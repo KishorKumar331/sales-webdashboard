@@ -11,6 +11,7 @@ import Investigation from './pages/Investigation';
 import Profile from './pages/Profile';
 import OnBoardingPage from './pages/(Auth)/OnBoarding';
 import SignUp from './pages/(Auth)/SignUp';
+import NewLeadForm from './pages/NewLeadForm';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated, redirectPath = '/auth' }) => {
@@ -58,6 +59,7 @@ function App() {
                 </div>
               }
             />
+            <Route path="/new-lead" element={<NewLeadForm />} />
             <Route path="/create-quote" element={<CreateQuote />} />
             <Route path="/follow-up" element={<FollowUp />} />
             <Route path="/converted" element={<Converted />} />
