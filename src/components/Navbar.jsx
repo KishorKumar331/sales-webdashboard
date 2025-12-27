@@ -34,10 +34,9 @@ const Navbar = ({
     <div 
       style={{
         background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-        borderRadius: '0 0 24px 24px',
+        borderRadius: '0 0 24px 0px',
         padding: '16px',
         paddingTop: 'calc(16px + env(safe-area-inset-top))',
-        marginBottom: '16px',
       }}
     >
       <div style={{

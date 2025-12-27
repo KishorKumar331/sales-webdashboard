@@ -170,12 +170,7 @@ export default function NewLeadForm() {
 
   return (
     <div style={styles.mainContainer}>
-      <Navbar
-        title="Add New Lead"
-        subtitle="Create a new customer lead"
-        showSearch={false}
-        showNotifications={false}
-      />
+  
 
       <div style={styles.scrollContainer}>
         <div style={styles.container}>
@@ -510,9 +505,7 @@ const styles = {
     width: "100%",
   },
   container: {
-    padding: 16,
     paddingBottom: 100,
-    maxWidth: 900,
     margin: "0 auto",
   },
   card: {
@@ -596,3 +589,4 @@ const styles = {
     display: "inline-block",
   },
 };
+  
