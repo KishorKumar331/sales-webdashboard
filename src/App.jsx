@@ -5,7 +5,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
-import CreateQuote from './pages/CreateQuote';
 import FollowUp from './pages/FollowUp';
 import Converted from './pages/Converted';
 import Investigation from './pages/Investigation';
@@ -13,6 +12,8 @@ import Profile from './pages/Profile';
 import OnBoardingPage from './pages/(Auth)/OnBoarding';
 import SignUp from './pages/(Auth)/SignUp';
 import NewLeadForm from './pages/NewLeadForm';
+import QuotationScreen from './pages/QuotationScreen';
+import CreateQuote from "./pages/CreateQuote"
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated, redirectPath = '/auth' }) => {
@@ -72,6 +73,8 @@ function App() {
             />
             <Route path="/new-lead" element={renderWithLayout(<NewLeadForm />, "New Lead")} />
             <Route path="/create-quote" element={renderWithLayout(<CreateQuote />, "Create Quote")} />
+                        <Route path="/create-newquote" element={renderWithLayout(<QuotationScreen />, "Create Quote")} />
+
             <Route path="/follow-up" element={renderWithLayout(<FollowUp />, "Follow Up")} />
             <Route path="/converted" element={renderWithLayout(<Converted />, "Converted")} />
             <Route path="/investigation" element={renderWithLayout(<Investigation />, "Investigation")} />
