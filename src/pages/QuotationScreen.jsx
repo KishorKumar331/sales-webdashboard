@@ -26,7 +26,7 @@ const QuotationScreen = () => {
 
   /* ================= FORM SUBMIT ================= */
   const handleFormSubmit = async (data) => {
-    if (isPrinting) return;
+    console.log(data)
     setIsPrinting(true);
 
     try {
@@ -40,7 +40,11 @@ const QuotationScreen = () => {
 
       const res = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations",
-        formDataToSubmit
+        {
+             ...data,
+        CompanyId: user?.CompanyId,
+        CompanyEmail: user?.Email,
+        }
       );
 
       console.log("✅ Quotation created:", res.data);

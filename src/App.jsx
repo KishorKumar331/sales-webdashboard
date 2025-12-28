@@ -6,7 +6,6 @@ import './App.css';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import FollowUp from './pages/FollowUp';
-import Converted from './pages/Converted';
 import Investigation from './pages/Investigation';
 import Profile from './pages/Profile';
 import OnBoardingPage from './pages/(Auth)/OnBoarding';
@@ -14,6 +13,7 @@ import SignUp from './pages/(Auth)/SignUp';
 import NewLeadForm from './pages/NewLeadForm';
 import QuotationScreen from './pages/QuotationScreen';
 import CreateQuote from "./pages/CreateQuote"
+import Converted from './pages/Converted';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated, redirectPath = '/auth' }) => {

@@ -39,19 +39,7 @@ const SimpleQuotationWrapper = ({
   return (
     <div style={styles.root}>
       {/* ================= HEADER ================= */}
-      <div style={styles.headerGradient}>
-        <div style={styles.headerRow}>
-          <button
-            onClick={() => navigate(-1)}
-            style={styles.backBtn}
-          >
-            <ArrowLeft size={22} color="white" />
-          </button>
-
-          <div style={styles.headerTitle}>Create Quotation</div>
-          <div style={{ width: 40 }} />
-        </div>
-      </div>
+  
 
       {/* ================= CONTENT ================= */}
       <div style={styles.content}>
