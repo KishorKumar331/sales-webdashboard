@@ -1,16 +1,8 @@
-import { useState, useEffect } from "react";
-import {
-  X,
-  Plus,
-  Pencil,
-  Share2,
-  FileText,
-  AlertCircle,
-  Receipt,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
-/* ------------------ MODAL ------------------ */
+
+
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function InvoiceListModal({
   visible,
@@ -18,14 +10,11 @@ export default function InvoiceListModal({
   onCreateNew,
   data,
 }) {
-  const router = useNavigate();
+  const navigate = useNavigate();
 
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const latest = invoices[0];
-  const previous = invoices.slice(1);
 
   useEffect(() => {
     if (visible && data?.TripId) {
@@ -42,16 +31,17 @@ export default function InvoiceListModal({
       if (data?.TripId) params.append("tripId", data.TripId);
       if (data?.invoiceId) params.append("invoiceId", data.invoiceId);
 
-      const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice?${params}`;
+      const response = await fetch(
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice?${params.toString()}`
+      );
 
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch invoices");
+      if (!response.ok) throw new Error("Failed to fetch invoices");
 
-      const json = await res.json();
-      setInvoices(Array.isArray(json) ? json : [json]);
+      const result = await response.json();
+      setInvoices(Array.isArray(result) ? result : [result]);
     } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to load invoices");
+      setError(err.message);
+      setInvoices([]);
     } finally {
       setLoading(false);
     }
@@ -59,179 +49,181 @@ export default function InvoiceListModal({
 
   const handleEditInvoice = (invoice) => {
     onClose();
-    router(
-      `/invoices/create?isEdit=true&tripId=${invoice.tripId}&initialData=${encodeURIComponent(
-        JSON.stringify(invoice)
-      )}`
-    );
+    navigate("/invoices/create", {
+      state: {
+        initialData: invoice,
+        tripId: invoice.tripId,
+        isEdit: true,
+      },
+    });
   };
 
-  const handleShareInvoice = async (invoice) => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Invoice ${invoice.invoiceNumber}`,
-          text: "Sharing invoice",
-        });
-      } else {
-        window.alert("Sharing not supported on this browser");
-      }
-    } catch (err) {
-      console.error(err);
-      window.alert("Failed to share invoice");
-    }
+  const handleViewInvoice = (invoice) => {
+    onClose();
+    navigate(`/invoices/${invoice.invoiceId}`, {
+      state: { invoice },
+    });
   };
 
-  const statusStyle = (status) => {
-    switch (status?.toLowerCase()) {
-      case "paid":
-        return "bg-green-100 text-green-700";
-      case "pending":
-        return "bg-yellow-100 text-yellow-700";
-      case "overdue":
-        return "bg-red-100 text-red-700";
-      case "partial":
-        return "bg-blue-100 text-blue-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
+  const handleShareInvoice = (invoice) => {
+    const html = generateInvoiceHtml(invoice);
+
+    const newWindow = window.open("", "_blank");
+    newWindow.document.write(html);
+    newWindow.document.close();
+  };
+
+  const generateInvoiceHtml = (invoice) => {
+    const total =
+      (invoice.pricing?.totalAmount || 0) +
+      (invoice.pricing?.gstAmount || 0) +
+      (invoice.pricing?.tcsAmount || 0);
+
+    return `
+      <html>
+        <head>
+          <title>Invoice ${invoice.invoiceNumber}</title>
+          <style>
+            body { font-family: Arial; padding: 40px; }
+            h1 { text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; }
+            th { background: #f3f4f6; }
+            .total { text-align: right; font-weight: bold; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <h1>INVOICE</h1>
+          <p><strong>Invoice #:</strong> ${invoice.invoiceNumber}</p>
+          <p><strong>Status:</strong> ${invoice.invoiceStatus}</p>
+
+          <h3>Customer</h3>
+          <p>${invoice.customer?.name}</p>
+          <p>${invoice.customer?.email}</p>
+          <p>${invoice.customer?.contact}</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Package Amount</td>
+                <td>₹${invoice.pricing?.totalAmount?.toLocaleString("en-IN")}</td>
+              </tr>
+              <tr>
+                <td>GST</td>
+                <td>₹${invoice.pricing?.gstAmount?.toLocaleString("en-IN")}</td>
+              </tr>
+              <tr>
+                <td>TCS</td>
+                <td>₹${invoice.pricing?.tcsAmount?.toLocaleString("en-IN")}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="total">
+            Total: ₹${total.toLocaleString("en-IN")}
+          </div>
+
+          <br/>
+          <button onclick="window.print()">Print Invoice</button>
+        </body>
+      </html>
+    `;
   };
 
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-gray-50 w-full max-w-lg max-h-[90vh] rounded-2xl overflow-hidden shadow-xl">
-        {/* HEADER */}
-        <div className="bg-purple-600 p-4 pt-10 rounded-b-3xl flex justify-between items-center">
-          <div>
-            <h2 className="text-white text-xl font-bold">Journey Routers</h2>
-            <p className="text-white/80 text-sm">Invoice Management</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="bg-white/20 p-2 rounded-full"
-          >
-            <X size={18} className="text-white" />
-          </button>
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+      <div className="bg-white w-[800px] max-h-[90vh] rounded-xl shadow-lg overflow-hidden">
+        {/* Header */}
+        <div className="bg-purple-600 text-white p-4 flex justify-between">
+          <h2 className="text-lg font-bold">Invoice Management</h2>
+          <button onClick={onClose}>✕</button>
         </div>
 
-        {/* CONTENT */}
-        <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {!data?.invoiceId && (
-            <button
-              onClick={() => {
-                onClose();
-                setTimeout(onCreateNew, 100);
-              }}
-              className="w-full bg-green-500 text-white rounded-lg py-3 flex items-center justify-center mb-4"
-            >
-              <Plus size={18} className="mr-2" />
-              Create New Invoice
-            </button>
-          )}
+        <div className="p-6 overflow-y-auto max-h-[75vh]">
+          {/* Create Button */}
+          <button
+            onClick={() => {
+              onClose();
+              onCreateNew();
+            }}
+            className="bg-green-500 text-white px-4 py-2 rounded mb-4"
+          >
+            + Create New Invoice
+          </button>
 
-          {loading && (
-            <div className="flex flex-col items-center py-10">
-              <div className="animate-spin h-8 w-8 border-b-2 border-purple-600 rounded-full" />
-              <p className="text-gray-600 mt-2">Loading invoices…</p>
-            </div>
-          )}
+          {loading && <p>Loading invoices...</p>}
 
           {error && (
-            <div className="text-center py-10">
-              <AlertCircle size={36} className="mx-auto text-red-500 mb-3" />
-              <p className="text-red-600">{error}</p>
+            <div className="text-red-500">
+              {error}
               <button
                 onClick={fetchInvoices}
-                className="mt-4 bg-purple-600 text-white px-6 py-2 rounded-lg"
+                className="ml-3 text-purple-600 underline"
               >
-                Try Again
+                Retry
               </button>
             </div>
           )}
 
           {!loading && invoices.length === 0 && (
-            <div className="text-center py-10">
-              <Receipt size={56} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500">No invoices found</p>
-            </div>
+            <p className="text-gray-500">No invoices found.</p>
           )}
 
-          {latest && renderInvoice(latest, true)}
-          {previous.length > 0 &&
-            previous.map((inv) => renderInvoice(inv))}
+          {invoices.map((invoice) => (
+            <div
+              key={invoice.invoiceId}
+              className="border rounded-lg p-4 mb-4"
+            >
+              <div className="flex justify-between">
+                <h3 className="text-purple-600 font-bold">
+                  {invoice.invoiceNumber}
+                </h3>
+                <span className="text-sm bg-gray-100 px-2 py-1 rounded">
+                  {invoice.invoiceStatus}
+                </span>
+              </div>
+
+              <p className="font-semibold mt-2">
+                ₹{invoice.pricing?.totalAmount?.toLocaleString("en-IN")}
+              </p>
+              <p className="text-sm text-gray-500">
+                {invoice.customer?.name} • {invoice.destination}
+              </p>
+
+              <div className="flex gap-3 mt-3">
+                <button
+                  onClick={() => handleEditInvoice(invoice)}
+                  className="bg-blue-100 px-3 py-1 rounded"
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() => handleShareInvoice(invoice)}
+                  className="bg-green-100 px-3 py-1 rounded"
+                >
+                  Preview / Print
+                </button>
+
+                <button
+                  onClick={() => handleViewInvoice(invoice)}
+                  className="bg-gray-100 px-3 py-1 rounded"
+                >
+                  View
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
-
-  function renderInvoice(invoice, latest = false) {
-    return (
-      <div
-        key={invoice.invoiceId || invoice.invoiceNumber}
-        className={`bg-white p-4 mb-4 rounded-xl ${
-          latest ? "border border-purple-300" : ""
-        }`}
-      >
-        {latest && (
-          <p className="text-xs text-gray-500 mb-1 font-medium">
-            LATEST INVOICE
-          </p>
-        )}
-
-        <div className="flex justify-between items-center mb-2">
-          <p className="text-purple-600 font-bold text-lg">
-            {invoice.invoiceNumber || invoice.invoiceId}
-          </p>
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyle(
-              invoice.invoiceStatus || invoice.Status
-            )}`}
-          >
-            {invoice.invoiceStatus || invoice.Status || "Draft"}
-          </span>
-        </div>
-
-        <p className="text-gray-900 font-semibold text-lg">
-          ₹{invoice.pricing?.totalAmount?.toLocaleString("en-IN") || "0"}
-        </p>
-
-        <p className="text-gray-500 text-sm">
-          Destination: {invoice.destination || "N/A"}
-        </p>
-        <p className="text-gray-500 text-xs">
-          {invoice.customer?.name} • {invoice.customer?.contact}
-        </p>
-
-        <div className="flex justify-end gap-2 mt-3">
-          <button
-            className="bg-blue-100 p-2 rounded-full"
-            onClick={() => handleEditInvoice(invoice)}
-          >
-            <Pencil size={16} className="text-blue-600" />
-          </button>
-
-          <button
-            className="bg-green-100 p-2 rounded-full"
-            onClick={() => handleShareInvoice(invoice)}
-          >
-            <Share2 size={16} className="text-green-600" />
-          </button>
-
-          <button
-            className="bg-gray-100 p-2 rounded-full"
-            onClick={() => {
-              onClose();
-              router.push(
-                `/invoices/${invoice.invoiceId || invoice.invoiceNumber}`
-              );
-            }}
-          >
-            <FileText size={16} className="text-gray-600" />
-          </button>
-        </div>
-      </div>
-    );
-  }
 }

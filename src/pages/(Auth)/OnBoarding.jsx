@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 // Linear gradient replaced with CSS gradients
 import { X, Loader2 } from 'lucide-react';
 import './Auth.css'; // You'll need to create this for custom styles
@@ -27,9 +28,17 @@ const OnBoardingPage = () => {
     setCurrentIndex(index);
   };
 
-  const showToast = (message) => {
-    // Using browser's alert for simplicity, you can replace with a toast library
-    alert(message);
+  const showToast = (message, type = 'success') => {
+    toast(message, {
+      type: type,
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
   };
 
   const isValidEmail = (email) => {
@@ -44,7 +53,7 @@ const OnBoardingPage = () => {
 
   const handleLogin = async () => {
     if (!loginInput.trim()) {
-      alert('Please enter your email or phone number');
+      showToast('Please enter your email or phone number', 'error');
       return;
     }
 
@@ -58,7 +67,7 @@ const OnBoardingPage = () => {
       } else if (isValidPhone(loginInput)) {
         apiUrl += `Phone=${encodeURIComponent(loginInput)}`;
       } else {
-        alert('Please enter a valid email or phone number');
+        showToast('Please enter a valid email or phone number', 'error');
         setIsLoading(false);
         return;
       }
@@ -72,25 +81,55 @@ const OnBoardingPage = () => {
 
       const result = await response.json();
       
+      console.log('API Response:', result);
+      console.log('Response OK:', response.ok);
+      console.log('Response Status:', response.status);
+      
       if (response.ok) {
+        // Handle different response formats
+        const hasData = Array.isArray(result) ? result.length > 0 : (result && Object.keys(result).length > 0);
+        
+        console.log('Has data:', hasData);
+        console.log('Result type:', typeof result);
+        console.log('Is array:', Array.isArray(result));
+        
         if (Array.isArray(result) && result.length === 0) {
-          alert('No account found with this email/phone. Please create an account first.');
-        } else if (result && (Array.isArray(result) ? result.length > 0 : Object.keys(result).length > 0)) {
+          showToast('No account found with this email/phone. Please create an account first.', 'error');
+        } else if (hasData) {
           // Profile found, store to localStorage and navigate
+          console.log('Storing user data:', result);
           localStorage.setItem('userProfile', JSON.stringify(result));
           localStorage.setItem('isAuthenticated', 'true');
           
+          console.log('Before dispatch - localStorage:', localStorage.getItem('isAuthenticated'));
+          
+          // Dispatch custom event to notify App component of auth change
+          window.dispatchEvent(new Event('authChange'));
+          
+          console.log('After dispatch - calling navigate');
+          
           showToast('Login successful!');
           setShowLoginModal(false);
-          navigate('/');
+          
+          // Force navigation with a small delay to ensure state updates
+          setTimeout(() => {
+            console.log('Navigating to home...');
+            try {
+              navigate('/');
+            } catch (error) {
+              console.error('Navigation error:', error);
+              // Fallback to window.location
+              window.location.href = '/';
+            }
+          }, 100);
         } else {
-          alert('Invalid response from server');
+          showToast('No account found with this email/phone. Please create an account first.', 'error');
         }
       } else {
-        alert(result.message || 'Login failed. Please try again.');
+        showToast(result.message || 'Login failed. Please try again.', 'error');
       }
     } catch (error) {
-      alert('Network error. Please check your connection and try again.');
+      showToast('Network error. Please check your connection and try again.', 'error');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);

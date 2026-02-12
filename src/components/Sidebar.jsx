@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, FilePlus, Clock, CheckCircle, Search, User } from 'lucide-react';
+import { Home, FilePlus, Clock, CheckCircle, Search, User, Users } from 'lucide-react';
 
 const Sidebar = () => {
   const navItems = [
@@ -8,6 +8,7 @@ const Sidebar = () => {
     { to: "/follow-up", icon: <Clock className="w-5 h-5" />, label: "Follow Up" },
     { to: "/converted", icon: <CheckCircle className="w-5 h-5" />, label: "Converted" },
     { to: "/investigation", icon: <Search className="w-5 h-5" />, label: "Investigation" },
+    { to: "/teams", icon: <Users className="w-5 h-5" />, label: "Teams" },
     { to: "/profile", icon: <User className="w-5 h-5" />, label: "Profile" },
   ];
 

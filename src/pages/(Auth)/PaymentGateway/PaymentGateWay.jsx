@@ -1,14 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
-import RazorpayCheckout from 'react-native-razorpay';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigate } from 'react-router-dom';
 
 const PaymentPage = () => {
-  const insets = useSafeAreaInsets();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
 
@@ -18,7 +12,7 @@ const PaymentPage = () => {
 
   const loadUserDetails = async () => {
     try {
-      const savedData = await AsyncStorage.getItem('createAccountFormData');
+      const savedData = localStorage.getItem('createAccountFormData');
       if (savedData) {
         setUserDetails(JSON.parse(savedData));
       }
@@ -36,7 +30,7 @@ const PaymentPage = () => {
       description: 'Journey Routers - Account Setup',
       image: 'https://i.imgur.com/3g7nmJC.png',
       currency: 'INR',
-      key: 'rzp_test_RNiBf9dqVTjgJt',
+      key: 'rzp_test_S5OVwU720vAaEY',
       amount: '100',
       name: 'Journey Routers',
       order_id: '',
@@ -48,37 +42,53 @@ const PaymentPage = () => {
       theme: { color: '#7c3aed' },
     };
 
-    RazorpayCheckout.open(options)
-      .then(async (data) => {
-        console.log('Payment Success:', data);
-        await handlePaymentSuccess(data);
-      })
-      .catch((error) => {
-        console.log('Payment Error:', error);
+    // Load Razorpay script if not already loaded
+    if (!window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        initializeRazorpay(options);
+      };
+      document.body.appendChild(script);
+    } else {
+      initializeRazorpay(options);
+    }
+  };
 
-        if (error.code === RazorpayCheckout.PAYMENT_CANCELLED) {
-          Alert.alert(
-            'Payment Cancelled',
-            'You cancelled the payment. Your account data has not been updated. Please try again to complete your setup.'
-          );
-        } else {
-          Alert.alert(
-            'Payment Failed',
-            `Error: ${error.code} | ${error.description || 'There was a problem processing your payment. Your account data has not been updated.'}`
-          );
-        }
+  const initializeRazorpay = (options) => {
+    const razorpay = new window.Razorpay(options);
+    
+    razorpay.open();
+    
+    razorpay.on('payment.success', async (response) => {
+      console.log('Payment Success:', response);
+      await handlePaymentSuccess(response);
+      setIsLoading(false);
+    });
+    
+    razorpay.on('payment.error', (response) => {
+      console.log('Payment Error:', response);
+      handlePaymentError(response);
+      setIsLoading(false);
+    });
+  };
 
-        // DO NOT update user data on payment failure or cancellation
-        // User data remains unchanged, they can retry payment later
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+  const handlePaymentError = (error) => {
+    if (error.code === 'PAYMENT_CANCELLED') {
+      alert(
+        'Payment Cancelled\n\nYou cancelled the payment. Your account data has not been updated. Please try again to complete your setup.'
+      );
+    } else {
+      alert(
+        `Payment Failed\n\nError: ${error.code} | ${error.description || 'There was a problem processing your payment. Your account data has not been updated.'}`
+      );
+    }
   };
 
   const updateAccountPaymentStatus = async (isPaid = false) => {
     try {
-      const accountData = await AsyncStorage.getItem('createAccountFormData');
+      const accountData = localStorage.getItem('createAccountFormData');
       if (accountData) {
         const parsedData = JSON.parse(accountData);
 
@@ -126,7 +136,7 @@ const PaymentPage = () => {
 
   const handlePaymentSuccess = async (paymentData) => {
     try {
-      await AsyncStorage.setItem('paymentDetails', JSON.stringify({
+      await localStorage.setItem('paymentDetails', JSON.stringify({
         paymentId: paymentData.razorpay_payment_id,
         orderId: paymentData.razorpay_order_id,
         signature: paymentData.razorpay_signature,
@@ -138,171 +148,156 @@ const PaymentPage = () => {
 
       // Update userProfile with paid status
       if (updatedProfile) {
-        await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        await localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
       }
 
       // Clear form data
-      await AsyncStorage.removeItem('createAccountFormData');
-      await AsyncStorage.removeItem('createAccountCurrentStep');
+      localStorage.removeItem('createAccountFormData');
+      localStorage.removeItem('createAccountCurrentStep');
 
-      Alert.alert(
-        'Payment Successful! 🎉',
-        'Your account has been set up successfully. Welcome to Journey Routers!',
-        [
-          {
-            text: 'Continue',
-            onPress: () => router.replace('/(tabs)'),
-          },
-        ]
+      alert(
+        'Payment Successful! 🎉\n\nYour account has been set up successfully. Welcome to Journey Routers!'
       );
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error handling payment success:', error);
-      Alert.alert('Error', 'Payment was successful but there was an error setting up your account. Please contact support.');
+      alert('Error\n\nPayment was successful but there was an error setting up your account. Please contact support.');
     }
   };
 
   const handleSkipPayment = async () => {
-    Alert.alert(
-      'Skip Payment?',
-      'You can skip the payment for now and complete it later from your profile settings.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Skip for Now',
-          onPress: async () => {
-            try {
-              // Update account with unpaid status
-              const updatedProfile = await updateAccountPaymentStatus(false);
+    if (confirm('Skip Payment?\n\nYou can skip the payment for now and complete it later from your profile settings.')) {
+      try {
+        // Update account with unpaid status
+        const updatedProfile = await updateAccountPaymentStatus(false);
 
-              // Update userProfile with unpaid status
-              if (updatedProfile) {
-                await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-              }
+        // Update userProfile with unpaid status
+        if (updatedProfile) {
+          await localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        }
 
-              // Clear form data
-              await AsyncStorage.removeItem('createAccountFormData');
-              await AsyncStorage.removeItem('createAccountCurrentStep');
+        // Clear form data
+        localStorage.removeItem('createAccountFormData');
+        localStorage.removeItem('createAccountCurrentStep');
 
-              router.replace('/(tabs)');
-            } catch (error) {
-              console.error('Error skipping payment:', error);
-            }
-          },
-        },
-      ]
-    );
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Error skipping payment:', error);
+      }
+    }
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <View className="bg-white px-5 py-4" style={{ paddingTop: insets.top + 16 }}>
-        <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#374151" />
-          </Pressable>
-          <Text className="text-xl font-semibold text-gray-900">Complete Setup</Text>
-          <View className="w-6" />
-        </View>
-      </View>
+      <div className="bg-white px-5 py-4 pt-8">
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-xl font-semibold text-gray-900">Complete Setup</h1>
+          <div className="w-6" />
+        </div>
+      </div>
 
       {/* Content */}
-      <View className="flex-1 px-6 py-8">
+      <div className="flex-1 px-6 py-8 max-w-md mx-auto">
         {/* Success Icon */}
-        <View className="items-center mb-8">
-          <View className="w-24 h-24 bg-green-100 rounded-full items-center justify-center mb-4">
-            <Ionicons name="checkmark-circle" size={48} color="#10b981" />
-          </View>
-          <Text className="text-2xl font-bold text-gray-900 text-center">Almost Done!</Text>
-          <Text className="text-gray-600 text-center mt-2">
+        <div className="text-center mb-8">
+          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 text-center">Almost Done!</h2>
+          <p className="text-gray-600 text-center mt-2">
             Complete your account setup with our premium plan
-          </Text>
-        </View>
+          </p>
+        </div>
 
         {/* Pricing Card */}
-        <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-          <LinearGradient
-            colors={['#7c3aed', '#5b21b6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="rounded-xl p-6 mb-4"
-          >
-            <View className="items-center">
-              <Text className="text-white text-lg font-medium">Premium Plan</Text>
-              <View className="flex-row items-baseline mt-2">
-                <Text className="text-white text-4xl font-bold">₹999</Text>
-                <Text className="text-white/80 text-lg ml-1">/month</Text>
-              </View>
-            </View>
-          </LinearGradient>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+          <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-xl p-6 mb-4">
+            <div className="text-center">
+              <h3 className="text-white text-lg font-medium">Premium Plan</h3>
+              <div className="flex items-baseline justify-center mt-2">
+                <span className="text-white text-4xl font-bold">₹999</span>
+                <span className="text-white/80 text-lg ml-1">/month</span>
+              </div>
+            </div>
+          </div>
 
-          <View className="space-y-3">
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text className="text-gray-700 ml-3">Unlimited quotations</Text>
-            </View>
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text className="text-gray-700 ml-3">Advanced analytics</Text>
-            </View>
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text className="text-gray-700 ml-3">Priority support</Text>
-            </View>
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text className="text-gray-700 ml-3">Custom branding</Text>
-            </View>
-          </View>
-        </View>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-gray-700 ml-3">Unlimited quotations</span>
+            </div>
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-gray-700 ml-3">Advanced analytics</span>
+            </div>
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-gray-700 ml-3">Priority support</span>
+            </div>
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-gray-700 ml-3">Custom branding</span>
+            </div>
+          </div>
+        </div>
 
         {/* User Details */}
         {userDetails && (
-          <View className="bg-white rounded-xl p-4 mb-6">
-            <Text className="text-gray-700 font-medium mb-2">Account Details:</Text>
-            <Text className="text-gray-600">
-              {userDetails.FullName}
-            </Text>
-            <Text className="text-gray-600">{userDetails.Email}</Text>
-            <Text className="text-gray-600">{userDetails.Phone}</Text>
-            <Text className="text-gray-600">{userDetails.CompanyName}</Text>
-          </View>
+          <div className="bg-white rounded-xl p-4 mb-6">
+            <h4 className="text-gray-700 font-medium mb-2">Account Details:</h4>
+            <p className="text-gray-600">{userDetails.FullName}</p>
+            <p className="text-gray-600">{userDetails.Email}</p>
+            <p className="text-gray-600">{userDetails.Phone}</p>
+            <p className="text-gray-600">{userDetails.CompanyName}</p>
+          </div>
         )}
-      </View>
+      </div>
 
       {/* Payment Buttons */}
-      <View className="px-6 py-4 space-y-3">
-        <Pressable
-          onPress={handlePayment}
+      <div className="px-6 py-4 space-y-3 max-w-md mx-auto">
+        <button
+          onClick={handlePayment}
           disabled={isLoading}
-          className="overflow-hidden rounded-full"
+          className="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white font-semibold py-4 rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LinearGradient
-            colors={["#7c3aed", "#5b21b6"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ paddingVertical: 16, borderRadius: 9999 }}
-          >
-            <View className="flex-row items-center justify-center">
-              {isLoading && <ActivityIndicator size="small" color="white" className="mr-2" />}
-              <Text className="text-center text-white font-semibold text-base">
-                {isLoading ? 'Processing...' : 'Pay ₹999 & Complete Setup'}
-              </Text>
-            </View>
-          </LinearGradient>
-        </Pressable>
+          <div className="flex items-center justify-center">
+            {isLoading && (
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
+            {isLoading ? 'Processing...' : 'Pay ₹999 & Complete Setup'}
+          </div>
+        </button>
 
-        <Pressable
-          onPress={handleSkipPayment}
-          className="bg-gray-200 rounded-full py-4"
+        <button
+          onClick={handleSkipPayment}
+          className="w-full bg-gray-200 text-gray-700 font-semibold py-4 rounded-full hover:bg-gray-300 transition-colors"
         >
-          <Text className="text-center text-gray-700 font-semibold">Skip for Now</Text>
-        </Pressable>
-      </View>
-    </View>
+          Skip for Now
+        </button>
+      </div>
+    </div>
   );
 };
 

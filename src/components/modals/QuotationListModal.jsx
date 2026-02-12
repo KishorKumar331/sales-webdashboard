@@ -8,11 +8,14 @@ import {
 } from "lucide-react";
 import { FetchQuoteByTripID } from "../../api/leads/FetchLeads";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
+import PdfPreviewModal from "./PdfPreviewModal";
 
 /* ---------------- HEADER ---------------- */
 
 const QuotationHeader = ({ onClose }) => (
-  <div className="bg-purple-600 p-4 pt-10 rounded-b-3xl flex justify-between items-center">
+  <div className="bg-purple-600 p-4  rounded-b-3xl flex justify-between items-center">
     <div>
       <h2 className="text-white text-xl font-bold">Journey Routers</h2>
       <p className="text-white/80 text-sm">Quotation Management</p>
@@ -32,7 +35,6 @@ export default function QuotationListModal({
   visible,
   onClose,
   tripId,
-  onViewQuotation,
 }) {
   const router = useNavigate();
 
@@ -40,10 +42,49 @@ export default function QuotationListModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPrevious, setShowPrevious] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [pdfHtml, setPdfHtml] = useState(null);
+  const [pdfUri, setPdfUri] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [formDataToSubmit, setFormDataToSubmit] = useState(null);
+
+  // Get user data from localStorage
+  const user = JSON.parse(localStorage.getItem('userProfile') || '{}');
 
   const latest = quotations[0];
   const previous = quotations.slice(1);
+  const onViewQuotation = async (quotation) => {
+    try {
+      const response = await axios.post(
+        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
+        {
+          type: "quotation",
+          renderOnly: true,
+          data: {
+            ...quotation,
+            user,
+          },
+          templateName: "ip_pdf.hbs",
+        }
+      );
 
+      if (response.data) {
+        setPdfHtml(response.data);
+        setPdfUri(null);
+        setFormDataToSubmit(quotation);
+        setShowPdfModal(true);
+        setRefreshKey((prev) => prev + 1);
+      } else {
+        throw new Error("No data received from server");
+      }
+    } catch (error) {
+      console.error("Error generating preview:", error);
+      toast.error("Failed to load quotation preview. Please try again.");
+    } finally {
+        // setIsPrinting(false);
+    }
+  };
   const fetchQuotations = async (id) => {
     try {
       if (!id) throw new Error("No trip ID provided");
@@ -67,6 +108,17 @@ export default function QuotationListModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewPdf = (quotation) => {
+    setSelectedQuotation(quotation);
+    setShowPdfModal(true);
+  };
+
+  const handleSharePdf = async () => {
+    // This would be called after PDF is generated/downloaded
+    // You can add API call here to update quotation status or send notification
+    console.log('PDF shared for quotation:', selectedQuotation?.QuoteId);
   };
 
   useEffect(() => {
@@ -129,11 +181,14 @@ export default function QuotationListModal({
                     className="bg-gray-100 p-2 rounded-full"
                     onClick={() => {
                       onClose();
-                      router(
-                        `/QuotationScreen?FollowleadData=${encodeURIComponent(
-                          JSON.stringify(latest)
-                        )}`
-                      );
+                      router('/create-newquote', { 
+                        state: { 
+                          followUpData: {
+                            ...latest,
+                            Quotations: [latest.QuoteId]
+                          }
+                        } 
+                      });
                     }}
                   >
                     <FileText size={16} className="text-gray-600" />
@@ -198,11 +253,14 @@ export default function QuotationListModal({
                       className="bg-gray-100 p-2 rounded-full"
                       onClick={() => {
                         onClose();
-                        router.push(
-                          `/QuotationScreen?FollowleadData=${encodeURIComponent(
-                            JSON.stringify(quotation)
-                          )}`
-                        );
+                        router('/create-newquote', { 
+                          state: { 
+                            followUpData: {
+                              ...quotation,
+                              Quotations: [quotation.QuoteId]
+                            }
+                          } 
+                        });
                       }}
                     >
                       <FileText size={16} className="text-gray-600" />
@@ -217,6 +275,20 @@ export default function QuotationListModal({
             ))}
         </div>
       </div>
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        visible={showPdfModal}
+        pdfUri={pdfUri}
+        pdfHtml={pdfHtml}
+        onClose={() => {
+          setShowPdfModal(false);
+          setSelectedQuotation(null);
+        }}
+        onShare={handleSharePdf}
+        clientName={selectedQuotation?.ClientName || selectedQuotation?.QuoteId || 'Quotation'}
+        key={refreshKey}
+      />
     </div>
   );
 }

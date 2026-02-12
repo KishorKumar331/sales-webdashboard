@@ -1,8 +1,7 @@
 
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { FormProvider } from "react-hook-form";
-import SimpleQuotationWrapper from "./SimpleQuotationWrapper";
 import BasicDetails from "./BasicDetails";
 import CostCalculator from "./CostCalculator";
 
@@ -25,7 +24,7 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
   console.log("FollowUp Data:", followUpData);
 
   const tripId = followUpData?.TripId || lead?.TripId || "";
-
+console.log(tripId)
   const userData = {
     CompanyId: "12345",
     AssignDate: new Date().toISOString(),
@@ -159,16 +158,30 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
     await clearQuotationDraft(tripId);
   });
 
-
-
   return (
     <FormProvider {...methods}>
-      <SimpleQuotationWrapper
-        sections={sections}
-        onSubmit={handleSubmit}
-        header={null}
-        footer={null}
-      />
+      <div style={{ padding: '20px' }}>
+        {sections.map(({ key, Component }) => (
+          <div key={key} style={{ marginBottom: '30px' }}>
+            <Component />
+          </div>
+        ))}
+        <button
+          onClick={handleSubmit}
+          style={{
+            backgroundColor: '#7c3aed',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: '600'
+          }}
+        >
+          Submit
+        </button>
+      </div>
     </FormProvider>
   );
 };
