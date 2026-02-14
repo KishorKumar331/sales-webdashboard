@@ -318,6 +318,7 @@ const PaymentPage = () => {
             </div>
           </div>
 
+{/* vgsahjgdjhas sdhjasj */}
           {/* Right Column - User Details & Payment */}
           <div className="space-y-6">
             {/* User Details Card */}
