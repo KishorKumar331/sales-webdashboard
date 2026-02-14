@@ -6,7 +6,7 @@ import Navbar from "../components/Navbar";
 import CalendarDatePicker from "../components/DatePicker";
 import CustomPicker from "../components/CustomPicker";
 import { getUserProfile } from "../utils/getUserProfile";
-import { HdIcon, Icon, PersonStanding, PlaySquareIcon } from "lucide-react";
+import { PersonStanding, MapPin, Calendar, Users, DollarSign, Mail, Phone, MessageSquare, Send } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
@@ -154,37 +154,47 @@ export default function NewLeadForm() {
     }
   };
 
-  const FormField = ({ label, children, required = false, error }) => (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ color: "#374151", fontWeight: 600, marginBottom: 8 }}>
-        {label} {required && <span style={{ color: "red" }}>*</span>}
-      </div>
+  const FormField = ({ label, children, required = false, error, icon: Icon }) => (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        {Icon && <Icon className="h-4 w-4 text-gray-400" />}
+        {label}
+        {required && <span className="text-red-500">*</span>}
+      </label>
       {children}
       {error?.message && (
-        <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+        <p className="text-xs text-red-600 flex items-center gap-1">
+          <span className="text-red-500">•</span>
           {error.message}
-        </div>
+        </p>
       )}
     </div>
   );
 
   return (
-    <div style={styles.mainContainer}>
-  
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="mx-auto px-4 py-8">
+        {/* Header */}
+       
 
-      <div style={styles.scrollContainer}>
-        <div style={styles.container}>
-          {/* Personal Information Section */}
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <div style={styles.iconWrapper}><PersonStanding/></div>
-              <div style={styles.sectionTitle}>Personal Information</div>
+        {/* Personal Information Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+            <div className="shrink-0 rounded-xl bg-purple-50 p-2.5 ring-1 ring-purple-100">
+              <PersonStanding className="h-5 w-5 text-purple-700" />
             </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
+              <p className="text-sm text-gray-500">Basic client details</p>
+            </div>
+          </div>
 
+          <div className="space-y-5">
             <FormField
               label="Client Name"
               required
               error={errors["Client-Name"]}
+              icon={PersonStanding}
             >
               <Controller
                 control={control}
@@ -192,10 +202,9 @@ export default function NewLeadForm() {
                 rules={{ required: "Client name is required" }}
                 render={({ field: { onChange, value } }) => (
                   <input
-                    style={{
-                      ...styles.input,
-                      ...(errors["Client-Name"] ? styles.errorInput : {}),
-                    }}
+                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+                      errors["Client-Name"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                    }`}
                     placeholder="Enter client full name"
                     value={value || ""}
                     onChange={(e) => onChange(e.target.value)}
@@ -208,6 +217,7 @@ export default function NewLeadForm() {
               label="Contact Number"
               required
               error={errors["Client-Contact"]}
+              icon={Phone}
             >
               <Controller
                 control={control}
@@ -218,10 +228,9 @@ export default function NewLeadForm() {
                 }}
                 render={({ field: { onChange, value } }) => (
                   <input
-                    style={{
-                      ...styles.input,
-                      ...(errors["Client-Contact"] ? styles.errorInput : {}),
-                    }}
+                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+                      errors["Client-Contact"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                    }`}
                     placeholder="Enter 10-digit number"
                     inputMode="numeric"
                     type="number"
@@ -237,6 +246,7 @@ export default function NewLeadForm() {
               label="Email Address"
               required
               error={errors["Client-Email"]}
+              icon={Mail}
             >
               <Controller
                 control={control}
@@ -250,13 +260,10 @@ export default function NewLeadForm() {
                 }}
                 render={({ field: { onChange, value } }) => (
                   <input
-                    style={{
-                      ...styles.input,
-                      ...(errors["Client-Email"] ? styles.errorInput : {}),
-                    }}
-                    placeholder="Enter email address"
-                    type="email"
-                    autoCapitalize="none"
+                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+                      errors["Client-Email"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                    }`}
+                    placeholder="client@example.com"
                     value={value || ""}
                     onChange={(e) => onChange(e.target.value)}
                   />
@@ -264,24 +271,29 @@ export default function NewLeadForm() {
               />
             </FormField>
           </div>
+        </div>
 
-          {/* Travel Information Section */}
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <div style={{ ...styles.iconWrapper, backgroundColor: "#dbeafe" }}>
-               <PlaySquareIcon/>
-              </div>
-              <div style={styles.sectionTitle}>Travel Information</div>
+        {/* Travel Information Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+            <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 ring-1 ring-blue-100">
+              <MapPin className="h-5 w-5 text-blue-700" />
             </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Travel Information</h2>
+              <p className="text-sm text-gray-500">Destination and travel details</p>
+            </div>
+          </div>
 
-            <FormField label="Departure City">
+          <div className="space-y-5">
+            <FormField label="Departure City" icon={MapPin}>
               <Controller
                 control={control}
                 name="Client-DepartureCity"
                 render={({ field: { onChange, value } }) => (
                   <input
-                    style={styles.input}
-                    placeholder="Enter Departure"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Enter departure city"
                     value={value || ""}
                     onChange={(e) => onChange(e.target.value)}
                   />
@@ -294,6 +306,7 @@ export default function NewLeadForm() {
               label="Destination"
               required
               error={errors["Client-Destination"]}
+              icon={MapPin}
             >
               <Controller
                 control={control}
@@ -311,282 +324,211 @@ export default function NewLeadForm() {
               />
             </FormField>
 
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <FormField
-                  label="Duration (Days)"
-                  required
-                  error={errors["Client-Days"]}
-                >
-                  <Controller
-                    control={control}
-                    name="Client-Days"
-                    rules={{ required: "Duration is required" }}
-                    render={({ field: { onChange, value } }) => (
-                      <input
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <FormField
+                label="Duration (Days)"
+                required
+                error={errors["Client-Days"]}
+                icon={Calendar}
+              >
+                <Controller
+                  control={control}
+                  name="Client-Days"
+                  rules={{ required: "Duration is required" }}
+                  render={({ field: { onChange, value } }) => (
+                    <input
                       type="number"
-                        style={styles.input}
-                        placeholder="Enter number of days"
-                        inputMode="numeric"
-                        maxLength={3}
-                        value={value || ""}
-                        onChange={(e) => onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </FormField>
-              </div>
+                      className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+                        errors["Client-Days"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                      }`}
+                      placeholder="Number of days"
+                      inputMode="numeric"
+                      maxLength={3}
+                      value={value || ""}
+                      onChange={(e) => onChange(e.target.value)}
+                    />
+                  )}
+                />
+              </FormField>
 
-              <div style={{ flex: 1 }}>
-                <FormField
-                  label="Travel Date"
-                  required
-                  error={errors["Client-TravelDate"]}
-                >
-                  <Controller
-                    control={control}
-                    name="Client-TravelDate"
-                    rules={{ required: "Travel date is required" }}
-                    render={({ field: { onChange, value } }) => (
-                      <CalendarDatePicker
-                        value={value}
-                        onDateChange={onChange}
-                        placeholder="Select travel date"
-                      />
-                    )}
-                  />
-                </FormField>
-              </div>
+              <FormField
+                label="Travel Date"
+                required
+                error={errors["Client-TravelDate"]}
+                icon={Calendar}
+              >
+                <Controller
+                  control={control}
+                  name="Client-TravelDate"
+                  rules={{ required: "Travel date is required" }}
+                  render={({ field: { onChange, value } }) => (
+                    <CalendarDatePicker
+                      value={value}
+                      onDateChange={onChange}
+                      placeholder="Select travel date"
+                    />
+                  )}
+                />
+              </FormField>
             </div>
 
-            <FormField label="Budget (₹)" error={errors["Client-Budget"]}>
+            <FormField label="Budget (₹)" error={errors["Client-Budget"]} icon={DollarSign}>
               <Controller
                 control={control}
                 name="Client-Budget"
                 render={({ field: { onChange, value } }) => (
                   <input
-                    style={styles.input}
-                    placeholder="Enter approximate budget"
+                    type="number"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Enter budget amount"
                     inputMode="numeric"
-                    maxLength={10}
                     value={value || ""}
                     onChange={(e) => onChange(e.target.value)}
                   />
                 )}
               />
             </FormField>
+          </div>
+        </div>
 
-            {/* Passenger Information */}
-            <div style={styles.sectionSubtitle}>Passenger Information</div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <FormField label="Adults" required error={errors["Client-Pax"]}>
-                  <Controller
-                    control={control}
-                    name="Client-Pax"
-                    rules={{ required: "Number of adults is required" }}
-                    render={({ field: { onChange, value } }) => (
-                      <input
-                        style={styles.input}
-                        placeholder="Adults"
-                        type="number"
-                        inputMode="numeric"
-                        value={value || ""}
-                        onChange={(e) => onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </FormField>
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <FormField label="Children" error={errors["Client-Child"]}>
-                  <Controller
-                    control={control}
-                    name="Client-Child"
-                    render={({ field: { onChange, value } }) => (
-                      <input
-                      type="number"
-                        style={styles.input}
-                        placeholder="Children"
-                        inputMode="numeric"
-                        value={value || ""}
-                        onChange={(e) => onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </FormField>
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <FormField label="Infants" error={errors["Client-Infant"]}>
-                  <Controller
-                    control={control}
-                    name="Client-Infant"
-                    render={({ field: { onChange, value } }) => (
-                      <input
-                        style={styles.input}
-                        placeholder="Infants"
-                        inputMode="numeric"
-                        value={value || ""}
-                        type="number"
-                        onChange={(e) => onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </FormField>
-              </div>
+        {/* Passenger Information Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+            <div className="shrink-0 rounded-xl bg-green-50 p-2.5 ring-1 ring-green-100">
+              <Users className="h-5 w-5 text-green-700" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Passenger Information</h2>
+              <p className="text-sm text-gray-500">Number of travelers</p>
             </div>
           </div>
 
-          {/* Additional Details Section */}
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <div style={{ ...styles.iconWrapper, backgroundColor: "#dcfce7" }}>
-                <HdIcon/>
-              </div>
-              <div style={styles.sectionTitle}>Additional Details</div>
-            </div>
-
-            <FormField label="Additional Comments" error={errors.Comments}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <FormField
+              label="Adults"
+              required
+              error={errors["Client-Pax"]}
+              icon={Users}
+            >
               <Controller
                 control={control}
-                name="Comments"
+                name="Client-Pax"
+                rules={{ required: "Number of adults is required" }}
                 render={({ field: { onChange, value } }) => (
-                  <textarea
-                    style={{ ...styles.input, ...styles.textArea }}
-                    placeholder="Enter any additional details, special requirements, or comments..."
+                  <input
+                    type="number"
+                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+                      errors["Client-Pax"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                    }`}
+                    placeholder="Adults"
+                    inputMode="numeric"
                     value={value || ""}
                     onChange={(e) => onChange(e.target.value)}
-                    rows={4}
+                  />
+                )}
+              />
+            </FormField>
+
+            <FormField
+              label="Children"
+              error={errors["Client-Child"]}
+              icon={Users}
+            >
+              <Controller
+                control={control}
+                name="Client-Child"
+                render={({ field: { onChange, value } }) => (
+                  <input
+                    type="number"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Children"
+                    inputMode="numeric"
+                    value={value || ""}
+                    onChange={(e) => onChange(e.target.value)}
+                  />
+                )}
+              />
+            </FormField>
+
+            <FormField
+              label="Infants"
+              error={errors["Client-Infant"]}
+              icon={Users}
+            >
+              <Controller
+                control={control}
+                name="Client-Infant"
+                render={({ field: { onChange, value } }) => (
+                  <input
+                    type="number"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Infants"
+                    inputMode="numeric"
+                    value={value || ""}
+                    onChange={(e) => onChange(e.target.value)}
                   />
                 )}
               />
             </FormField>
           </div>
+        </div>
+
+        {/* Additional Details Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+            <div className="shrink-0 rounded-xl bg-amber-50 p-2.5 ring-1 ring-amber-100">
+              <MessageSquare className="h-5 w-5 text-amber-700" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Additional Details</h2>
+              <p className="text-sm text-gray-500">Comments and special requirements</p>
+            </div>
+          </div>
+
+          <FormField label="Additional Comments" error={errors.Comments} icon={MessageSquare}>
+            <Controller
+              control={control}
+              name="Comments"
+              render={({ field: { onChange, value } }) => (
+                <textarea
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-vertical"
+                  placeholder="Enter any additional details, special requirements, or comments..."
+                  value={value || ""}
+                  onChange={(e) => onChange(e.target.value)}
+                  rows={4}
+                />
+              )}
+            />
+          </FormField>
+        </div>
 
           {/* Submit Button */}
+        <div className="flex justify-center pt-4">
           <button
             onClick={handleSubmit(onSubmit)}
-            style={{
-              ...styles.submitBtn,
-              ...(isSubmitting ? styles.submitBtnDisabled : {}),
-            }}
             disabled={isSubmitting}
             type="button"
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold text-white shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+              isSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 active:translate-y-px"
+            }`}
           >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              {isSubmitting ? (
-                <>
-                  <div style={styles.loadingSpinner} />
-                  <span style={styles.submitBtnText}>Creating Lead...</span>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: 18, color: "white" }}>➕</span>
-                  <span style={styles.submitBtnText}>Create Lead</span>
-                </>
-              )}
-            </div>
+            {isSubmitting ? (
+              <>
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span>Creating Lead...</span>
+              </>
+            ) : (
+              <>
+                <Send className="h-5 w-5" />
+                <span>Create Lead</span>
+              </>
+            )}
           </button>
         </div>
       </div>
     </div>
   );
 }
-
-/* ================= STYLES (WEB EQUIVALENT) ================= */
-const styles = {
-  mainContainer: {
-    minHeight: "100vh",
-    backgroundColor: "#f3f4f6",
-  },
-  scrollContainer: {
-    width: "100%",
-  },
-  container: {
-    paddingBottom: 100,
-    margin: "0 auto",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-  },
-  sectionHeader: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: 12,
-    gap: 8,
-  },
-  iconWrapper: {
-    backgroundColor: "#ede9fe",
-    borderRadius: 999,
-    padding: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#111827",
-  },
-  sectionSubtitle: {
-    fontSize: 16,
-    fontWeight: 600,
-    color: "#374151",
-    marginBottom: 12,
-    marginTop: 16,
-  },
-  input: {
-    width: "100%",
-    border: "1px solid #e5e7eb",
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "white",
-    fontSize: 16,
-    color: "#1f2937",
-    outline: "none",
-  },
-  errorInput: {
-    borderColor: "#ef4444",
-    borderWidth: 2,
-  },
-  submitBtn: {
-    width: "100%",
-    backgroundColor: "#7c3aed",
-    borderRadius: 16,
-    padding: "16px 20px",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    justifyContent: "center",
-  },
-  submitBtnText: {
-    color: "white",
-    fontWeight: 700,
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  textArea: {
-    height: 100,
-    paddingTop: 12,
-    resize: "vertical",
-  },
-  submitBtnDisabled: {
-    backgroundColor: "#9ca3af",
-    opacity: 0.7,
-    cursor: "not-allowed",
-  },
-  loadingSpinner: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    border: "2px solid white",
-    borderTopColor: "transparent",
-    marginRight: 8,
-    display: "inline-block",
-  },
-};
   

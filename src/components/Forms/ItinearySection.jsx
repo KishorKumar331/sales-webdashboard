@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useReducer } from "react";
 import { useFormContext, Controller, useFieldArray } from "react-hook-form";
-import { Calendar, Trash2, Info, PlusCircle } from "lucide-react";
+import { Calendar, Trash2, Info, PlusCircle, MapPin, Camera, Edit3 } from "lucide-react";
 
 import ActivitySelector from "../ActivitySelector";
 import CalendarDatePicker from "../DatePicker";
@@ -159,271 +159,186 @@ const ItinerarySection = () => {
   /* ================= UI ================= */
 
   return (
-    <div style={styles.card}>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
       {/* Header */}
-      <div style={styles.sectionHeader}>
-        <div style={{ ...styles.iconWrapper, backgroundColor: "#ecfdf5" }}>
-          <Calendar size={20} color="#10b981" />
+      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+        <div className="shrink-0 rounded-xl bg-green-50 p-2.5 ring-1 ring-green-100">
+          <Calendar className="h-5 w-5 text-green-700" />
         </div>
-        <div style={styles.sectionTitle}>Day-wise Itinerary</div>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Day-wise Itinerary</h2>
+          <p className="text-sm text-gray-500">Plan each day of the trip</p>
+        </div>
       </div>
 
       {/* Info */}
-      <div style={styles.infoBox}>
-        <Info size={20} color="#3b82f6" />
-        <div style={styles.infoText}>
+      <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100 mb-6">
+        <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+        <p className="text-sm text-blue-700">
           Itinerary auto-generates based on trip duration ({days} days)
-        </div>
+        </p>
       </div>
 
-      {fields.map((field, index) => (
-        <div key={field.id} style={styles.dayCard}>
-          {/* Day Header */}
-          <div style={styles.dayHeader}>
-            <div style={styles.dayBadge}>Day {index + 1}</div>
+      <div className="space-y-6">
+        {fields.map((field, index) => (
+          <div key={field.id} className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+            {/* Day Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm">
+                  Day {index + 1}
+                </div>
+                <span className="text-sm text-gray-500">
+                  {getItineraryDate(index) || "No date set"}
+                </span>
+              </div>
 
-            {fields.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeDay(index)}
-                style={styles.removeButton}
-              >
-                <Trash2 size={18} color="#ef4444" />
-              </button>
-            )}
-          </div>
+              {fields.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeDay(index)}
+                  className="rounded-lg p-2 text-red-500 hover:bg-red-50 transition-colors"
+                  title="Remove day"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
 
-          {/* Image Preview */}
-          <Controller
-            control={control}
-            name={`Itinearies.${index}.ImageUrl`}
-            render={({ field: { value } }) =>
-              value ? (
-                <img
-                  src={value}
-                  alt="itinerary"
-                  style={{
-                    width: "100%",
-                    maxWidth: 290,
-                    height: 180,
-                    marginBottom: 18,
-                    borderRadius: 8,
-                    objectFit: "cover",
-                  }}
-                />
-              ) : null
-            }
-          />
+            {/* Image Preview */}
+            <Controller
+              control={control}
+              name={`Itinearies.${index}.ImageUrl`}
+              render={({ field: { value } }) =>
+                value ? (
+                  <div className="mb-5 rounded-xl overflow-hidden border border-gray-200">
+                    <img
+                      src={value}
+                      alt="Itinerary"
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-5 flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
+                    <Camera className="h-8 w-8 text-gray-400" />
+                  </div>
+                )
+              }
+            />
 
-          {/* Date */}
-          <Controller
-            control={control}
-            name={`Itinearies.${index}.Date`}
-            render={({ field }) => (
-              <CalendarDatePicker
-                value={field.value || getItineraryDate(index)}
-                onDateChange={(date) => {
-                  field.onChange(date);
-                  const key = Number(date.replace(/-/g, ""));
-                  setValue(`Itinearies.${index}.DateKey`, key);
+            {/* Date Picker */}
+            <div className="mb-5">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                <Calendar className="mr-2 inline h-4 w-4 text-gray-400" />
+                Date
+              </label>
+              <Controller
+                control={control}
+                name={`Itinearies.${index}.Date`}
+                render={({ field }) => (
+                  <CalendarDatePicker
+                    value={field.value || getItineraryDate(index)}
+                    onDateChange={(date) => {
+                      field.onChange(date);
+                      const key = Number(date.replace(/-/g, ""));
+                      setValue(`Itinearies.${index}.DateKey`, key);
+                    }}
+                  />
+                )}
+              />
+            </div>
+
+            {/* Activity Selector */}
+            <div className="mb-5">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                <MapPin className="mr-2 inline h-4 w-4 text-gray-400" />
+                Select Activity
+              </label>
+              <ActivitySelector
+                onSelectActivity={(a) => handleActivitySelect(a, index)}
+                selectedActivity={{
+                  Title: watch(`Itinearies.${index}.Title`) || "",
+                  Description: watch(`Itinearies.${index}.Description`) || "",
+                  ImageUrl: watch(`Itinearies.${index}.ImageUrl`) || "",
                 }}
+                destination={destinations?.[0]}
+                activities={activity}
               />
-            )}
-          />
+            </div>
 
-          {/* Activity Selector */}
-          <ActivitySelector
-            onSelectActivity={(a) => handleActivitySelect(a, index)}
-            selectedActivity={{
-              Title: watch(`Itinearies.${index}.Title`) || "",
-              Description: watch(`Itinearies.${index}.Description`) || "",
-              ImageUrl: watch(`Itinearies.${index}.ImageUrl`) || "",
-            }}
-            destination={destinations?.[0]}
-            activities={activity}
-          />
-
-          {/* Title */}
-          <Controller
-            control={control}
-            name={`Itinearies.${index}.Title`}
-            render={({ field }) => (
-              <input
-                {...field}
-                style={styles.input}
-                placeholder="Enter day title"
+            {/* Title */}
+            <div className="mb-5">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                <Edit3 className="mr-2 inline h-4 w-4 text-gray-400" />
+                Day Title
+              </label>
+              <Controller
+                control={control}
+                name={`Itinearies.${index}.Title`}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Enter day title"
+                  />
+                )}
               />
-            )}
-          />
+            </div>
 
-          {/* Activity */}
-          <Controller
-            control={control}
-            name={`Itinearies.${index}.Activity`}
-            render={({ field }) => (
-              <textarea
-                {...field}
-                style={{ ...styles.input, ...styles.textArea }}
-                rows={2}
-                placeholder="Activities"
+            {/* Activity */}
+            <div className="mb-5">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                <MapPin className="mr-2 inline h-4 w-4 text-gray-400" />
+                Activities
+              </label>
+              <Controller
+                control={control}
+                name={`Itinearies.${index}.Activity`}
+                render={({ field }) => (
+                  <textarea
+                    {...field}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-vertical"
+                    rows={2}
+                    placeholder="List activities for this day"
+                  />
+                )}
               />
-            )}
-          />
+            </div>
 
-          {/* Description */}
-          <Controller
-            control={control}
-            name={`Itinearies.${index}.Description`}
-            render={({ field }) => (
-              <textarea
-                {...field}
-                style={{ ...styles.input, ...styles.textArea }}
-                rows={3}
-                placeholder="Description"
+            {/* Description */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                <Edit3 className="mr-2 inline h-4 w-4 text-gray-400" />
+                Description
+              </label>
+              <Controller
+                control={control}
+                name={`Itinearies.${index}.Description`}
+                render={({ field }) => (
+                  <textarea
+                    {...field}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-vertical"
+                    rows={3}
+                    placeholder="Detailed description of the day"
+                  />
+                )}
               />
-            )}
-          />
-        </div>
-      ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Add Day */}
-      <button type="button" onClick={addDay} style={styles.addButton}>
-        <PlusCircle size={22} color="#10b981" />
-        <span style={styles.addButtonText}>Add Another Day</span>
+      <button
+        type="button"
+        onClick={addDay}
+        className="mt-6 w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-green-500 bg-green-50 px-4 py-3.5 text-base font-semibold text-green-700 transition-all hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+      >
+        <PlusCircle className="h-5 w-5" />
+        Add Another Day
       </button>
     </div>
   );
 };
 
 export default ItinerarySection;
-
-
-export const styles = {
-  card: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-  },
-
-  sectionHeader: {
-    display: "flex",
-    alignItems: "center",
-    flexDirection: "row",
-    marginBottom: 12,
-  },
-
-  iconWrapper: {
-    backgroundColor: "#ecfdf5",
-    borderRadius: "50%",
-    padding: 8,
-    marginRight: 8,
-  },
-
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#111827",
-  },
-
-  infoBox: {
-    display: "flex",
-    alignItems: "center",
-    flexDirection: "row",
-    backgroundColor: "#eff6ff",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-
-  infoText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: "#3b82f6",
-    flex: 1,
-  },
-
-  dayCard: {
-    backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    border: "1px solid #e5e7eb",
-  },
-
-  dayHeader: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-
-  dayBadge: {
-    backgroundColor: "#10b981",
-    padding: "6px 12px",
-    borderRadius: 20,
-  },
-
-  dayNumber: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: 600,
-  },
-
-  removeButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "#fef2f2",
-    border: "none",
-    cursor: "pointer",
-  },
-
-  subsectionTitle: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: "#374151",
-    marginBottom: 8,
-    marginTop: 8,
-  },
-
-  input: {
-    width: "100%",
-    border: "1px solid #e5e7eb",
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "white",
-    fontSize: 16,
-    color: "#1f2937",
-    outline: "none",
-  },
-
-  errorInput: {
-    border: "2px solid #ef4444",
-  },
-
-  textArea: {
-    height: 100,
-    paddingTop: 12,
-    resize: "vertical",
-  },
-
-  addButton: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    borderRadius: 12,
-    border: "2px dashed #10b981",
-    backgroundColor: "#f0fdf4",
-    cursor: "pointer",
-  },
-
-  addButtonText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: 600,
-    color: "#10b981",
-  },
-};

@@ -9,177 +9,216 @@ import {
   PersonStanding,
   CloudUpload,
   QrCode,
+  Check,
+  Sparkles,
+  Zap,
+  Shield,
+  Star,
+  ArrowRight,
+  User,
+  Mail,
+  Phone,
+  Globe,
+  MapPin,
+  Briefcase,
+  CreditCard as CardIcon,
+  BanknoteIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-const Field = ({ label, required, children }) => (
-  <div>
-    <div className="text-gray-700 font-medium mb-2">
+
+const Field = ({ label, required, children, icon }) => (
+  <div className="space-y-2">
+    <div className="flex items-center gap-2 text-gray-700 font-medium">
+      {icon && <span className="w-4 h-4 text-purple-600">{icon}</span>}
       {label} {required ? <span className="text-red-500">*</span> : null}
     </div>
     {children}
   </div>
 );
 
-const Card = ({ icon, heading, subheading, children }) => (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-    <div className="flex flex-col items-center mb-6">
-      <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-        {icon}
+const Card = ({ icon, heading, subheading, children, stepNumber, isActive }) => (
+  <div className={`bg-white rounded-2xl shadow-xl border-2 transition-all duration-500 ${
+    isActive ? 'border-purple-500 shadow-purple-200' : 'border-gray-100'
+  }`}>
+    <div className="p-8">
+      <div className="flex items-center gap-4 mb-6">
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+          isActive ? 'bg-gradient-to-br from-purple-600 to-purple-800 shadow-lg scale-110' : 'bg-purple-100'
+        }`}>
+          <span className={isActive ? 'text-white' : 'text-purple-600'}>
+            {icon}
+          </span>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+              isActive ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'
+            }`}>
+              Step {stepNumber}
+            </span>
+            {isActive && <Sparkles className="w-4 h-4 text-yellow-500 animate-pulse" />}
+          </div>
+          <div className="text-xl font-bold text-gray-900 mt-1">{heading}</div>
+          <div className="text-gray-600 text-sm mt-1">{subheading}</div>
+        </div>
       </div>
-      <div className="text-xl font-semibold text-gray-900">{heading}</div>
-      <div className="text-gray-600 text-center mt-1">{subheading}</div>
+      <div className="space-y-4">{children}</div>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">{children}</div>
   </div>
 );
-const UploadBox = ({ value, onChange, acceptHint, previewSize = 64, emptyIcon, emptyText }) => (
-  <label className="cursor-pointer block">
-    <div className="bg-gray-50 rounded-xl px-4 py-6 border-2 border-dashed border-gray-300 flex flex-col items-center">
-      {value ? (
-        <div className="flex flex-col items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={value}
-            alt="uploaded"
-            className="rounded-lg mb-2 object-cover"
-            style={{ width: previewSize, height: previewSize }}
-          />
-          <div className="text-green-600 font-medium">Uploaded!</div>
-          <div className="text-gray-400 text-sm">Click to change</div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center">
-          {emptyIcon}
-          <div className="text-gray-600 mt-2">{emptyText}</div>
-          <div className="text-gray-400 text-sm">{acceptHint}</div>
-        </div>
-      )}
 
+const UploadBox = ({ value, onChange, acceptHint, previewSize = 64, emptyIcon, emptyText, label }) => (
+  <label className="cursor-pointer block group">
+    <div className="relative overflow-hidden">
+      <div className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-all duration-300 ${
+        value 
+          ? 'border-green-400 bg-green-50' 
+          : 'border-gray-300 bg-gray-50 group-hover:border-purple-400 group-hover:bg-purple-50'
+      }`}>
+        {value ? (
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <img
+                src={value}
+                alt="uploaded"
+                className="rounded-lg shadow-lg object-cover"
+                style={{ width: previewSize, height: previewSize }}
+              />
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <Check className="w-4 h-4 text-white" />
+              </div>
+            </div>
+            <div className="text-green-600 font-semibold mt-2">Uploaded Successfully!</div>
+            <div className="text-gray-500 text-sm">Click to change</div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+              {emptyIcon}
+            </div>
+            <div className="text-gray-700 font-medium mt-3">{emptyText}</div>
+            <div className="text-gray-500 text-sm text-center">{acceptHint}</div>
+          </div>
+        )}
+      </div>
       <input type="file" accept="image/*" className="hidden" onChange={onChange} />
     </div>
   </label>
 );
-  const handleQRUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    // 2MB
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Please select an image smaller than 2MB.");
-      return;
-    }
+const Input = React.forwardRef((props, ref) => (
+  <div className="relative">
+    <input
+      {...props}
+      ref={ref}
+      className={`w-full px-4 py-3 pl-12 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 outline-none transition-all duration-200 focus:border-purple-500 focus:bg-white focus:shadow-lg ${props.className || ""}`}
+    />
+    {props.icon && (
+      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+        {props.icon}
+      </span>
+    )}
+  </div>
+));
 
-    try {
-      const dataUrl = await fileToDataUrl(file);
-      updateFormData("QrCode", dataUrl);
-      showToast("QR code uploaded successfully!");
-    } catch (err) {
-      console.error("QR upload error:", err);
-      alert("Failed to upload QR code. Please try again.");
-    } finally {
-      e.target.value = "";
-    }
-  };
-const handleLogoUpload = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  // 5MB
-  if (file.size > 5 * 1024 * 1024) {
-    alert("Please select an image smaller than 5MB.");
-    return;
-  }
-
-  try {
-    const dataUrl = await fileToDataUrl(file);
-    updateFormData("CompanyLogoUrl", dataUrl);
-    showToast("Logo uploaded successfully!");
-  } catch (err) {
-    console.error("Logo upload error:", err);
-    alert("Failed to upload logo. Please try again.");
-  } finally {
-    e.target.value = "";
-  }
-};
+const TextArea = React.forwardRef((props, ref) => (
+  <div className="relative">
+    <textarea
+      {...props}
+      ref={ref}
+      className={`w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 outline-none transition-all duration-200 focus:border-purple-500 focus:bg-white focus:shadow-lg resize-none ${props.className || ""}`}
+    />
+  </div>
+));
 
 const Step1 = ({ formData, updateFormData }) => (
   <>
     <Card
-      icon={<PersonStanding className="w-8 h-8 text-purple-600" />}
-      heading="Welcome!"
-      subheading="Let's get to know you better"
+      icon={<User className="w-8 h-8" />}
+      heading="Welcome! Let's get started"
+      subheading="Tell us about yourself to personalize your experience"
+      stepNumber={1}
+      isActive={true}
     >
-
-      <Field label="Full Name" required>
+      <Field label="Full Name" required icon={<User className="w-4 h-4" />}>
         <Input
           value={formData.FullName}
           onChange={(e) => updateFormData("FullName", e.target.value)}
           placeholder="Enter your full name"
+          icon={<User className="w-5 h-5" />}
         />
-
       </Field>
 
-      <Field label="Email Address" required>
+      <Field label="Email Address" required icon={<Mail className="w-4 h-4" />}>
         <Input
           value={formData.Email}
           onChange={(e) => updateFormData("Email", e.target.value)}
           placeholder="Enter your email"
           type="email"
           autoCapitalize="none"
+          icon={<Mail className="w-5 h-5" />}
         />
       </Field>
-      <Field label="Phone Number" required>
+
+      <Field label="Phone Number" required icon={<Phone className="w-4 h-4" />}>
         <Input
           value={formData.Phone}
           onChange={(e) => updateFormData("Phone", e.target.value)}
-          placeholder="Enter your phone"
+          placeholder="Enter your phone number"
+          icon={<Phone className="w-5 h-5" />}
         />
       </Field>
     </Card>
   </>
 );
+
 const Step2 = ({ formData, updateFormData }) => (
   <div className="px-6 space-y-4">
     <Card
-      icon={<Building2 className="w-8 h-8 text-purple-600" />}
+      icon={<Building2 className="w-8 h-8" />}
       heading="Organization Details"
-      subheading="Tell us about your business"
+      subheading="Help us understand your business better"
+      stepNumber={2}
+      isActive={true}
     >
-      <Field label="Company Name" required>
+      <Field label="Company Name" required icon={<Briefcase className="w-4 h-4" />}>
         <Input
           value={formData.CompanyName}
           onChange={(e) => updateFormData("CompanyName", e.target.value)}
           placeholder="Enter company name"
+          icon={<Briefcase className="w-5 h-5" />}
         />
       </Field>
 
-      <Field label="Company Address" required>
+      <Field label="Company Address" required icon={<MapPin className="w-4 h-4" />}>
         <TextArea
           value={formData.CompanyAddress}
           onChange={(e) => updateFormData("CompanyAddress", e.target.value)}
-          placeholder="Enter company address"
+          placeholder="Enter complete company address"
           rows={3}
         />
       </Field>
 
-      <Field label="Company Website">
+      <Field label="Company Website" icon={<Globe className="w-4 h-4" />}>
         <Input
           value={formData.CompanyWebsite}
           onChange={(e) => updateFormData("CompanyWebsite", e.target.value)}
           placeholder="https://www.example.com"
           type="url"
           autoCapitalize="none"
+          icon={<Globe className="w-5 h-5" />}
         />
       </Field>
 
-      <Field label="Upload Logo">
+      <Field label="Upload Company Logo">
         <UploadBox
           value={formData.CompanyLogoUrl}
           onChange={handleLogoUpload}
           acceptHint="PNG, JPG up to 5MB"
-          previewSize={64}
+          previewSize={80}
           emptyIcon={<CloudUpload className="w-8 h-8 text-gray-400" />}
-          emptyText="Click to upload company logo"
+          emptyText="Upload your company logo"
+          label="Company Logo"
         />
       </Field>
 
@@ -188,6 +227,7 @@ const Step2 = ({ formData, updateFormData }) => (
           value={formData.CompanyGSTNumber}
           onChange={(e) => updateFormData("CompanyGSTNumber", e.target.value.toUpperCase())}
           placeholder="Enter GST number"
+          icon={<CardIcon className="w-5 h-5" />}
         />
       </Field>
 
@@ -196,6 +236,7 @@ const Step2 = ({ formData, updateFormData }) => (
           value={formData.InvoiceNumber}
           onChange={(e) => updateFormData("InvoiceNumber", e.target.value)}
           placeholder="e.g., INV-2024-001"
+          icon={<BanknoteIcon className="w-5 h-5" />}
         />
       </Field>
     </Card>
@@ -205,32 +246,39 @@ const Step2 = ({ formData, updateFormData }) => (
 const Step3 = ({ formData, updateFormData }) => (
   <div className="px-6 space-y-4">
     <Card
-      icon={<CreditCard className="w-8 h-8 text-purple-600" />}
+      icon={<CreditCard className="w-8 h-8" />}
       heading="Payment Setup"
-      subheading="Configure your payment methods"
+      subheading="Configure your payment methods for seamless transactions"
+      stepNumber={3}
+      isActive={true}
     >
-      <Field label="Bank Name" required>
-        <Input
-          value={formData.BankName}
-          onChange={(e) => updateFormData("BankName", e.target.value)}
-          placeholder="Enter bank name"
-        />
-      </Field>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Field label="Bank Name" required icon={<Building2 className="w-4 h-4" />}>
+          <Input
+            value={formData.BankName}
+            onChange={(e) => updateFormData("BankName", e.target.value)}
+            placeholder="Enter bank name"
+            icon={<Building2 className="w-5 h-5" />}
+          />
+        </Field>
 
-      <Field label="Branch Name" required>
-        <Input
-          value={formData.BranchName}
-          onChange={(e) => updateFormData("BranchName", e.target.value)}
-          placeholder="Enter branch name"
-        />
-      </Field>
+        <Field label="Branch Name" required icon={<MapPin className="w-4 h-4" />}>
+          <Input
+            value={formData.BranchName}
+            onChange={(e) => updateFormData("BranchName", e.target.value)}
+            placeholder="Enter branch name"
+            icon={<MapPin className="w-5 h-5" />}
+          />
+        </Field>
+      </div>
 
-      <Field label="Account Number" required>
+      <Field label="Account Number" required icon={<CreditCard className="w-4 h-4" />}>
         <Input
           value={formData.AccountNumber}
           onChange={(e) => updateFormData("AccountNumber", e.target.value)}
           placeholder="Enter account number"
           inputMode="numeric"
+          icon={<CreditCard className="w-5 h-5" />}
         />
       </Field>
 
@@ -251,14 +299,15 @@ const Step3 = ({ formData, updateFormData }) => (
         />
       </Field>
 
-      <Field label="QR Code Scanner">
+      <Field label="Payment QR Code">
         <UploadBox
           value={formData.QrCode}
           onChange={handleQRUpload}
           acceptHint="PNG, JPG up to 2MB"
-          previewSize={80}
+          previewSize={100}
           emptyIcon={<QrCode className="w-8 h-8 text-gray-400" />}
           emptyText="Upload QR code for payments"
+          label="QR Code"
         />
       </Field>
     </Card>
@@ -267,25 +316,48 @@ const Step3 = ({ formData, updateFormData }) => (
 
 const LS_FORM_KEY = "createAccountFormData";
 const LS_STEP_KEY = "createAccountCurrentStep";
-const Input = React.forwardRef((props, ref) => (
-  <input
-    {...props}
-    ref={ref}
-    className={`bg-gray-50 rounded-xl px-4 py-3 text-gray-900 w-full outline-none focus:ring-2 focus:ring-purple-200 ${props.className || ""
-      }`}
-  />
-));
 
-const TextArea = React.forwardRef((props, ref) => (
-  <textarea
-    {...props}
-    ref={ref}
-    className={`bg-gray-50 rounded-xl px-4 py-3 text-gray-900 w-full outline-none focus:ring-2 focus:ring-purple-200 ${props.className || ""
-      }`}
-  />
-));
+const handleQRUpload = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
+  if (file.size > 2 * 1024 * 1024) {
+    alert("Please select an image smaller than 2MB.");
+    return;
+  }
 
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    updateFormData("QrCode", dataUrl);
+    showToast("QR code uploaded successfully!");
+  } catch (err) {
+    console.error("QR upload error:", err);
+    alert("Failed to upload QR code. Please try again.");
+  } finally {
+    e.target.value = "";
+  }
+};
+
+const handleLogoUpload = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Please select an image smaller than 5MB.");
+    return;
+  }
+
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    updateFormData("CompanyLogoUrl", dataUrl);
+    showToast("Logo uploaded successfully!");
+  } catch (err) {
+    console.error("Logo upload error:", err);
+    alert("Failed to upload logo. Please try again.");
+  } finally {
+    e.target.value = "";
+  }
+};
 
 export default function SignUp() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -295,21 +367,18 @@ export default function SignUp() {
     Phone: "",
     FullName: "",
     Role: "Salesperson",
-
     CompanyName: "",
     CompanyAddress: "",
     CompanyGSTNumber: "",
     CompanyWebsite: "",
     CompanyLogoUrl: null,
     InvoiceNumber: "",
-
     BankName: "",
     BranchName: "",
     AccountNumber: "",
     IfscCode: "",
     UpiId: "",
     QrCode: null,
-
     CompanyId: "",
     Balance: 0,
     Currency: "INR",
@@ -333,8 +402,6 @@ export default function SignUp() {
     },
   });
 
-  // Load saved progress
-  // Load saved data on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LS_FORM_KEY);
@@ -353,25 +420,20 @@ export default function SignUp() {
     }
   }, []);
 
-  // save ONLY when step changes
   useEffect(() => {
     if (isLoading) return;
-
     localStorage.setItem(LS_FORM_KEY, JSON.stringify(formData));
     localStorage.setItem(LS_STEP_KEY, String(currentStep));
   }, [currentStep, isLoading]);
 
-
   const updateFormData = useCallback((field, value) => {
     setFormData(prev => {
-      // Only update if the value has actually changed
       if (prev[field] === value) return prev;
       return { ...prev, [field]: value };
     });
   }, []);
 
   const showToast = (message) => {
-    // Simple web toast
     alert(message);
   };
 
@@ -400,7 +462,6 @@ export default function SignUp() {
     if (currentStep > 1) setCurrentStep((s) => s - 1);
   };
 
-  // Convert File -> base64 data URL
   const fileToDataUrl = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -409,15 +470,11 @@ export default function SignUp() {
       reader.readAsDataURL(file);
     });
 
-
-  const navigate = useNavigate()
-
+  const navigate = useNavigate();
 
   const fillEmptyFields = (data) => {
     const currentDate = new Date().toISOString();
-
-    const companyNamePart =
-      data.CompanyName?.replace(/\s+/g, "").substring(0, 6).toUpperCase() || "COMP";
+    const companyNamePart = data.CompanyName?.replace(/\s+/g, "").substring(0, 6).toUpperCase() || "COMP";
     const usernamePart = data.Email?.split("@")[0]?.substring(0, 4).toUpperCase() || "USER";
     const mobileLast4 = data.Phone?.slice(-4) || "0000";
     const companyId = `${companyNamePart}${usernamePart}${mobileLast4}`;
@@ -478,127 +535,120 @@ export default function SignUp() {
 
   const stepMeta = useMemo(
     () => ({
-      1: { title: "Personal Info", subtitle: "Tell us about yourself" },
-      2: { title: "Organization Info", subtitle: "Your company details" },
-      3: { title: "Payment Info", subtitle: "Banking & payment setup" },
+      1: { title: "Personal Info", subtitle: "Tell us about yourself", icon: User },
+      2: { title: "Organization Info", subtitle: "Your company details", icon: Building2 },
+      3: { title: "Payment Info", subtitle: "Banking & payment setup", icon: CreditCard },
     }),
     []
   );
 
   const ProgressBar = () => (
-    <div className="bg-purple-100 h-2">
-      <div
-        className="bg-purple-500 h-full transition-all duration-300"
+    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+      <div className="h-full bg-gradient-to-r from-purple-600 to-purple-800 rounded-full transition-all duration-500 shadow-lg"
         style={{ width: `${(currentStep / 3) * 100}%` }}
       />
     </div>
   );
 
   const Header = () => (
-    <div className="bg-white px-5 py-4 sticky top-0 z-10 border-b border-gray-100">
+    <div className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-800 px-5 py-6 shadow-xl">
       <div className="flex items-center justify-between">
         <button
-          onClick={() => {
-            if (window.history.length > 1) router.back();
-            else router.replace("/(auth)");
-          }}
-          className="p-2 -ml-2 rounded-lg hover:bg-gray-100"
+          onClick={() => navigate(-1)}
+          className="p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
           aria-label="Back"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-700" />
+          <ArrowLeft className="w-5 h-5 text-white" />
         </button>
 
-        <div className="text-xl font-semibold text-gray-900">Create Account</div>
-        <div className="w-6" />
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-yellow-300" />
+            Create Your Account
+          </h1>
+          <p className="text-white/80 text-sm mt-1">Join thousands of successful businesses</p>
+        </div>
+
+        <div className="w-12" />
       </div>
     </div>
   );
 
   const StepTitle = () => (
-    <div className="px-6 py-4">
-      <div className="text-2xl font-bold text-gray-900">{stepMeta[currentStep].title}</div>
-      <div className="text-gray-600 mt-1">{stepMeta[currentStep].subtitle}</div>
-    </div>
-  );
-
-  const Card = ({ icon, heading, subheading, children }) => (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex flex-col items-start mb-6">
-        <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-          {icon}
+    <div className="px-6 py-6 text-center">
+      <div className="inline-flex items-center gap-3 mb-3">
+        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center shadow-lg">
+          {React.createElement(stepMeta[currentStep].icon, { className: "w-6 h-6 text-white" })}
         </div>
-        <div className="text-xl font-semibold text-gray-900">{heading}</div>
-        <div className="text-gray-600 text-center mt-1">{subheading}</div>
+        <div className="text-left">
+          <div className="text-2xl font-bold text-gray-900">{stepMeta[currentStep].title}</div>
+          <div className="text-gray-600">{stepMeta[currentStep].subtitle}</div>
+        </div>
       </div>
-      <div className="space-y-4">{children}</div>
     </div>
   );
-
-
-
-
-
-  // Add refs for inputs to maintain focus
-
-
-
-
-
 
   const Buttons = () => (
-    <div className="px-6 py-4 flex gap-4">
+    <div className="px-6 py-6 flex gap-4 bg-white border-t border-gray-100">
       {currentStep > 1 && (
         <button
           onClick={prevStep}
-          className="flex-1 bg-gray-200 rounded-full py-4 text-gray-700 font-semibold hover:bg-gray-300 transition"
+          className="flex-1 bg-gray-100 text-gray-700 rounded-xl py-4 font-semibold hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2"
         >
+          <ArrowLeft className="w-4 h-4" />
           Previous
         </button>
       )}
 
       <button
         onClick={currentStep === 3 ? handleSubmit : nextStep}
-        className="flex-1 rounded-full py-4 text-white font-semibold text-base transition"
-        style={{
-          backgroundImage: "linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%)",
-        }}
+        className="flex-1 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-xl py-4 font-semibold hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
       >
-        {currentStep === 3 ? "Complete Setup" : "Continue"}
+        {currentStep === 3 ? (
+          <>
+            <Zap className="w-4 h-4" />
+            Complete Setup
+          </>
+        ) : (
+          <>
+            Continue
+            <ArrowRight className="w-4 h-4" />
+          </>
+        )}
       </button>
     </div>
   );
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-            <Hourglass className="w-6 h-6 text-purple-600" />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center mb-4 animate-pulse shadow-lg">
+            <Hourglass className="w-8 h-8 text-white animate-spin" />
           </div>
-          <div className="text-gray-600">Loading your progress...</div>
+          <div className="text-gray-700 font-medium">Loading your progress...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
       <Header />
-      <ProgressBar />
+      <div className="px-6 py-4">
+        <ProgressBar />
+      </div>
 
-      <div className="mx-auto">
+      <div className="mx-auto max-w-4xl">
         <StepTitle />
 
         <div className="pb-6">
-          {currentStep === 1 && <Step1 formData={formData}
-            updateFormData={updateFormData} />}
-          {currentStep === 2 && <Step2 formData={formData}
-            updateFormData={updateFormData} />}
-          {currentStep === 3 && <Step3 formData={formData}
-            updateFormData={updateFormData} />}
+          {currentStep === 1 && <Step1 formData={formData} updateFormData={updateFormData} />}
+          {currentStep === 2 && <Step2 formData={formData} updateFormData={updateFormData} />}
+          {currentStep === 3 && <Step3 formData={formData} updateFormData={updateFormData} />}
         </div>
 
-        <div className="sticky bottom-0 bg-gray-50/80 backdrop-blur border-t border-gray-100">
+        <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-lg">
           <Buttons />
         </div>
       </div>
