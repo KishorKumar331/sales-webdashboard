@@ -42,10 +42,11 @@ function App() {
 
   const renderWithLayout = (Component, title) => (
     <div className="flex h-screen flex-col">
-      <Navbar title={title} />
+    
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-auto p-6 bg-gray-50">
+        <main className="flex-1 overflow-auto bg-gray-50">
+            <Navbar title={title} />
           {Component}
         </main>
       </div>

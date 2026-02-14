@@ -5,7 +5,6 @@ import Navbar from '../components/Navbar';
 const Investigation = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar title="Investigation" />
       <div className="flex items-center justify-center min-h-[calc(100vh-64px)] p-6">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
           <div className="bg-yellow-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">

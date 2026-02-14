@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import { AlertCircle, FileText, RefreshCw } from "lucide-react";
 import ConvertedCards from "../components/cards/ConvertedCard";
+import FilterBar from "../components/FilterBar";
 import {useUserProfile} from "../hooks/useUserProfile";
 
 export default function Converted() {
@@ -11,6 +12,7 @@ export default function Converted() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [filters, setFilters] = useState({});
 
   const parseLeads = useCallback((raw) => {
     if (Array.isArray(raw)) return raw;
@@ -75,20 +77,87 @@ export default function Converted() {
 
   const onRefresh = useCallback(() => fetchLeads("refresh"), [fetchLeads]);
 
+  // Apply frontend filters
+  const filteredLeads = useMemo(() => {
+    if (!leads.length) return leads;
+
+    return leads.filter(lead => {
+      // Search filter (name, trip ID, email, phone)
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        const searchableText = [
+          lead['Client-Name'] || '',
+          lead.TripId?.toString() || '',
+          lead['Client-Email'] || '',
+          lead['Client-Contact'] || ''
+        ].join(' ').toLowerCase();
+        
+        if (!searchableText.includes(searchTerm)) {
+          return false;
+        }
+      }
+
+      // Destination filter
+      if (filters.destination && lead['Client-Destination'] !== filters.destination) {
+        return false;
+      }
+
+      // Budget range filter
+      const budget = parseFloat(lead['Client-Budget']) || 0;
+      if (filters.minBudget && budget < parseFloat(filters.minBudget)) {
+        return false;
+      }
+      if (filters.maxBudget && budget > parseFloat(filters.maxBudget)) {
+        return false;
+      }
+
+      // Travel date range filter
+      if (filters.minTravelDate || filters.maxTravelDate) {
+        const travelDate = new Date(lead['Client-TravelDate']);
+        if (!isNaN(travelDate.getTime())) {
+          if (filters.minTravelDate && travelDate < new Date(filters.minTravelDate)) {
+            return false;
+          }
+          if (filters.maxTravelDate && travelDate > new Date(filters.maxTravelDate)) {
+            return false;
+          }
+        }
+      }
+
+      // Pax range filter
+      const pax = parseInt(lead['Client-Pax']) || 0;
+      if (filters.minPax && pax < parseInt(filters.minPax)) {
+        return false;
+      }
+      if (filters.maxPax && pax > parseInt(filters.maxPax)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [leads, filters]);
+
   const renderLeads = useMemo(
     () =>
-      leads.map((item, index) => (
+      filteredLeads.map((item, index) => (
         <ConvertedCards
           key={item?.id ?? item?._id ?? index}
           data={item}
           onStatusChange={fetchLeads}
         />
       )),
-    [leads, fetchLeads]
+    [filteredLeads, fetchLeads]
   );
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Filter Bar - Sticky */}
+      {!loading && !userLoading && !error && leads.length > 0 && (
+        <FilterBar 
+          data={leads} 
+          onFilterChange={setFilters}
+        />
+      )}
    
       {/* LOADING */}
       {loading || userLoading ? (
@@ -137,7 +206,46 @@ export default function Converted() {
           ref={scrollRef}
           className="max-w-7xl mx-auto px-4 py-6 space-y-4"
         >
-          {renderLeads}
+          {/* Results count */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm text-gray-600">
+              {filteredLeads.length === leads.length ? (
+                <span>Showing all <span className="font-semibold text-gray-900">{leads.length}</span> leads</span>
+              ) : (
+                <span>
+                  Showing <span className="font-semibold text-purple-600">{filteredLeads.length}</span> of{' '}
+                  <span className="font-semibold text-gray-900">{leads.length}</span> leads
+                </span>
+              )}
+            </div>
+            {filteredLeads.length === 0 && Object.values(filters).some(v => v !== '') && (
+              <button
+                onClick={() => setFilters({})}
+                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          {/* No results for current filters */}
+          {filteredLeads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-6 bg-white rounded-lg border border-gray-200">
+              <Filter size={48} className="text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">No leads match your filters</h3>
+              <p className="text-sm text-gray-500 text-center mb-4">
+                Try adjusting your filter criteria to see more results
+              </p>
+              <button
+                onClick={() => setFilters({})}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          ) : (
+            renderLeads
+          )}
 
           {refreshing && (
             <div className="flex justify-center py-6">
