@@ -3,9 +3,9 @@ import { Home, FilePlus, Clock, CheckCircle, Search, User, Users, TrendingUp, Sp
 
 const Sidebar = () => {
   const navItems = [
-    { to: "/", icon: <Home className="w-5 h-5" />, label: "Dashboard", badge: null },
-    { to: "/create-quote", icon: <FilePlus className="w-5 h-5" />, label: "Quote", badge: "New" },
-    { to: "/follow-up", icon: <Clock className="w-5 h-5" />, label: "Follow", badge: null },
+    { to: "/", icon: <Home className="w-5 h-5" />, label: "Create Quote", badge: null },
+    // { to: "/create-quote", icon: <FilePlus className="w-5 h-5" />, label: "Create Quote", badge: "New" },
+    { to: "/follow-up", icon: <Clock className="w-5 h-5" />, label: "Follow Up", badge: null },
     { to: "/converted", icon: <CheckCircle className="w-5 h-5" />, label: "Converted", badge: null },
     { to: "/teams", icon: <Users className="w-5 h-5" />, label: "Teams", badge: null },
     { to: "/profile", icon: <User className="w-5 h-5" />, label: "Profile", badge: null },

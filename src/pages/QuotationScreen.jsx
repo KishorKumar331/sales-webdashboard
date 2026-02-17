@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import  { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
@@ -27,6 +27,25 @@ const QuotationScreen = () => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [formDataToSubmit, setFormDataToSubmit] = useState(null);
+
+  // Smooth scroll to top on component mount
+  useEffect(() => {
+    // Ensure scroll happens after component is fully rendered
+    const timer = setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+    }, 100);
+
+    // Also handle immediate scroll for refresh scenarios
+    if (window.scrollY > 0) {
+      window.scrollTo(0, 0);
+    }
+
+    return () => clearTimeout(timer);
+  }, []);
 
   /* ================= FORM SUBMIT ================= */
   const handleFormSubmit = async (data) => {

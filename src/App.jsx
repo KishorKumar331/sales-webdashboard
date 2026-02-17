@@ -65,21 +65,7 @@ function App() {
           <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
             <Route
               path="/"
-              element={
-                renderWithLayout(
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h1 className="text-2xl font-semibold mb-6">Dashboard</h1>
-                    <p className="text-gray-600 mb-6">Welcome to your dashboard!</p>
-                    <button 
-                      onClick={() => window.location.href = '/payment'}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                    >
-                      Make Payment
-                    </button>
-                  </div>,
-                  "Dashboard"
-                )
-              }
+             element={renderWithLayout(<CreateQuote />, "Create Quote")} 
             />
             <Route path="/new-lead" element={renderWithLayout(<NewLeadForm />, "New Lead")} />
             <Route path="/create-quote" element={renderWithLayout(<CreateQuote />, "Create Quote")} />
