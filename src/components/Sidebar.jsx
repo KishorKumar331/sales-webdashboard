@@ -35,7 +35,7 @@ const Sidebar = () => {
             </div>
             <div className="flex-1">
               <h1 className="text-white font-bold text-xl tracking-tight flex items-center gap-2">
-                SalesHub
+                Quick Quotes
                 <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
               </h1>
               <p className="text-white/60 text-xs font-medium">Pro Dashboard</p>

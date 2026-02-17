@@ -45,12 +45,12 @@ const PaymentPage = () => {
     setIsLoading(true);
 
     const options = {
-      description: 'SalesHub Premium - Complete Setup',
+      description: 'Quick Quotes Premium - Complete Setup',
       image: 'https://i.imgur.com/3g7nmJC.png',
       currency: 'INR',
       key: 'rzp_test_S5OVwU720vAaEY',
       amount: '99900', // ₹999 in paise
-      name: 'SalesHub Premium',
+      name: 'Quick Quotes Premium',
       order_id: '',
       prefill: {
         email: userDetails?.Email || '',
@@ -446,7 +446,7 @@ const PaymentPage = () => {
             
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful! 🎉</h2>
             <p className="text-gray-600 mb-6">
-              Your account has been set up successfully. Welcome to SalesHub Premium!
+              Your account has been set up successfully. Welcome to Quick Quotes Premium!
             </p>
             
             <div className="space-y-3">

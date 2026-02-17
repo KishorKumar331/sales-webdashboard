@@ -37,7 +37,7 @@ const OnBoardingPage = () => {
   const carouselData = [
     { 
       id: 1, 
-      title: "Welcome to SalesHub", 
+      title: "Welcome to Quick Quotes", 
       subtitle: "Your Complete Sales Management Solution",
       description: "Streamline your sales process with our powerful tools",
       bgColor: "from-purple-500 to-purple-700",
@@ -226,7 +226,7 @@ const OnBoardingPage = () => {
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
               <Sparkles className="w-6 h-6 text-yellow-300" />
             </div>
-            <h1 className="text-2xl font-bold text-white">SalesHub</h1>
+            <h1 className="text-2xl font-bold text-white">Quick Quotes</h1>
           </div>
           <div className="flex gap-3">
             <button 
@@ -254,10 +254,11 @@ const OnBoardingPage = () => {
       </div>
 
       {/* Enhanced Carousel */}
-      <div className="relative h-[calc(100vh-120px)] overflow-hidden">
+      <div style={{overflow:'hidden'}} className="relative h-[calc(100vh-120px)] ">
         <div
+        style={{overflow:'hidden'}}
           ref={scrollViewRef}
-          className="flex h-full overflow-x-auto snap-x snap-mandatory scroll-smooth"
+          className="flex h-full overflow-x-auto  snap-x snap-mandatory scroll-smooth"
           onScroll={handleScroll}
         >
           {carouselData.map((item, index) => (
@@ -379,7 +380,7 @@ const OnBoardingPage = () => {
                   {isLogin ? 'Welcome Back' : 'Create Account'}
                 </h2>
                 <p className="text-gray-600 mt-1">
-                  {isLogin ? 'Sign in to continue to SalesHub' : 'Start your free trial today'}
+                  {isLogin ? 'Sign in to continue to Quick Quotes' : 'Start your free trial today'}
                 </p>
               </div>
               <button 

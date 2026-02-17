@@ -67,12 +67,12 @@ const Profile = () => {
 
   const [profileData, setProfileData] = useState({
     name: user?.name || user?.username || 'Admin User',
-    email: user?.email || 'admin@saleshub.com',
+    email: user?.email || 'admin@Quick Quotes.com',
     phone: user?.phone || '+1 234 567 8900',
     location: user?.location || 'New York, USA',
     bio: user?.bio || 'Travel enthusiast and sales professional',
-    company: user?.company || 'SalesHub Pro',
-    website: user?.website || 'www.saleshub.com',
+    company: user?.company || 'Quick Quotes Pro',
+    website: user?.website || 'www.Quick Quotes.com',
     joinDate: user?.joinDate || '2024-01-15'
   });
 
@@ -687,7 +687,7 @@ const Profile = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Help Center</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
-            { title: 'Getting Started', description: 'Learn the basics of SalesHub', icon: Package },
+            { title: 'Getting Started', description: 'Learn the basics of Quick Quotes', icon: Package },
             { title: 'Billing & Payments', description: 'Manage subscriptions and payments', icon: CreditCard },
             { title: 'Account Settings', description: 'Configure your account preferences', icon: Settings },
             { title: 'Security & Privacy', description: 'Keep your account secure', icon: Shield },
@@ -709,7 +709,7 @@ const Profile = () => {
           {[
             { q: 'How do I upgrade my subscription?', a: 'Go to Payment tab and select your desired plan.' },
             { q: 'Can I export my data?', a: 'Yes, you can export all your data from the Documents section.' },
-            { q: 'How do I contact support?', a: 'Use the contact form below or email support@saleshub.com' },
+            { q: 'How do I contact support?', a: 'Use the contact form below or email support@Quick Quotes.com' },
             { q: 'Is my data secure?', a: 'Yes, we use industry-standard encryption and security measures.' },
           ].map((faq, index) => (
             <div key={index} className="border border-gray-200 rounded-lg">
