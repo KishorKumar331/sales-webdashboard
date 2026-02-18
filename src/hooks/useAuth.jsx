@@ -19,7 +19,7 @@ export const useAuth = () => {
       const url = email ? `${SESSION_API}?email=${encodeURIComponent(email)}` : SESSION_API;
       const response = await fetch(url, {
         method: "GET",
-        credentials: "include", // 🔥 IMPORTANT for cookies
+        // credentials: "include", 
       });
 
       if (!response.ok) {
