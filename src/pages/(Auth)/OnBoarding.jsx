@@ -20,6 +20,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import './Auth.css';
 
 const OnBoardingPage = () => {
@@ -32,6 +33,7 @@ const OnBoardingPage = () => {
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
+  const { login } = useAuth();
   
   // Enhanced carousel data with better content
   const carouselData = [
@@ -155,9 +157,8 @@ const OnBoardingPage = () => {
         if (Array.isArray(result) && result.length === 0) {
           showToast('No account found. Please create an account first.', 'error');
         } else if (hasData) {
-          localStorage.setItem('userProfile', JSON.stringify(result));
-          localStorage.setItem('isAuthenticated', 'true');
-          window.dispatchEvent(new Event('authChange'));
+          const userObj = Array.isArray(result) ? result[0] : result;
+          login(userObj);
           showToast('Login successful!');
           setShowLoginModal(false);
           

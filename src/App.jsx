@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
@@ -17,41 +16,46 @@ import Converted from './pages/Converted';
 import PaymentPage from './pages/(Auth)/PaymentGateway/PaymentGateWay';
 import Teams from './pages/Teams';
 import InvoicePage from './pages/InvoicePage';
+import { useAuth } from './hooks/useAuth';
 
 // Protected Route Component
-const ProtectedRoute = ({ isAuthenticated, redirectPath = '/auth' }) => {
+const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) => {
+  // Don't redirect while loading - wait for auth check to complete
+  if (isLoading || isAuthenticated === null) {
+    return null; // Or return a loading component
+  }
+  
   if (!isAuthenticated) {
     return <Navigate to={redirectPath} replace />;
   }
   return <Outlet />;
 };
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    localStorage.getItem('isAuthenticated') === 'true'
-  );
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setIsAuthenticated(localStorage.getItem('isAuthenticated') === 'true');
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+const App = () => {
+  const { isAuthenticated, isLoading } = useAuth();
 
   const renderWithLayout = (Component, title) => (
     <div className="flex h-screen flex-col">
-    
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-auto bg-gray-50">
-            <Navbar title={title} />
+          <Navbar title={title} />
           {Component}
         </main>
       </div>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>
@@ -60,44 +64,86 @@ function App() {
           {/* Public Routes */}
           <Route path="/auth" element={<OnBoardingPage />} />
           <Route path="/signup" element={<SignUp />} />
-          
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-            <Route
-              path="/"
-             element={renderWithLayout(<CreateQuote />, "Create Quote")} 
-            />
-            <Route path="/new-lead" element={renderWithLayout(<NewLeadForm />, "New Lead")} />
-            <Route path="/create-quote" element={renderWithLayout(<CreateQuote />, "Create Quote")} />
-                        <Route path="/create-newquote" element={renderWithLayout(<QuotationScreen />, "Create Quote")} />
 
-            <Route path="/follow-up" element={renderWithLayout(<FollowUp />, "Follow Up")} />
-            <Route path="/invoices/create" element={renderWithLayout(<InvoicePage />, "Create Invoice")} />
-            <Route path="/converted" element={renderWithLayout(<Converted />, "Converted")} />
-            <Route path="/investigation" element={renderWithLayout(<Investigation />, "Investigation")} />
-            <Route path="/teams" element={renderWithLayout(<Teams />, "Teams")} />
-            <Route path="/profile" element={renderWithLayout(<Profile />, "Profile")} />
-            <Route path="/payment" element={renderWithLayout(<PaymentPage />, "Payment")} />
-          </Route>
-          
-          {/* Redirect to auth if no route matches */}
-          <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/auth'} replace />} />
-        </Routes>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
+          {/* Protected Routes */}
+          <Route
+            element={
+              <ProtectedRoute
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
+          >
+          <Route
+            path="/"
+            element={renderWithLayout(<CreateQuote />, "Create Quote")}
+          />
+
+          <Route
+            path="/new-lead"
+            element={renderWithLayout(<NewLeadForm />, "New Lead")}
+          />
+
+          <Route
+            path="/create-quote"
+            element={renderWithLayout(<CreateQuote />, "Create Quote")}
+          />
+
+          <Route
+            path="/create-newquote"
+            element={renderWithLayout(<QuotationScreen />, "Create Quote")}
+          />
+
+          <Route
+            path="/follow-up"
+            element={renderWithLayout(<FollowUp />, "Follow Up")}
+          />
+
+          <Route
+            path="/invoices/create"
+            element={renderWithLayout(<InvoicePage />, "Create Invoice")}
+          />
+
+          <Route
+            path="/converted"
+            element={renderWithLayout(<Converted />, "Converted")}
+          />
+
+          <Route
+            path="/investigation"
+            element={renderWithLayout(<Investigation />, "Investigation")}
+          />
+
+          <Route
+            path="/teams"
+            element={renderWithLayout(<Teams />, "Teams")}
+          />
+
+          <Route
+            path="/profile"
+            element={renderWithLayout(<Profile />, "Profile")}
+          />
+
+          <Route
+            path="/payment"
+            element={renderWithLayout(<PaymentPage />, "Payment")}
+          />
+        </Route>
+
+        {/* Fallback */}
+        <Route
+          path="*"
+          element={
+            <Navigate to={isAuthenticated ? "/" : "/auth"} replace />
+          }
         />
+      </Routes>
+
+      <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </Router>
   );
-}
+};
+
 
 export default App;
