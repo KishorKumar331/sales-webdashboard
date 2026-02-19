@@ -67,12 +67,12 @@ const App = () => {
 
           {/* Protected Routes */}
           <Route
-            element={
-              <ProtectedRoute
-                isAuthenticated={isAuthenticated}
-                isLoading={isLoading}
-              />
-            }
+            // element={
+            //   <ProtectedRoute
+            //     isAuthenticated={isAuthenticated}
+            //     isLoading={isLoading}
+            //   />
+            // }
           >
           <Route
             path="/"

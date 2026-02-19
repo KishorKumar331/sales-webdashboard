@@ -300,55 +300,108 @@ const PdfPreviewModal = ({
 
   /* ---------------- DOWNLOAD USING SIR PUPPETEER LOGIC ---------------- */
 
-  const handleDownload = async () => {
-    try {
-      if (!pdfHtml) {
-        toast.error("No HTML available");
-        return;
-      }
+// const handleDownload = async () => {
+//   try {
+//     if (!pdfHtml) {
+//       toast.error("No HTML available");
+//       return;
+//     }
 
-      setIsGenerating(true);
+//     setIsGenerating(true);
 
-      const response = await axios.post(
-        API_URL,
-        {
-          mode: "pdf",         // 👈 important
-          type: "quotation",
-          html: pdfHtml,       // 👈 send complete preview HTML
-          fileName: `${clientName}.pdf`,
-          tripId: "000163-7658",
-          quoteId: "QUO-20260224-DUB-4-0c01",
-          templateName: "ip_pdf.hbs",
-        },
-        {
-          responseType: "blob",
-        }
-      );
+//     const response = await axios.post(API_URL, {
+//       mode: "pdf",
+//       type: "quotation",
+//       html: pdfHtml,
+//       fileName: `${clientName}.pdf`,
+//       tripId: "000163-7658",
+//       quoteId: "QUO-20260224-DUB-4-0c01",
+//       templateName: "ip_pdf.hbs",
+//     });
 
-      const blob = new Blob([response.data], {
-        type: "application/pdf",
-      });
+//     const fileUrl = response?.data?.url;
 
-      const url = window.URL.createObjectURL(blob);
+//     if (!fileUrl) {
+//       throw new Error("No file URL received");
+//     }
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${clientName}.pdf`;
+//     // 🔥 Auto download
+//     const link = document.createElement("a");
+//     link.href = fileUrl;
+//     link.download = `${clientName}.pdf`; // forces download
+//     document.body.appendChild(link);
+//     link.click();
+//     document.body.removeChild(link);
 
-      document.body.appendChild(link);
-      link.click();
+//     toast.success("PDF downloaded successfully ✅");
 
-      link.remove();
-      window.URL.revokeObjectURL(url);
+//   } catch (err) {
+//     console.error("Download error:", err);
+//     toast.error("Failed to generate PDF");
+//   } finally {
+//     setIsGenerating(false);
+//   }
+// };
 
-      toast.success("PDF downloaded successfully ✅");
-    } catch (err) {
-      console.error("Download error:", err);
-      toast.error("Failed to generate PDF");
-    } finally {
-      setIsGenerating(false);
+
+
+const handleDownload = async () => {
+  try {
+    if (!pdfHtml) {
+      toast.error("No HTML available");
+      return;
     }
-  };
+
+    setIsGenerating(true);
+
+    const response = await axios.post(API_URL, {
+      mode: "pdf",
+      type: "quotation",
+      html: pdfHtml,
+      fileName: `${clientName}.pdf`,
+      tripId: "000163-7658",
+      quoteId: "QUO-20260224-DUB-4-0c01",
+      templateName: "ip_pdf.hbs",
+    });
+
+    const fileUrl = response?.data?.url;
+console.log(fileUrl)
+    if (!fileUrl) {
+      throw new Error("No file URL received");
+    }
+
+    // ✅ FORCE DOWNLOAD VIA BLOB
+    const fileResponse = await axios.get(fileUrl, {
+      responseType: "blob",
+    });
+console.log(fileResponse)
+    const blob = new Blob([fileResponse.data], {
+      type: "application/pdf",
+    });
+console.log(blob)
+    const blobUrl = window.URL.createObjectURL(blob);
+console.log(blobUrl)
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.setAttribute("download", `${clientName}.pdf`);
+    console.log(link)
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean memory
+    window.URL.revokeObjectURL(blobUrl);
+
+    toast.success("PDF downloaded successfully ✅");
+
+  } catch (err) {
+    console.error("Download error:", err);
+    toast.error("Failed to generate PDF");
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
 
   if (!visible) return null;
 
