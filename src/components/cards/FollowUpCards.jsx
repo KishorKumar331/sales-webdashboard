@@ -47,13 +47,14 @@ const FollowUpCards = ({ data }) => {
   const cardWidth = '100%';
 
   const pages = useMemo(() => ["page1", "page2"], []);
-
+const navigate=useNavigate()
   const handleCreateNewInvoice = () => {
-    router(
-      `/invoices/create?tripId=${data?.TripId}&initialData=${encodeURIComponent(
-        JSON.stringify(data)
-      )}`
-    );
+  navigate("/invoices/create", {
+      state: {
+        initialData: data,
+        tripId: data.TripId,
+      },
+    });
     setIsInvoiceModalVisible(false);
   };
 

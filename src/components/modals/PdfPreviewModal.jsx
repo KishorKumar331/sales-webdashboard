@@ -16,10 +16,10 @@
 //   const handleDownload = async () => {
 //     try {
 //       setIsGeneratingPdf(true);
-      
+
 //       if (pdfHtml) {
 //         console.log("🔄 Opening print dialog for PDF...");
-        
+
 //         // Create a temporary div with the HTML content
 //         const tempDiv = document.createElement('div');
 //         tempDiv.style.position = 'absolute';
@@ -30,9 +30,9 @@
 //         tempDiv.style.backgroundColor = 'white';
 //         tempDiv.style.fontFamily = 'Arial, sans-serif';
 //         tempDiv.innerHTML = pdfHtml;
-        
+
 //         document.body.appendChild(tempDiv);
-        
+
 //         // Wait for content to render then print
 //         setTimeout(() => {
 //           const printWindow = window.open('', '_blank');
@@ -58,7 +58,7 @@
 //             </html>
 //           `);
 //           printWindow.document.close();
-          
+
 //           // Trigger print dialog
 //           setTimeout(() => {
 //             printWindow.print();
@@ -67,7 +67,7 @@
 //             console.log("✅ Print dialog opened successfully");
 //           }, 500);
 //         }, 300);
-        
+
 //         // Call onShare callback to submit quotation to API
 //         if (onShare) {
 //           await onShare();
@@ -81,7 +81,7 @@
 //         link.click();
 //         document.body.removeChild(link);
 //         console.log("✅ PDF downloaded successfully");
-        
+
 //         if (onShare) {
 //           await onShare();
 //         }
@@ -123,7 +123,7 @@
 //         </html>
 //       `);
 //       printWindow.document.close();
-      
+
 //       // Wait for content to load then trigger print
 //       setTimeout(() => {
 //         printWindow.print();
@@ -198,7 +198,7 @@
 //               <p className="text-gray-600 text-center">Use the download button below to view the quotation</p>
 //             </div>
 //           )}
-          
+
 //           {pdfHtml && !error && (
 //             <iframe
 //             ref={iframeRef}
@@ -293,6 +293,7 @@ const PdfPreviewModal = ({
   pdfHtml,
   onClose,
   clientName = "Quotation",
+  onShare,
 }) => {
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -300,107 +301,107 @@ const PdfPreviewModal = ({
 
   /* ---------------- DOWNLOAD USING SIR PUPPETEER LOGIC ---------------- */
 
-// const handleDownload = async () => {
-//   try {
-//     if (!pdfHtml) {
-//       toast.error("No HTML available");
-//       return;
-//     }
+  // const handleDownload = async () => {
+  //   try {
+  //     if (!pdfHtml) {
+  //       toast.error("No HTML available");
+  //       return;
+  //     }
 
-//     setIsGenerating(true);
+  //     setIsGenerating(true);
 
-//     const response = await axios.post(API_URL, {
-//       mode: "pdf",
-//       type: "quotation",
-//       html: pdfHtml,
-//       fileName: `${clientName}.pdf`,
-//       tripId: "000163-7658",
-//       quoteId: "QUO-20260224-DUB-4-0c01",
-//       templateName: "ip_pdf.hbs",
-//     });
+  //     const response = await axios.post(API_URL, {
+  //       mode: "pdf",
+  //       type: "quotation",
+  //       html: pdfHtml,
+  //       fileName: `${clientName}.pdf`,
+  //       tripId: "000163-7658",
+  //       quoteId: "QUO-20260224-DUB-4-0c01",
+  //       templateName: "ip_pdf.hbs",
+  //     });
 
-//     const fileUrl = response?.data?.url;
+  //     const fileUrl = response?.data?.url;
 
-//     if (!fileUrl) {
-//       throw new Error("No file URL received");
-//     }
+  //     if (!fileUrl) {
+  //       throw new Error("No file URL received");
+  //     }
 
-//     // 🔥 Auto download
-//     const link = document.createElement("a");
-//     link.href = fileUrl;
-//     link.download = `${clientName}.pdf`; // forces download
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);
+  //     // 🔥 Auto download
+  //     const link = document.createElement("a");
+  //     link.href = fileUrl;
+  //     link.download = `${clientName}.pdf`; // forces download
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
 
-//     toast.success("PDF downloaded successfully ✅");
+  //     toast.success("PDF downloaded successfully ✅");
 
-//   } catch (err) {
-//     console.error("Download error:", err);
-//     toast.error("Failed to generate PDF");
-//   } finally {
-//     setIsGenerating(false);
-//   }
-// };
+  //   } catch (err) {
+  //     console.error("Download error:", err);
+  //     toast.error("Failed to generate PDF");
+  //   } finally {
+  //     setIsGenerating(false);
+  //   }
+  // };
 
 
 
-const handleDownload = async () => {
-  try {
-    if (!pdfHtml) {
-      toast.error("No HTML available");
-      return;
+  const handleDownload = async () => {
+    try {
+      if (!pdfHtml) {
+        toast.error("No HTML available");
+        return;
+      }
+
+      setIsGenerating(true);
+
+      const response = await axios.post(API_URL, {
+        mode: "pdf",
+        type: "quotation",
+        html: pdfHtml,
+        fileName: `${clientName}.pdf`,
+        tripId: "000163-7658",
+        quoteId: "QUO-20260224-DUB-4-0c01",
+        templateName: "ip_pdf.hbs",
+      });
+
+      const fileUrl = response?.data?.url;
+      console.log(fileUrl)
+      if (!fileUrl) {
+        throw new Error("No file URL received");
+      }
+
+      // ✅ FORCE DOWNLOAD VIA BLOB
+      const fileResponse = await axios.get(fileUrl, {
+        responseType: "blob",
+      });
+      console.log(fileResponse)
+      const blob = new Blob([fileResponse.data], {
+        type: "application/pdf",
+      });
+      console.log(blob)
+      const blobUrl = window.URL.createObjectURL(blob);
+      console.log(blobUrl)
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.setAttribute("download", `${clientName}.pdf`);
+      console.log(link)
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean memory
+      window.URL.revokeObjectURL(blobUrl);
+
+      toast.success("PDF downloaded successfully ✅");
+      onShare();
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setIsGenerating(false);
     }
-
-    setIsGenerating(true);
-
-    const response = await axios.post(API_URL, {
-      mode: "pdf",
-      type: "quotation",
-      html: pdfHtml,
-      fileName: `${clientName}.pdf`,
-      tripId: "000163-7658",
-      quoteId: "QUO-20260224-DUB-4-0c01",
-      templateName: "ip_pdf.hbs",
-    });
-
-    const fileUrl = response?.data?.url;
-console.log(fileUrl)
-    if (!fileUrl) {
-      throw new Error("No file URL received");
-    }
-
-    // ✅ FORCE DOWNLOAD VIA BLOB
-    const fileResponse = await axios.get(fileUrl, {
-      responseType: "blob",
-    });
-console.log(fileResponse)
-    const blob = new Blob([fileResponse.data], {
-      type: "application/pdf",
-    });
-console.log(blob)
-    const blobUrl = window.URL.createObjectURL(blob);
-console.log(blobUrl)
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.setAttribute("download", `${clientName}.pdf`);
-    console.log(link)
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Clean memory
-    window.URL.revokeObjectURL(blobUrl);
-
-    toast.success("PDF downloaded successfully ✅");
-
-  } catch (err) {
-    console.error("Download error:", err);
-    toast.error("Failed to generate PDF");
-  } finally {
-    setIsGenerating(false);
-  }
-};
+  };
 
 
   if (!visible) return null;

@@ -1,29 +1,53 @@
 import React, { useState, useEffect } from "react";
+import { Plus, Trash2 } from "lucide-react";
+
+import { getUserProfile } from "../../utils/getUserProfile";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
+import CalendarDatePicker from "../DatePicker";
 import PdfPreviewModal from "../modals/PdfPreviewModal";
 import CustomPicker from "../CustomPicker";
-import { getUserProfile } from "../../utils/getUserProfile";
+import { toast } from "react-toastify";
 
 export default function InvoiceForm({
   tripId,
   onSubmit,
   initialData = null,
+  onCancel,
+  defaultCustomerName = "",
+  defaultEmail = "",
+  defaultContact = "",
+  defaultDestination = "",
+  defaultPax = "",
+  defaultTravelDate = "",
 }) {
-  const query = useQueryClient();
-
+  console.log(initialData);
+  const [step, setStep] = useState("fillForm"); // 'selectQuotation' or 'fillForm'
   const [quotations, setQuotations] = useState([]);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
-  const [loadingQuotes, setLoadingQuotes] = useState(false);
+  console.log(selectedQuotation)
+  const [quotationsLoading, setQuotationsLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [showPdfModal, setShowPdfModal] = useState(false);
-  const [pdfHtml, setPdfHtml] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const [pdfUri, setPdfUri] = useState(null);
+  const [pdfHtml, setPdfHtml] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [formDataToSubmit, setFormDataToSubmit] = useState(null);
 
   const [formData, setFormData] = useState({
+    invoiceId: "",
     invoiceNumber: "",
     tripId: tripId || "",
     finalPackageQuotationId: "",
+    leadId: "",
+    createdAt: "",
+    updatedAt: "",
+    invoiceDate: "",
+    invoiceStatus: "Pending",
+    currency: "INR",
     customer: {
       name: "",
       email: "",
@@ -36,69 +60,229 @@ export default function InvoiceForm({
         country: "",
       },
     },
+    travelerSummary: {
+      adults: 0,
+      children: 0,
+      infants: 0,
+      totalTravelers: 0,
+    },
     destination: "",
     travelDate: "",
+    startDate: "",
+    endDate: "",
+    packageSummary: {
+      packageName: "",
+      packageType: "International",
+      nights: 0,
+      days: 0,
+    },
     pricing: {
-      totalAmount: 0,
+      baseAmount: 0,
+      discountAmount: 0,
+      taxableAmount: 0,
+      gstPercentage: 0,
       gstAmount: 0,
+      tcsPercentage: 0,
       tcsAmount: 0,
+      otherCharges: [],
+      totalAmount: 0,
+      amountInWords: "",
+      tcsClaim: Array.isArray(initialData?.pricing?.tcsClaim)
+        ? initialData.pricing.tcsClaim
+        : [{ panNumber: "", name: "", percentage: 0 }],
     },
     payment: {
+      dueDate: "",
+      totalPaid: 0,
+      balanceAmount: 0,
       installments: [
         {
+          installmentId: "",
+          sequence: 1,
           installmentAmount: 0,
           installmentDate: "",
+          status: "Pending",
+          paymentMethod: "",
+          paymentVerification: null,
+          receivedDate: "",
+          amountReceived: 0,
+          utrNumber: "",
+          amountReceivedBy: "",
+          amountConfirmedBy: "",
+          lastUpdatedDate: "",
+          lastUpdatedBy: "",
         },
       ],
     },
+    cancellationPolicy: {
+      flights: "As per airline policy",
+      hotel: "As per the hotel policy",
+      land: [
+        {
+          fromDaysBeforeTravel: 20,
+          toDaysBeforeTravel: null,
+          chargeType: "PERCENT",
+          value: 25,
+        },
+        {
+          fromDaysBeforeTravel: 0,
+          toDaysBeforeTravel: 19,
+          chargeType: "PERCENT",
+          value: 100,
+        },
+      ],
+      nonRefundableComponents: ["Visa", "TCS", "Taxes", "Remittance charges"],
+      jrCancellationChargePerPax: 2500,
+      rescheduleChargePerPax: {
+        amount: 2000,
+        notes: "Per pax + fare difference for flights and land part",
+      },
+      latePaymentFee: {
+        amount: 5000,
+        notes: "Within allowable limits",
+      },
+    },
+    deliverables: [
+      { item: "Hotel Vouchers", required: true, provided: false },
+      { item: "Cab/Driver Details", required: true, provided: false },
+      { item: "Scanned copy of passport", required: true, provided: false },
+      {
+        item: "Scanned copy of flights and tickets",
+        required: true,
+        provided: false,
+      },
+      {
+        item: "Payment screenshot (esp. NEFT)",
+        required: true,
+        provided: false,
+      },
+      { item: "Scanned copy of PAN card", required: true, provided: false },
+    ],
     notes: "",
+    meta: {
+      createdBy: "",
+      lastUpdatedBy: "",
+      source: "mobile",
+      companyProfileId: "",
+      companyName: "",
+      bankDetails: {},
+    },
+    auditTrail: [
+      {
+        action: "CREATE",
+        performedBy: "",
+        timestamp: "",
+        details: "",
+      },
+    ],
   });
 
-  // ===============================
-  // LOAD USER PROFILE
-  // ===============================
+  // Load quotations when TripId is available
   useEffect(() => {
-    const loadProfile = async () => {
-      const profile = await getUserProfile();
-      setUserProfile(profile);
-    };
-    loadProfile();
-  }, []);
-
-  // ===============================
-  // FETCH QUOTATIONS
-  // ===============================
-  useEffect(() => {
-    if (!tripId) return;
-
-    const fetchQuotes = async () => {
-      try {
-        setLoadingQuotes(true);
-        const res = await fetch(
-          `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations?TripId=${tripId}`
-        );
-
-        const data = await res.json();
-        setQuotations(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error(err);
-        window.alert("Failed to load quotations");
-      } finally {
-        setLoadingQuotes(false);
-      }
-    };
-
-    fetchQuotes();
+    if (tripId) {
+      setFormData((prev) => ({ ...prev, tripId }));
+      fetchQuotations();
+    }
   }, [tripId]);
 
-  // ===============================
-  // HELPERS
-  // ===============================
-  const updateField = (field, value) => {
+  // Apply initialData if passed (not used from screen currently, but kept)
+  useEffect(() => {
+    if (initialData) {
+      setFormData((prev) => ({
+        ...prev,
+        ...initialData,
+      }));
+    }
+  }, [initialData]);
+
+  // Prefill from navigation params (customer, dest, pax, date)
+  useEffect(() => {
+    setFormData((prev) => {
+      const pax = defaultPax
+        ? parseInt(defaultPax, 10) || 0
+        : prev.travelerSummary.totalTravelers;
+      return {
+        ...prev,
+        customer: {
+          ...prev.customer,
+          name: defaultCustomerName || prev.customer.name,
+          email: defaultEmail || prev.customer.email,
+          contact: defaultContact || prev.customer.contact,
+        },
+        destination: defaultDestination || prev.destination,
+        travelDate: defaultTravelDate || prev.travelDate,
+        travelerSummary: {
+          ...prev.travelerSummary,
+          totalTravelers: pax || prev.travelerSummary.totalTravelers,
+          adults: pax || prev.travelerSummary.adults,
+        },
+      };
+    });
+  }, [
+    defaultCustomerName,
+    defaultEmail,
+    defaultContact,
+    defaultDestination,
+    defaultPax,
+    defaultTravelDate,
+  ]);
+
+  // Load user profile
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const profile = await getUserProfile();
+        if (profile) {
+          setUserProfile(profile);
+          setFormData((prev) => ({
+            ...prev,
+            meta: {
+              ...prev.meta,
+              createdBy: profile.email || profile.name || "",
+              companyProfileId: profile.companyId || "",
+              companyName: profile.companyName || "",
+              bankDetails: profile.bankDetails || {},
+            },
+          }));
+        }
+      } catch (error) {
+        console.error("Error loading user profile:", error);
+      }
+    };
+    loadUserProfile();
+  }, []);
+
+  const fetchQuotations = async () => {
+    try {
+      setQuotationsLoading(true);
+      const response = await fetch(
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations?TripId=${tripId}`
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch quotations");
+
+      const data = await response.json();
+      setQuotations(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching quotations:", error);
+      toast.error("Error", "Failed to load quotations");
+    } finally {
+      setQuotationsLoading(false);
+    }
+  };
+
+  const handleQuotationSelectFromPicker = (quoteId) => {
+    const quotation = quotations.find((q) => q.QuoteId === quoteId);
+    if (quotation) {
+      handleSelectQuotation(quotation);
+    }
+  };
+
+  const updateFormData = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateNested = (parent, field, value) => {
+  const updateNestedField = (parent, field, value) => {
     setFormData((prev) => ({
       ...prev,
       [parent]: {
@@ -108,222 +292,908 @@ export default function InvoiceForm({
     }));
   };
 
-  const calculateInvoiceTotal = () => {
-    return (
-      Number(formData.pricing.totalAmount || 0) +
-      Number(formData.pricing.gstAmount || 0) +
-      Number(formData.pricing.tcsAmount || 0)
-    );
+  const updateAddressField = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      customer: {
+        ...prev.customer,
+        address: {
+          ...prev.customer.address,
+          [field]: value,
+        },
+      },
+    }));
   };
 
-  // ===============================
-  // PREVIEW
-  // ===============================
-  const handleOpenPreview = async () => {
-    if (!formData.finalPackageQuotationId) {
-      window.alert("Please select quotation");
+  const addInstallment = () => {
+    setFormData((prev) => {
+      const currentInstallments = prev?.payment?.installments || [];
+      return {
+        ...prev,
+        payment: {
+          ...prev.payment,
+          installments: [
+            ...currentInstallments,
+            {
+              installmentId: "",
+              sequence: currentInstallments.length + 1,
+              installmentAmount: 0,
+              installmentDate: "",
+              status: "Pending",
+              paymentMethod: "",
+              paymentVerification: null,
+              receivedDate: "",
+              amountReceived: 0,
+              utrNumber: "",
+              amountReceivedBy: "",
+              amountConfirmedBy: "",
+              lastUpdatedDate: "",
+              lastUpdatedBy: "",
+            },
+          ],
+        },
+      };
+    });
+  };
+
+  const removeInstallment = (index) => {
+    if ((formData?.payment?.installments?.length || 0) <= 1) {
+      toast.error("Error", "At least one installment is required");
       return;
     }
+    setFormData((prev) => ({
+      ...prev,
+      payment: {
+        ...prev.payment,
+        installments: (prev?.payment?.installments || []).filter(
+          (_, i) => i !== index
+        ),
+      },
+    }));
+  };
+
+  const updateInstallment = (index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      payment: {
+        ...prev.payment,
+        installments: (prev?.payment?.installments || []).map((inst, i) =>
+          i === index ? { ...inst, [field]: value } : inst
+        ),
+      },
+    }));
+  };
+
+  const addTcsClaim = () => {
+    setFormData((prev) => ({
+      ...prev,
+      pricing: {
+        ...prev.pricing,
+        tcsClaim: [
+          ...(prev.pricing.tcsClaim || []),
+          { panNumber: "", name: "", percentage: 0 },
+        ],
+      },
+    }));
+  };
+
+  const removeTcsClaim = (index) => {
+    if (!formData.pricing.tcsClaim || formData.pricing.tcsClaim.length <= 1) {
+      toast.error("Error", "At least one TCS claim entry is required");
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      pricing: {
+        ...prev.pricing,
+        tcsClaim: (prev.pricing.tcsClaim || []).filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  const updateTcsClaim = (index, field, value) => {
+    setFormData((prev) => {
+      const currentClaims = Array.isArray(prev.pricing.tcsClaim)
+        ? [...prev.pricing.tcsClaim]
+        : [];
+
+      if (index >= currentClaims.length) {
+        currentClaims.push({ panNumber: "", name: "", percentage: 0 });
+      }
+
+      const updatedClaims = currentClaims.map((claim, i) =>
+        i === index ? { ...claim, [field]: value } : claim
+      );
+
+      return {
+        ...prev,
+        pricing: {
+          ...prev.pricing,
+          tcsClaim: updatedClaims,
+        },
+      };
+    });
+  };
+
+  const calculateInvoiceTotal = () => {
+    const baseAmount = parseFloat(formData?.pricing?.totalAmount) || 0;
+    const gst = parseFloat(formData?.pricing?.gstAmount) || 0;
+    const tcs = parseFloat(formData?.pricing?.tcsAmount) || 0;
+    return baseAmount + gst + tcs;
+  };
+
+  const generateInvoiceNumberValue = () => {
+    const companyName = userProfile?.companyName || "JR";
+    const initials =
+      companyName
+        .split(/\s+/)
+        .map((w) => w[0]?.toUpperCase())
+        .join("")
+        .substring(0, 3) || "INV";
+    const timestamp = new Date().toISOString().split("T")[0].replace(/-/g, "");
+    return `${initials}-Inv-${timestamp}`;
+  };
+
+  const ensureInvoiceNumber = () => {
+    if (formData.invoiceNumber && formData.invoiceNumber.length > 0) {
+      return formData.invoiceNumber;
+    }
+    const newNumber = generateInvoiceNumberValue();
+    setFormData((prev) => ({ ...prev, invoiceNumber: newNumber }));
+    return newNumber;
+  };
+
+  const handleOpenPreview = async () => {
+    if (!validateForm()) return;
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
 
     try {
-      setIsGeneratingPdf(true);
+    
 
+      const dataWithUser = {
+        ...formData,
+        user: userProfile,
+      };
+
+      console.log("Invoice data with user:", dataWithUser);
+
+      // Call the API endpoint to get HTML
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
           type: "invoice",
-          renderOnly: true,
-          data: { ...formData, user: userProfile },
+          // renderOnly: true,
+          data: dataWithUser,
           templateName: "invoiceip.hbs",
+mode: "html",
+        fileName: `$test.pdf`,
+        tripId: formData?.tripId,
+        quoteId:formData?.finalPackageQuotationId ,
         }
       );
 
-      setPdfHtml(response.data);
-      setShowPdfModal(true);
-    } catch (err) {
-      console.error(err);
-      window.alert("Failed to generate preview");
+      if (response.data) {
+        console.log("HTML Content received from API");
+        setPdfHtml(response.data);
+        setPdfUri(null);
+        setFormDataToSubmit({
+          ...dataWithUser,
+          CompanyId: userProfile?.companyId,
+          CompanyEmail: userProfile?.email,
+        });
+        setShowPdfModal(true);
+        setRefreshKey((prev) => prev + 1);
+        console.log("✅ HTML set for preview");
+      } else {
+        throw new Error("Invalid response format from server");
+      }
+    } catch (error) {
+      console.error("❌ Error generating preview:", error);
+      toast.error("Error", "Failed to generate preview. Please try again.");
     } finally {
       setIsGeneratingPdf(false);
     }
   };
 
-  // ===============================
-  // SUBMIT
-  // ===============================
-  const handleSubmitInvoice = async () => {
+  const handlePreviewClose = () => {
+    setShowPdfModal(false);
+  };
+
+  const handleShare = async () => {
+    if (!formDataToSubmit) {
+      toast.error("Error", "No invoice data to submit");
+      return;
+    }
+
     try {
+      console.log("📤 Submitting invoice to API...");
+      await handleSubmitInvoice();
+    } catch (error) {
+      console.error("❌ Error submitting:", error);
+      toast.error(
+        "Error",
+        "Failed to submit invoice: " + (error?.message || error)
+      );
+    }
+  };
+
+  const handleSelectQuotation = (quotation) => {
+    if (!quotation) return;
+
+    const totalCost =
+      (Number(quotation.Costs?.FlightCost) || 0) +
+      (Number(quotation.Costs?.VisaCost) || 0) +
+      (Number(quotation.Costs?.LandPackageCost) || 0);
+console.log(totalCost)
+    const adults = (quotation.NoOfPax || 0) - (quotation.Child || 0) - (parseInt(quotation.Infant) || 0);
+
+    setSelectedQuotation(quotation);
+    setFormData((prev) => ({
+      ...prev,
+      finalPackageQuotationId: quotation.QuoteId || "",
+      leadId: quotation.LeadId || "",
+      customer: {
+        ...prev.customer,
+        name: quotation["Client-Name"] || "",
+        email: quotation["Client-Email"] || "",
+        contact: quotation["Client-Contact"] || "",
+      },
+      destination: quotation.DestinationName || "",
+      startDate: quotation.TravelDate || "",
+      endDate: quotation.TravelEndDate || "",
+      travelDate: quotation.TravelDate || "",
+      travelerSummary: {
+        ...prev.travelerSummary,
+        adults: adults,
+        children: quotation.Child || 0,
+        infants: parseInt(quotation.Infant) || 0,
+        totalTravelers: quotation.NoOfPax || 0,
+      },
+      packageSummary: {
+        ...prev.packageSummary,
+        nights: quotation.Nights || 0,
+        days: quotation.Days || 0,
+        packageName: quotation.QuoteId || "",
+      },
+      pricing: {
+        ...prev.pricing,
+        baseAmount: quotation.Costs?.TotalCost || totalCost,
+        gstAmount: quotation.Costs?.GSTAmount || 0,
+        tcsAmount: quotation.Costs?.TCSAmount || 0,
+        totalAmount: totalCost,
+      },
+    }));
+    setStep("fillForm");
+  };
+
+  const validateForm = () => {
+    if (!formData.finalPackageQuotationId) {
+      toast.error("Please select a quotation");
+      return false;
+    }
+    if (!formData.customer.name) {
+      toast.error("Customer name is required");
+      return false;
+    }
+    if (!formData.pricing.totalAmount) {
+      toast.error("Error", "Total amount is required");
+      return false;
+    }
+    return true;
+  };
+  const query = useQueryClient();
+  const handleSubmitInvoice = async () => {
+    if (!validateForm()) return;
+
+    try {
+      setIsSubmitting(true);
+
+      const invoiceNumber = ensureInvoiceNumber();
+      const today = new Date().toISOString();
+
+      const auditEntry = {
+        action: "Created",
+        timestamp: today,
+        performedBy: userProfile?.email || "system",
+        changes: {
+          status: "Pending",
+          invoiceNumber,
+        },
+      };
+
+      const cleanedData = {
+        invoiceNumber,
+        invoiceId: formData.tripId || tripId,
+        tripId: formData.tripId || tripId,
+        finalPackageQuotationId: formData.finalPackageQuotationId,
+        customer: formData.customer,
+        destination: formData.destination,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        travelDate: formData.travelDate,
+        travelerSummary: formData.travelerSummary,
+        pricing: formData.pricing,
+        payment: formData.payment,
+        cancellationPolicy: formData.cancellationPolicy,
+        deliverables: formData.deliverables,
+        notes: formData.notes,
+        invoiceDate: today.split("T")[0],
+        meta: {
+          createdBy: userProfile?.email || "",
+          companyProfileId: userProfile?.companyId || "",
+          companyName: userProfile?.companyName || "",
+          bankDetails: userProfile?.bankDetails || {},
+          source: "mobile",
+        },
+        auditTrail: [auditEntry],
+      };
+
+      console.log("📋 Invoice Payload:", cleanedData);
+
       const response = await fetch(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(cleanedData),
         }
       );
+      if (!response.ok) {
+        const text = await response.text();
+        console.log("Invoice API error:", text);
+        throw new Error("Failed to save invoice");
+      }
 
-      if (!response.ok) throw new Error("Failed");
-
+      let data = null;
+      try {
+        data = await response.json();
+        console.log(data);
+        await axios.put(
+          `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`,
+          {
+            invoiceId: data?.invoiceId,
+            TripId: initialData?.TripId,
+            LeadId: initialData?.leadId,
+            LatestQuotationId: cleanedData?.finalPackageQuotationId,
+          }
+        );
+      } catch {
+        // if no json body
+      }
       await query.invalidateQueries({ queryKey: ["followup"] });
 
-      window.alert("Invoice submitted successfully");
-      setShowPdfModal(false);
-      onSubmit && onSubmit();
-    } catch (err) {
-      window.alert("Error saving invoice");
+      toast.error("Success", "Invoice submitted successfully!", [
+        {
+          text: "OK",
+          onPress: () => {
+            setShowPdfModal(false);
+            if (onSubmit) {
+              onSubmit(data || cleanedData);
+            }
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error("Error saving invoice:", error);
+      toast.error("Error", error.message || "Failed to save invoice.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // ===============================
-  // UI
-  // ===============================
-  return (
-    <div className="bg-gray-50 min-h-screen p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+  const quotationOptions = quotations.map((q) => ({
+    label: `${q.QuoteId} - ₹${
+      q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
+    }`,
+    value: q.QuoteId,
+  }));
 
-        {/* HEADER */}
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h1 className="text-2xl font-bold">Create Invoice</h1>
+  // Form Filling Step
+  return (
+    <div className="flex-1 bg-gray-50 overflow-auto p-6">
+      <div className="p-1">
+        {selectedQuotation && (
+          <div className="bg-blue-50 p-3 rounded-lg mb-4 flex justify-between items-center">
+            <span className="text-blue-800">
+              Using Quotation #
+              {selectedQuotation?.QuoteId || selectedQuotation?.id}
+            </span>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="bg-white rounded-xl p-4 mb-4">
+          <span className="text-2xl font-bold text-gray-900 mb-2 block">
+            Create Invoice
+          </span>
+          <span className="text-gray-600 block">
+            Select a quotation and fill in the details
+          </span>
         </div>
 
-        {/* QUOTATION */}
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">Select Quotation</h2>
-
-          {loadingQuotes ? (
-            <p>Loading...</p>
+        {/* Quotation Selection */}
+        <div className="bg-white rounded-xl p-4 mb-4">
+          <span className="text-lg font-semibold text-gray-900 mb-3 block">
+            Select Quotation
+          </span>
+          {quotationsLoading ? (
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
           ) : (
             <CustomPicker
-              items={quotations.map((q) => ({
-                label: `${q.QuoteId}`,
-                value: q.QuoteId,
-              }))}
-              selectedValue={formData.finalPackageQuotationId}
-              onValueChange={(value) =>
-                updateField("finalPackageQuotationId", value)
-              }
+              items={quotationOptions}
+              selectedValue={formData?.finalPackageQuotationId}
+              onValueChange={handleQuotationSelectFromPicker}
+              placeholder="Select a quotation"
+              title="Select Quotation"
             />
           )}
         </div>
 
-        {/* CUSTOMER */}
-        <div className="bg-white p-6 rounded-xl shadow space-y-4">
-          <h2 className="text-lg font-semibold">Customer Details</h2>
+        {/* Customer Details */}
+        <div className="bg-white rounded-xl p-4 mb-4">
+          <span className="text-lg font-semibold text-gray-900 mb-3 block">
+            Customer Details
+          </span>
 
+          <span className="text-sm font-medium text-gray-700 mb-2 block">Name *</span>
           <input
-            className="input"
-            placeholder="Customer Name"
-            value={formData.customer.name}
+            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
+            value={formData?.customer?.name || ""}
             onChange={(e) =>
-              updateNested("customer", "name", e.target.value)
+              updateNestedField("customer", "name", e.target.value)
             }
+            placeholder="Customer name"
           />
 
+          <span className="text-sm font-medium text-gray-700 mb-2 block">Email</span>
           <input
-            className="input"
-            placeholder="Email"
-            value={formData.customer.email}
+            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
+            value={formData?.customer?.email || ""}
             onChange={(e) =>
-              updateNested("customer", "email", e.target.value)
+              updateNestedField("customer", "email", e.target.value)
             }
+            placeholder="customer@email.com"
+            type="email"
           />
 
+          <span className="text-sm font-medium text-gray-700 mb-2 block">
+            Contact
+          </span>
           <input
-            className="input"
-            placeholder="Contact"
-            value={formData.customer.contact}
+            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
+            value={formData?.customer?.contact || ""}
             onChange={(e) =>
-              updateNested("customer", "contact", e.target.value)
+              updateNestedField("customer", "contact", e.target.value)
             }
-          />
-        </div>
-
-        {/* FINANCIAL */}
-        <div className="bg-white p-6 rounded-xl shadow space-y-4">
-          <h2 className="text-lg font-semibold">Financial Details</h2>
-
-          <input
-            type="number"
-            className="input"
-            placeholder="Package Amount"
-            value={formData.pricing.totalAmount}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                pricing: {
-                  ...prev.pricing,
-                  totalAmount: Number(e.target.value),
-                },
-              }))
-            }
+            placeholder="Phone number"
+            type="tel"
           />
 
+          {/* Address */}
+          <span className="text-base font-semibold text-gray-900 mt-3 mb-2 block">
+            Address
+          </span>
+
+          <span className="text-sm font-medium text-gray-700 mb-2 block">Street</span>
           <input
-            type="number"
-            className="input"
-            placeholder="GST"
-            value={formData.pricing.gstAmount}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                pricing: {
-                  ...prev.pricing,
-                  gstAmount: Number(e.target.value),
-                },
-              }))
-            }
+            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
+            value={formData?.customer?.address?.street || ""}
+            onChange={(e) => updateAddressField("street", e.target.value)}
+            placeholder="Street address"
           />
 
-          <input
-            type="number"
-            className="input"
-            placeholder="TCS"
-            value={formData.pricing.tcsAmount}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                pricing: {
-                  ...prev.pricing,
-                  tcsAmount: Number(e.target.value),
-                },
-              }))
-            }
-          />
+          <div className="flex gap-3 mb-3">
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-700 mb-2 block">
+                City
+              </span>
+              <input
+                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                value={formData?.customer?.address?.city || ""}
+                onChange={(e) => updateAddressField("city", e.target.value)}
+                placeholder="City"
+              />
+            </div>
 
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <p className="font-bold text-purple-700">
-              Invoice Total: ₹{calculateInvoiceTotal()}
-            </p>
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-700 mb-2 block">
+                State
+              </span>
+              <input
+                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                value={formData?.customer?.address?.state || ""}
+                onChange={(e) => updateAddressField("state", e.target.value)}
+                placeholder="State"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-700 mb-2 block">
+                Zip Code
+              </span>
+              <input
+                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                value={formData?.customer?.address?.zipCode || ""}
+                onChange={(e) => updateAddressField("zipCode", e.target.value)}
+                placeholder="Zip"
+                type="number"
+              />
+            </div>
+
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-700 mb-2 block">
+                Country
+              </span>
+              <input
+                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                value={formData?.customer?.address?.country || ""}
+                onChange={(e) => updateAddressField("country", e.target.value)}
+                placeholder="Country"
+              />
+            </div>
           </div>
         </div>
 
-        {/* NOTES */}
-        <div className="bg-white p-6 rounded-xl shadow">
+        {/* Financial Details */}
+        <div className="bg-white rounded-xl p-4 mb-4">
+          <span className="text-lg font-semibold text-gray-900 mb-3 block">
+            Financial Details
+          </span>
+
+          {/* Package Amount (Read-only from quotation) */}
+          <div className="bg-gray-50 rounded-lg p-3 mb-3">
+            <span className="text-sm text-gray-600 mb-1 block">Package Amount</span>
+            <span className="text-2xl font-bold text-gray-900 block">
+              ₹
+              {parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString(
+                "en-IN"
+              )}
+            </span>
+            <span className="text-xs text-gray-500 mt-1 block">
+              From selected quotation
+            </span>
+          </div>
+
+          {/* Editable GST and TCS */}
+          <div className="flex gap-3 mb-3">
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-700 mb-2 block">
+                GST (₹)
+              </span>
+              <input
+                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                value={(formData?.pricing?.gstAmount || 0).toString()}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    pricing: {
+                      ...prev.pricing,
+                      gstAmount: parseFloat(e.target.value) || 0,
+                    },
+                  }))
+                }
+                placeholder="GST amount"
+                type="number"
+              />
+            </div>
+
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-700 mb-2 block">
+                TCS (₹)
+              </span>
+              <input
+                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                value={(formData?.pricing?.tcsAmount || 0).toString()}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    pricing: {
+                      ...prev.pricing,
+                      tcsAmount: parseFloat(e.target.value) || 0,
+                    },
+                  }))
+                }
+                placeholder="TCS amount"
+                type="number"
+              />
+            </div>
+          </div>
+
+          {/* Invoice Total Calculation */}
+          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+            <span className="text-sm font-semibold text-gray-700 mb-2 block">
+              Invoice Breakdown
+            </span>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-700">Package Amount:</span>
+                <span className="font-semibold text-gray-900">
+                  ₹
+                  {parseFloat(
+                    formData?.pricing?.totalAmount || 0
+                  ).toLocaleString("en-IN")}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-700">GST:</span>
+                <span className="font-semibold text-gray-900">
+                  ₹
+                  {parseFloat(formData?.pricing?.gstAmount || 0).toLocaleString(
+                    "en-IN"
+                  )}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-700">TCS:</span>
+                <span className="font-semibold text-gray-900">
+                  ₹
+                  {parseFloat(formData?.pricing?.tcsAmount || 0).toLocaleString(
+                    "en-IN"
+                  )}
+                </span>
+              </div>
+
+              <div className="border-t border-purple-300 pt-2 mt-2">
+                <div className="flex justify-between">
+                  <span className="text-lg font-bold text-purple-700">
+                    Invoice Total:
+                  </span>
+                  <span className="text-lg font-bold text-purple-700">
+                    ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Installments */}
+        <div className="bg-white rounded-xl p-4 mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-lg font-semibold text-gray-900">
+              Installments
+            </span>
+            <button
+              onClick={addInstallment}
+              className="bg-purple-600 rounded-lg px-4 py-2 flex items-center"
+            >
+              <Plus size={16} className="text-white" />
+              <span className="text-white font-medium ml-1">Add</span>
+            </button>
+          </div>
+
+          {formData?.payment?.installments?.map((installment, index) => (
+            <div
+              key={index}
+              className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold text-gray-900">
+                  Installment {index + 1}
+                </span>
+                {formData?.payment?.installments?.length > 1 && (
+                  <button
+                    onClick={() => removeInstallment(index)}
+                    className="bg-red-100 rounded-full p-1"
+                  >
+                    <Trash2 size={16} className="text-red-600" />
+                  </button>
+                )}
+              </div>
+
+              <span className="text-sm font-medium text-gray-700 mb-2 block">
+                Amount (₹)
+              </span>
+              <input
+                className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
+                value={installment.installmentAmount.toString()}
+                onChange={(e) =>
+                  updateInstallment(
+                    index,
+                    "installmentAmount",
+                    parseFloat(e.target.value) || 0
+                  )
+                }
+                placeholder="Installment amount"
+                type="number"
+              />
+
+              <span className="text-sm font-medium text-gray-700 mb-2 block">
+                Installment Date
+              </span>
+              <CalendarDatePicker
+                value={installment.installmentDate}
+                onDateChange={(value) =>
+                  updateInstallment(index, "installmentDate", value)
+                }
+                placeholder="Select installment date"
+              />
+            </div>
+          ))}
+
+          {/* Installment Summary */}
+          <div className="bg-purple-50 rounded-lg p-3 mt-2">
+            <div className="flex justify-between">
+              <span className="text-gray-700">Total Installments:</span>
+              <span className="font-semibold text-gray-900">
+                ₹
+                {(formData?.payment?.installments || [])
+                  .reduce((sum, inst) => sum + (inst.installmentAmount || 0), 0)
+                  .toLocaleString("en-IN")}
+              </span>
+            </div>
+
+            <div className="flex justify-between mt-1">
+              <span className="text-gray-700">
+                Invoice Total (with GST & TCS):
+              </span>
+              <span className="font-semibold text-purple-700">
+                ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
+              </span>
+            </div>
+
+            {calculateInvoiceTotal() > 0 &&
+              (formData?.payment?.installments || []).reduce(
+                (sum, inst) => sum + (inst.installmentAmount || 0),
+                0
+              ) !== calculateInvoiceTotal() && (
+                <span className="text-red-600 text-xs mt-2 block">
+                  ⚠️ Installments don&apos;t match invoice total (₹
+                  {calculateInvoiceTotal().toLocaleString("en-IN")})
+                </span>
+              )}
+          </div>
+        </div>
+
+        {/* Cancellation Details */}
+        <div className="bg-white rounded-xl p-4 mb-4">
+          <span className="text-lg font-semibold text-gray-900 mb-3 block">
+            Cancellation Policy
+          </span>
           <textarea
-            className="w-full border rounded-lg p-3"
-            placeholder="Notes..."
-            value={formData.notes}
-            onChange={(e) => updateField("notes", e.target.value)}
+            className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+            value={formData?.cancellationPolicy?.flights || ""}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                cancellationPolicy: {
+                  ...prev.cancellationPolicy,
+                  flights: e.target.value,
+                },
+              }))
+            }
+            placeholder="Enter cancellation policy details..."
+            rows={8}
           />
         </div>
 
-        {/* BUTTONS */}
-        <div className="flex gap-4">
-          <button
-            onClick={handleOpenPreview}
-            className="bg-purple-600 text-white px-6 py-3 rounded-lg"
-          >
-            {isGeneratingPdf ? "Preparing..." : "Preview & Save"}
-          </button>
+        {/* TCS Claim */}
+        <div className="bg-white rounded-xl p-4 mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-lg font-semibold text-gray-900">
+              TCS Claim
+            </span>
+            <button
+              onClick={addTcsClaim}
+              className="bg-purple-600 rounded-lg px-4 py-2 flex items-center"
+            >
+              <Plus size={16} className="text-white" />
+              <span className="text-white font-medium ml-1">Add</span>
+            </button>
+          </div>
+
+          {formData?.pricing?.tcsClaim &&
+            Array.isArray(formData.pricing.tcsClaim) &&
+            formData.pricing.tcsClaim.map((claim, index) => (
+              <div
+                key={index}
+                className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-gray-900">
+                    TCS Claim {index + 1}
+                  </span>
+                  {formData.pricing.tcsClaim.length > 1 && (
+                    <button
+                      onClick={() => removeTcsClaim(index)}
+                      className="bg-red-100 rounded-full p-1"
+                    >
+                      <Trash2 size={16} className="text-red-600" />
+                    </button>
+                  )}
+                </div>
+
+                <span className="text-sm font-medium text-gray-700 mb-2 block">
+                  PAN Number
+                </span>
+                <input
+                  className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full uppercase"
+                  value={claim.panNumber}
+                  onChange={(e) =>
+                    updateTcsClaim(index, "panNumber", e.target.value)
+                  }
+                  placeholder="PAN Number"
+                />
+
+                <span className="text-sm font-medium text-gray-700 mb-2 block">
+                  Name
+                </span>
+                <input
+                  className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
+                  value={claim.name}
+                  onChange={(e) => updateTcsClaim(index, "name", e.target.value)}
+                  placeholder="Name"
+                />
+
+                <span className="text-sm font-medium text-gray-700 mb-2 block">
+                  Percentage (%)
+                </span>
+                <input
+                  className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                  value={claim.percentage.toString()}
+                  onChange={(e) =>
+                    updateTcsClaim(index, "percentage", parseFloat(e.target.value) || 0)
+                  }
+                  placeholder="Percentage"
+                  type="number"
+                />
+              </div>
+            ))}
         </div>
 
+        {/* Notes */}
+        <div className="bg-white rounded-xl p-4 mb-4">
+          <span className="text-lg font-semibold text-gray-900 mb-3 block">
+            Notes
+          </span>
+          <textarea
+            className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+            value={formData?.notes || ""}
+            onChange={(e) => updateFormData("notes", e.target.value)}
+            placeholder="Additional notes..."
+            rows={4}
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-between mt-6 mb-8">
+          <button
+            onClick={() => setStep("selectQuotation")}
+            className="border border-purple-600 rounded-xl p-4 flex-1 mr-2 items-center justify-center"
+          >
+            <span className="text-purple-600 font-bold">Back</span>
+          </button>
+          <button
+            onClick={handleOpenPreview}
+            className="bg-purple-600 rounded-xl p-4 flex-1 ml-2 items-center justify-center"
+          >
+            <span className="text-white font-bold">Preview & Save</span>
+          </button>
+        </div>
       </div>
 
+      {/* Loading Overlay */}
+      {isGeneratingPdf && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mr-3"></div>
+            <span className="text-gray-900">Preparing Preview...</span>
+          </div>
+        </div>
+      )}
+
       <PdfPreviewModal
+        key={refreshKey}
         visible={showPdfModal}
+        pdfUri={pdfUri}
         pdfHtml={pdfHtml}
-        onClose={() => setShowPdfModal(false)}
-        onShare={handleSubmitInvoice}
+        onClose={handlePreviewClose}
+        onShare={handleShare}
       />
     </div>
   );

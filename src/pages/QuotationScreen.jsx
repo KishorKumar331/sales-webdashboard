@@ -63,8 +63,9 @@ const QuotationScreen = () => {
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
+          mode: "html",
           type: "quotation",
-          renderOnly: true,
+          // renderOnly: true,
           data: dataWithUser,
           templateName: "ip_pdf.hbs",
         }
@@ -131,15 +132,7 @@ const QuotationScreen = () => {
 
       await clearQuotationDraft(formDataToSubmit.TripId);
 
-      Alert.alert("Success", "Quotation created and shared successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            setShowPdfModal(false);
-            router.replace("/(tabs)");
-          },
-        },
-      ]);
+    navigate("/")
     } catch (error) {
       console.error("❌ Error submitting:", error);
       Alert.alert(

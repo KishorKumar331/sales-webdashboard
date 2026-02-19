@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { FormProvider } from "react-hook-form";
 import BasicDetails from "./BasicDetails";
 import CostCalculator from "./CostCalculator";
+import { Loader2 } from "lucide-react";
 
 import { clearQuotationDraft } from "../../storage/quotationDraft";
 import HotelsSection from "./HotelSection";
@@ -20,6 +21,8 @@ const calculateTravelEndDate = (startDate, days) => {
 };
 
 const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpData }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   console.log("Lead Data:", lead);
   console.log("FollowUp Data:", followUpData);
 
@@ -153,9 +156,16 @@ console.log(tripId)
   );
 
   const handleSubmit = methods.handleSubmit(async (data) => {
-    console.log("Form Submit Data:", data);
-    await onSubmit({ ...data, ...userData });
-    await clearQuotationDraft(tripId);
+    try {
+      setIsSubmitting(true);
+      console.log("Form Submit Data:", data);
+      await onSubmit({ ...data, ...userData });
+      await clearQuotationDraft(tripId);
+    } catch (error) {
+      console.error("Submit error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   });
 
   return (
@@ -166,21 +176,36 @@ console.log(tripId)
             <Component />
           </div>
         ))}
-        <button
+      <div className="flex justify-center">
+          <button
           onClick={handleSubmit}
+          disabled={isSubmitting}
           style={{
-            backgroundColor: '#7c3aed',
+            backgroundColor: isSubmitting ? '#9ca3af' : '#7c3aed',
             color: 'white',
             padding: '12px 24px',
             borderRadius: '8px',
             border: 'none',
-            cursor: 'pointer',
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
             fontSize: '16px',
-            fontWeight: '600'
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            opacity: isSubmitting ? 0.8 : 1,
+            transition: 'all 0.2s ease'
           }}
         >
-          Submit
+          {isSubmitting ? (
+            <>
+              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+              <span>Submitting...</span>
+            </>
+          ) : (
+            <span>Submit</span>
+          )}
         </button>
+      </div>
       </div>
     </FormProvider>
   );

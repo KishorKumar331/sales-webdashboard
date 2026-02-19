@@ -92,9 +92,9 @@ const InclusionsExclusions = () => {
           Inclusions & Exclusions
         </div>
       </div>
-
-      {/* ================= INCLUSIONS ================= */}
-      <div style={styles.subsection}>
+<div className="flex gap-4">
+ {/* ================= INCLUSIONS ================= */}
+      <div className="w-[50%]" style={styles.subsection}>
         <div style={styles.subsectionHeader}>
           <CheckCircle size={20} color="#10b981" />
           <div style={{ ...styles.subsectionTitle, color: "#10b981" }}>
@@ -157,8 +157,11 @@ const InclusionsExclusions = () => {
         ))}
       </div>
 
+      {/* Vertical Divider */}
+      <div className="w-px bg-gray-200 self-stretch"></div>
+
       {/* ================= EXCLUSIONS ================= */}
-      <div style={styles.subsection}>
+      <div className="w-[50%]" style={styles.subsection}>
         <div style={styles.subsectionHeader}>
           <XCircle size={20} color="#ef4444" />
           <div style={{ ...styles.subsectionTitle, color: "#ef4444" }}>
@@ -220,6 +223,8 @@ const InclusionsExclusions = () => {
           </div>
         ))}
       </div>
+</div>
+     
     </div>
   );
 };

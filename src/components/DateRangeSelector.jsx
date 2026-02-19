@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 /* ===================== Helpers ===================== */
 
@@ -154,119 +155,108 @@ const DateRangeSelector = ({
   /* ===================== UI ===================== */
 
   return (
-    <div style={{ ...styles.container, ...containerStyle }}>
-      {showLabel && <div style={styles.label}>{label}</div>}
+    <div className="mb-4" style={containerStyle}>
+      {showLabel && <div className="text-base font-medium mb-2 text-gray-700">{label}</div>}
 
       <button
         type="button"
-        style={styles.dateDisplay}
+        className="flex items-center justify-between gap-4 w-full p-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 shadow-sm transition-colors cursor-pointer"
         onClick={() => setShowModal(true)}
       >
-        <div style={styles.dateDisplayItem}>
-          <div style={styles.dateLabel}>Check-in</div>
-          <div style={styles.dateText}>
+        <div className="flex-1">
+          <div className="text-xs text-gray-500 mb-1">Check-in</div>
+          <div className="text-base font-medium text-gray-900">
             {startDate ? formatDisplayDate(startDate) : "Select date"}
           </div>
         </div>
 
-        <div style={styles.dateDisplayItem}>
-          <div style={styles.dateLabel}>Check-out</div>
-          <div style={styles.dateText}>
+        <div className="flex-1">
+          <div className="text-xs text-gray-500 mb-1">Check-out</div>
+          <div className="text-base font-medium text-gray-900">
             {endDate ? formatDisplayDate(endDate) : "Select date"}
           </div>
         </div>
+
+        <Calendar className="h-5 w-5 text-gray-400" />
       </button>
 
       {showModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalTitle}>Select Dates</div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="text-lg font-semibold text-center mb-4">Select Dates</div>
 
-            <div style={styles.monthHeader}>
+            <div className="flex justify-between items-center mb-3">
               <button
                 type="button"
-                style={styles.monthNavButton}
+                className="bg-transparent border-none text-blue-600 hover:text-blue-800 cursor-pointer p-1"
                 onClick={() => navigateMonth(-1)}
               >
-                ‹
+                <ChevronLeft className="h-5 w-5" />
               </button>
 
-              <div style={styles.monthTitle}>{monthLabel}</div>
+              <div className="text-lg font-semibold">{monthLabel}</div>
 
               <button
                 type="button"
-                style={styles.monthNavButton}
+                className="bg-transparent border-none text-blue-600 hover:text-blue-800 cursor-pointer p-1"
                 onClick={() => navigateMonth(1)}
               >
-                ›
+                <ChevronRight className="h-5 w-5" />
               </button>
             </div>
 
-            <div style={styles.weekDaysContainer}>
+            <div className="grid grid-cols-7 gap-1 mb-2">
               {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
-                <div key={d} style={styles.weekDayText}>{d}</div>
+                <div key={d} className="text-center text-xs font-medium text-gray-500">{d}</div>
               ))}
             </div>
 
-            <div style={styles.daysContainer}>
-              <div style={styles.daysGrid}>
+            <div className="overflow-auto max-h-80">
+              <div className="grid grid-cols-7 gap-1">
                 {days.map((date, i) =>
                   !date ? (
-                    <div key={`e-${i}`} style={styles.dayCell} />
+                    <div key={`e-${i}`} className="aspect-square" />
                   ) : (
                     <button
                       key={date.toISOString()}
                       type="button"
                       disabled={isDateDisabled(date)}
                       onClick={() => handleDayClick(date)}
-                      style={{
-                        ...styles.dayCell,
-                        ...(isInRange(date) ? styles.dayInRange : {}),
-                        ...(isSelected(date) ? styles.daySelected : {}),
-                        ...(isDateDisabled(date) ? styles.dayDisabled : {}),
-                      }}
+                      className={`aspect-square flex items-center justify-center p-1  border-none cursor-pointer hover:bg-gray-100 rounded-full transition-colors text-sm ${
+                        isInRange(date) ? 'bg-blue-50' : ''
+                      } ${
+                        isSelected(date) ? 'bg-blue-600 text-white font-semibold' : ''
+                      } ${
+                        isDateDisabled(date) ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
-                      <span
-                        style={{
-                          ...styles.dayText,
-                          ...(isSelected(date)
-                            ? styles.daySelectedText
-                            : {}),
-                          ...(isDateDisabled(date)
-                            ? styles.dayDisabledText
-                            : {}),
-                        }}
-                      >
-                        {date.getDate()}
-                      </span>
+                      {date.getDate()}
                     </button>
                   )
                 )}
               </div>
             </div>
 
-            <div style={styles.modalButtons}>
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
               <button
                 type="button"
-                style={{ ...styles.button, ...styles.cancelButton }}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 onClick={handleCancel}
               >
-                <span style={{ ...styles.buttonText, ...styles.cancelButtonText }}>
-                  Cancel
-                </span>
+                Cancel
               </button>
 
               <button
                 type="button"
                 disabled={!tempStartDate}
-                style={{
-                  ...styles.button,
-                  ...styles.applyButton,
-                  ...(tempStartDate ? {} : styles.buttonDisabled),
-                }}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  tempStartDate
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
                 onClick={handleApply}
               >
-                <span style={styles.buttonText}>Apply</span>
+                Apply
               </button>
             </div>
           </div>
@@ -277,135 +267,3 @@ const DateRangeSelector = ({
 };
 
 export default DateRangeSelector;
-
-/* ===================== Styles ===================== */
-
-const styles = {
-  container: { marginBottom: 16 },
-
-  label: {
-    fontSize: 16,
-    fontWeight: 500,
-    marginBottom: 8,
-    color: "#374151",
-  },
-
-  dateDisplay: {
-    display: "flex",
-    justifyContent: "space-between",
-    border: "1px solid #d1d5db",
-    borderRadius: 12,
-    padding: 12,
-    background: "#fff",
-    width: "100%",
-    cursor: "pointer",
-  },
-
-  dateDisplayItem: { flex: 1 },
-  dateLabel: { fontSize: 12, color: "#6b7280", marginBottom: 4 },
-  dateText: { fontSize: 16, color: "#111827" },
-
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.5)",
-    display: "flex",
-    justifyContent: "center",
-    padding: 20,
-    zIndex: 1000,
-  },
-
-  modalContent: {
-    background: "white",
-    borderRadius: 16,
-    padding: 16,
-    maxHeight: "80%",
-    width: "100%",
-    maxWidth: 420,
-    overflow: "auto",
-  },
-
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 600,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-
-  monthHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  monthNavButton: {
-    fontSize: 20,
-    background: "none",
-    border: "none",
-    color: "#3b82f6",
-    cursor: "pointer",
-  },
-
-  monthTitle: { fontSize: 18, fontWeight: 600 },
-
-  weekDaysContainer: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: 4,
-  },
-
-  weekDayText: {
-    width: "14.28%",
-    textAlign: "center",
-    color: "#6b7280",
-    fontSize: 12,
-    fontWeight: 500,
-  },
-
-  daysContainer: { maxHeight: 300 },
-  daysGrid: { display: "flex", flexWrap: "wrap" },
-
-  dayCell: {
-    width: "14.28%",
-    aspectRatio: "1",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 4,
-    background: "transparent",
-    border: "none",
-  },
-
-  dayText: { fontSize: 14, color: "#111827" },
-  daySelected: { background: "#3b82f6", borderRadius: 999 },
-  daySelectedText: { color: "white", fontWeight: 600 },
-  dayInRange: { background: "#dbeafe", borderRadius: 999 },
-  dayDisabled: { opacity: 0.3 },
-  dayDisabledText: { color: "#9ca3af" },
-
-  modalButtons: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginTop: 16,
-    borderTop: "1px solid #e5e7eb",
-    paddingTop: 12,
-    gap: 8,
-  },
-
-  button: {
-    padding: "10px 16px",
-    borderRadius: 10,
-    minWidth: 80,
-    textAlign: "center",
-    cursor: "pointer",
-    border: "none",
-  },
-
-  cancelButton: { background: "#f3f4f6" },
-  applyButton: { background: "#3b82f6" },
-  buttonDisabled: { opacity: 0.5 },
-
-  buttonText: { color: "white", fontWeight: 500 },
-  cancelButtonText: { color: "#374151" },
-};

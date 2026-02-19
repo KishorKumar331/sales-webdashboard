@@ -415,8 +415,9 @@ const styles = {
 
   switchRow: {
     display: "flex",
-    justifyContent: "space-between",
+    // justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
     padding: "8px 0",
   },
 };
