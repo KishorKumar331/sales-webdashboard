@@ -9,6 +9,7 @@ import { getUserProfile } from "../utils/getUserProfile";
 import { PersonStanding, MapPin, Calendar, Users, DollarSign, Mail, Phone, MessageSquare, Send } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const DestinationList = [
   "Bali",
@@ -39,6 +40,8 @@ export default function NewLeadForm() {
     reset,
     // setValue, // (kept in comments like your native file)
   } = useForm();
+    const {user:salesPersonInfo } = useAuth();
+  
 
   const navigate = useNavigate();
   // State for multi-select destinations
@@ -61,13 +64,12 @@ export default function NewLeadForm() {
       };
 
       // Get sales person info (same logic)
-      const salesPersonInfo = await getUserProfile();
-      console.log(salesPersonInfo);
+  
 
       // Keep EXACT payload logic
       const leadData = {
-        CompanyId: salesPersonInfo.companyId,
-        CompanyName: salesPersonInfo.companyName,
+        CompanyId: salesPersonInfo.CompanyId,
+        company: salesPersonInfo.CompanyName,
 
         "Client-Name": data["Client-Name"],
         "Client-Email": data["Client-Email"],
@@ -86,7 +88,7 @@ export default function NewLeadForm() {
         "Client-Child": parseInt(data["Client-Child"]) || 0,
         "Client-Infant": parseInt(data["Client-Infant"]) || 0,
         "Client-Days": parseInt(data["Client-Days"]) || 0,
-        "Client-Budget": parseInt(data["Client-Budget"]) || 0,
+        "budget": parseInt(data["Client-Budget"]) || 0,
         "Client-TravelDate": data["Client-TravelDate"]?.date
           ? data["Client-TravelDate"]?.date
           : data["Client-TravelDate"],
@@ -106,7 +108,7 @@ export default function NewLeadForm() {
 
         SalesStatus: "LeadCreate",
         LatestStatus: "LeadCreate",
-        SalesPersonUid: salesPersonInfo.FullName,
+        SalesPersonUid: salesPersonInfo.Email,
         SalesPersonName: salesPersonInfo.FullName,
         SalesPersonEmail: salesPersonInfo.Email,
 
@@ -124,16 +126,16 @@ export default function NewLeadForm() {
 
       console.log("Lead Data:", JSON.stringify(leadData, null, 2));
 
-      const response = await fetch(
-        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(leadData),
-        }
-      );
+      // const response = await fetch(
+      //   "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote",
+      //   {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify(leadData),
+      //   }
+      // );
 
-      const responseData = await response.json();
+      // const responseData = await response.json();
 
       if (response.ok) {
         toast.success("Success: Lead created successfully!");
