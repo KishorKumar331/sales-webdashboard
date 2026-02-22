@@ -20,7 +20,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthStore } from '../../store/authStore';
 import './Auth.css';
 
 const OnBoardingPage = () => {
@@ -33,7 +33,9 @@ const OnBoardingPage = () => {
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  
+  // Get Zustand store actions
+  const { setUserEmail, setUserData, setIsAuthenticated } = useAuthStore();
   
   // Enhanced carousel data with better content
   const carouselData = [
@@ -158,7 +160,15 @@ const OnBoardingPage = () => {
           showToast('No account found. Please create an account first.', 'error');
         } else if (hasData) {
           const userObj = Array.isArray(result) ? result[0] : result;
-          login(userObj);
+          
+          // Set full user data in Zustand store directly
+          const email = userObj?.Email || userObj?.email;
+          if (email) {
+            setUserEmail(email);
+          }
+          setUserData(userObj); // Store complete user data from login API
+          setIsAuthenticated(true);
+          
           showToast('Login successful!');
           setShowLoginModal(false);
           

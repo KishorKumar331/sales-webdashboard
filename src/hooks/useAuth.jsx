@@ -1,25 +1,44 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuthStore } from "../store/authStore";
 
 const SESSION_API =
   "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/session";
 
 export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
-
+  
+  // Get state from zustand store
+  const { 
+    userEmail, 
+    userData, 
+    isAuthenticated,
+    setUserEmail,
+    setIsAuthenticated,
+    clearAuth 
+  } = useAuthStore();
+  
+  // Derive user from store data
+  const user = userData;
+console.log(user)
   /**
    * Check session using secure cookie
    */
   const checkSession = useCallback(async (email) => {
-  
     setIsLoading(true);
+    
+    // Get email from zustand store if not provided
+    const storedEmail = email || userEmail;
+    
+    if (!storedEmail) {
+      setIsLoading(false);
+      setIsAuthenticated(false);
+      return;
+    }
 
     try {
-      const url = email ? `${SESSION_API}?email=${encodeURIComponent(email)}` : SESSION_API;
+      const url = storedEmail ? `${SESSION_API}?email=${encodeURIComponent(storedEmail)}` : SESSION_API;
       const response = await fetch(url, {
         method: "GET",
-        // credentials: "include", // 🔥 IMPORTANT for cookies
       });
 
       if (!response.ok) {
@@ -30,19 +49,16 @@ export const useAuth = () => {
 
       if (result?.valid || result === true) {
         setIsAuthenticated(true);
-        setUser({ email: result.email || email });
       } else {
         setIsAuthenticated(false);
-        setUser(null);
       }
     } catch (error) {
       console.error("Session check error:", error);
       setIsAuthenticated(false);
-      setUser(null);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userEmail, setIsAuthenticated]);
 
   /**
    * Run on app mount
@@ -56,14 +72,20 @@ export const useAuth = () => {
    */
   const login = async (userData) => {
     let email = null;
+    let fullUserData = null;
     
     if (userData) {
-      // Extract email from userData
+      // Extract email and full user data
       const userObj = Array.isArray(userData) ? userData[0] : userData;
       email = userObj?.Email || userObj?.email;
+      fullUserData = userObj;
       
-      // Set user from provided data first (for immediate UI update)
-      setUser(userObj);
+      // Store email and full user data in zustand store
+      if (email) {
+        setUserEmail(email);
+      }
+      
+      // Store complete user data from login API
       setIsAuthenticated(true);
     }
     
@@ -80,14 +102,14 @@ export const useAuth = () => {
         "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/logout",
         {
           method: "POST",
-          credentials: "include",
+          // credentials: "include",
         }
       );
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
-      setIsAuthenticated(false);
-      setUser(null);
+      // Clear zustand store on logout
+      clearAuth();
     }
   };
 

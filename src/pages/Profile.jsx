@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '../hooks/useUserProfile';
+import { useAuth } from '../hooks/useAuth';
 import { 
   User, 
   CreditCard, 
@@ -39,6 +40,7 @@ import {
 const Profile = () => {
   const navigate = useNavigate();
   const { user, loading } = useUserProfile();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -57,9 +59,8 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userProfile');
-      navigate('/login');
+      await logout();
+      navigate('/auth');
     } catch (error) {
       console.error('Error during logout:', error);
     }

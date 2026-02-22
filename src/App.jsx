@@ -18,11 +18,11 @@ import Teams from './pages/Teams';
 import InvoicePage from './pages/InvoicePage';
 import { useAuth } from './hooks/useAuth';
 
-// Protected Route Component
+// Protected Route Component - redirects to /auth if not authenticated
 const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) => {
   // Don't redirect while loading - wait for auth check to complete
   if (isLoading || isAuthenticated === null) {
-    return null; // Or return a loading component
+    return null;
   }
   
   if (!isAuthenticated) {
@@ -31,9 +31,23 @@ const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) 
   return <Outlet />;
 };
 
-const App = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+// Public Route Component - redirects to / if already authenticated
+const PublicRoute = ({ isAuthenticated, isLoading, redirectPath = '/' }) => {
+  // Don't redirect while loading
+  if (isLoading || isAuthenticated === null) {
+    return null;
+  }
+  
+  // If user is authenticated, redirect to home
+  if (isAuthenticated) {
+    return <Navigate to={redirectPath} replace />;
+  }
+  return <Outlet />;
+};
 
+const App = () => {
+  const { isAuthenticated, isLoading,user } = useAuth();
+console.log(user,isAuthenticated)
   const renderWithLayout = (Component, title) => (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 overflow-hidden">
@@ -61,18 +75,27 @@ const App = () => {
     <Router>
       <div className="min-h-screen bg-gray-100">
         <Routes>
-          {/* Public Routes */}
-          <Route path="/auth" element={<OnBoardingPage />} />
-          <Route path="/signup" element={<SignUp />} />
-
-          {/* Protected Routes */}
+          {/* Public Routes - redirect to / if already authenticated */}
           <Route
-            // element={
-            //   <ProtectedRoute
-            //     isAuthenticated={isAuthenticated}
-            //     isLoading={isLoading}
-            //   />
-            // }
+            element={
+              <PublicRoute
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
+          >
+            <Route path="/auth" element={<OnBoardingPage />} />
+            <Route path="/signup" element={<SignUp />} />
+          </Route>
+
+          {/* Protected Routes - redirect to /auth if not authenticated */}
+          <Route
+            element={
+              <ProtectedRoute
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+              />
+            }
           >
           <Route
             path="/"
@@ -131,15 +154,15 @@ const App = () => {
         </Route>
 
         {/* Fallback */}
-        <Route
-          path="*"
-          element={
-            <Navigate to={isAuthenticated ? "/" : "/auth"} replace />
-          }
-        />
-      </Routes>
+          <Route
+            path="*"
+            element={
+              <Navigate to={isAuthenticated ? "/" : "/auth"} replace />
+            }
+          />
+        </Routes>
 
-      <ToastContainer position="top-right" autoClose={3000} />
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </Router>
   );
