@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
@@ -14,7 +14,7 @@ const QuotationScreen = () => {
   // Get lead data from navigation state
   const leadData = location.state?.leadData || null;
   const followUpData = location.state?.followUpData || null;
-  
+
   console.log('Lead Data:', leadData);
   console.log('Follow-up Data:', followUpData);
 
@@ -116,12 +116,14 @@ const QuotationScreen = () => {
       console.log("✅ Quotation created:", res.data);
 
       const updateData = {
-        TripId: res?.data?.TripId,
-        Quotations: Array.isArray(leadData?.Quotations)
-          ? [...leadData.Quotations, res.data.QuoteId]
+        TripId: leadData?.TripId,
+        CreatedAt: leadData?.CreatedAt,
+        company: leadData?.company,
+        quotations: Array.isArray(leadData?.quotations)
+          ? [...leadData.quotations, res.data.QuoteId]
           : [res.data.QuoteId],
-        SalesStatus: "Cold",
-        LatestQuotationId: res.data.QuoteId,
+        latestStatus: "Cold",
+        latestQuotationId: res.data.QuoteId,
         LeadId: leadData?.LeadId || followUpData?.LeadId,
       };
 
@@ -132,7 +134,7 @@ const QuotationScreen = () => {
 
       await clearQuotationDraft(formDataToSubmit.TripId);
 
-    navigate("/")
+      navigate("/")
     } catch (error) {
       console.error("❌ Error submitting:", error);
       Alert.alert(
@@ -150,7 +152,7 @@ const QuotationScreen = () => {
         lead={leadData}
         followUpData={followUpData}
       />
-        <PdfPreviewModal
+      <PdfPreviewModal
         key={refreshKey}
         visible={showPdfModal}
         pdfUri={pdfUri}

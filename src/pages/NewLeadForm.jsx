@@ -68,31 +68,30 @@ export default function NewLeadForm() {
 
       // Keep EXACT payload logic
       const leadData = {
-        CompanyId: salesPersonInfo.CompanyId,
         company: salesPersonInfo.CompanyName,
 
-        "Client-Name": data["Client-Name"],
-        "Client-Email": data["Client-Email"],
-        "Client-Contact": data["Client-Contact"],
-        "Client-DepartureCity": data["Client-DepartureCity"],
-        "Client-Destination": isMultiDestination
+        "clientName": data["Client-Name"],
+        "clientEmail": data["Client-Email"],
+        "clientContact": data["Client-Contact"],
+        "departureCity": data["Client-DepartureCity"],
+        "destination": isMultiDestination
           ? selectedDestinations.length > 0
             ? selectedDestinations[0]
             : data["Client-Destination"]
           : data["Client-Destination"],
-        "Client-Destinations": isMultiDestination
+        "otherDestinations": isMultiDestination
           ? selectedDestinations
           : [data["Client-Destination"]],
-        IsMultiDestination: isMultiDestination,
-        "Client-Pax": parseInt(data["Client-Pax"]) || 0,
-        "Client-Child": parseInt(data["Client-Child"]) || 0,
-        "Client-Infant": parseInt(data["Client-Infant"]) || 0,
-        "Client-Days": parseInt(data["Client-Days"]) || 0,
+        isMultiDestination: isMultiDestination,
+        "pax": parseInt(data["Client-Pax"]) || 0,
+        "child": parseInt(data["Client-Child"]) || 0,
+        "infant": parseInt(data["Client-Infant"]) || 0,
+        "days": parseInt(data["Client-Days"]) || 0,
         "budget": parseInt(data["Client-Budget"]) || 0,
-        "Client-TravelDate": data["Client-TravelDate"]?.date
+        "travelDate": data["Client-TravelDate"]?.date
           ? data["Client-TravelDate"]?.date
           : data["Client-TravelDate"],
-        "Client-TravelEndDate": data["Client-TravelDate"]?.date
+        "travelEndDate": data["Client-TravelDate"]?.date
           ? calculateEndDate(
               data["Client-TravelDate"].date,
               parseInt(data["Client-Days"]) || 0
@@ -102,19 +101,14 @@ export default function NewLeadForm() {
               parseInt(data["Client-Days"]) || 0
             ),
 
-        LeadSource: data.LeadSource || "WebApp",
-        LeadPotential: data.LeadPotential || "Medium",
-        LeadRating: data.LeadRating || "Warm",
+        leadSource: data.LeadSource || "WebApp",
+      leadRating: data.LeadRating || "Warm",
+        latestStatus: "LeadCreate",
+        salesPersonUid: salesPersonInfo.Email,
 
-        SalesStatus: "LeadCreate",
-        LatestStatus: "LeadCreate",
-        SalesPersonUid: salesPersonInfo.Email,
-        SalesPersonName: salesPersonInfo.FullName,
-        SalesPersonEmail: salesPersonInfo.Email,
+        quotations: [],
 
-        Quotations: [],
-
-        Comments: [
+        comments: [
           {
             By: salesPersonInfo.salesPersonEmail,
             Role: "Sales",
@@ -126,16 +120,16 @@ export default function NewLeadForm() {
 
       console.log("Lead Data:", JSON.stringify(leadData, null, 2));
 
-      // const response = await fetch(
-      //   "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote",
-      //   {
-      //     method: "POST",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify(leadData),
-      //   }
-      // );
+      const response = await fetch(
+        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(leadData),
+        }
+      );
 
-      // const responseData = await response.json();
+      const responseData = await response.json();
 
       if (response.ok) {
         toast.success("Success: Lead created successfully!");

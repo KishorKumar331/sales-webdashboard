@@ -3,9 +3,10 @@ import { AlertCircle, FileText } from "lucide-react";
 import QuotationCards from "../components/cards/QuotationCards";
 import FilterBar from "../components/FilterBar";
 import { useUserProfile } from "../hooks/useUserProfile";
+import { useAuth } from "../hooks/useAuth";
 
 export default function CreateQuote() {
-  const { user, loading: userLoading } = useUserProfile();
+    const {user } = useAuth();
 
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,7 @@ export default function CreateQuote() {
 
       try {
         setError(null);
-        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?SalesPersonUid=${user.FullName}&SalesStatus=LeadCreate`;
+        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.Email}&latestStatus=LeadCreate&case=maxcase`;
 
         const res = await fetch(url, { signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -117,7 +118,7 @@ export default function CreateQuote() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Filter Bar - Sticky */}
-      {!loading && !userLoading && !error && leads.length > 0 && (
+      {!loading  && !error && leads.length > 0 && (
         <FilterBar 
           data={leads} 
           onFilterChange={setFilters}

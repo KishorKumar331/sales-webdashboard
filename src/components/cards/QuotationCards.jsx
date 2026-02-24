@@ -14,22 +14,22 @@ import {
 const QuotationCards = ({ leadData }) => {
   const navigate = useNavigate();
   const tripId = leadData?.TripId || 'Lead';
-  const clientName = leadData?.['Client-Name'] || 'Unknown Client';
-  const contact = leadData?.['Client-Contact'] || 'No contact';
-  const destination = leadData?.['Client-Destination'] || 'Not specified';
-  const departure = leadData?.['Client-DepartureCity'] || 'Not specified';
-  const adults = leadData?.['Client-Pax'] || 0;
-  const children = leadData?.['Client-Child'] || 0;
-  const days = leadData?.['Client-Days'] || 0;
+  const clientName = leadData?.clientName || 'Unknown Client';
+  const contact = leadData?.clientContact || 'No contact';
+  const destination = leadData?.destination || 'Not specified';
+  const departure = leadData?.departureCity || 'Not specified';
+  const adults = leadData?.pax || 0;
+  const children = leadData?.child || 0;
+  const days = leadData?.days || 0;
   const travelDate = (() => {
-    const raw = leadData?.['Client-TravelDate'];
+    const raw = leadData?.travelDate;
     if (!raw) return 'Not set';
     const d = new Date(raw);
     if (Number.isNaN(d.getTime())) return 'Not set';
     return d.toLocaleDateString();
   })();
-  const leadSource = leadData?.LeadSource || 'Unknown';
-  const budgetValue = Number(leadData?.['Client-Budget'] || 0);
+  const leadSource = leadData?.leadSource || 'Unknown';
+  const budgetValue = Number(leadData?.budget || 0);
   const budgetText = budgetValue > 0 && Number.isFinite(budgetValue)
     ? `₹${budgetValue.toLocaleString()}`
     : 'Not specified';
@@ -40,24 +40,28 @@ const QuotationCards = ({ leadData }) => {
         leadData?.TripId ||
         leadData?.id ||
         leadData?._id ||
-        `${leadData?.['Client-Contact'] || 'LEAD'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        `${leadData?.clientContact || 'LEAD'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       const formattedLeadData = {
-        TripId: uniqueId,
+                CreatedAt:leadData?.CreatedAt,
+
+        TripId: leadData?.TripId,
+        company: leadData?.company,
+        sk: leadData?.sk,
         LeadId: leadData?.LeadId,
         Quotations: leadData?.Quotations,
         ClientLeadDetails: {
-          FullName: leadData?.['Client-Name'] || '',
-          Contact: leadData?.['Client-Contact'] || '',
-          Email: leadData?.['Client-Email'] || '',
-          TravelDate: leadData?.['Client-TravelDate'] || '',
-          Pax: leadData?.['Client-Pax'] || '1',
-          Child: leadData?.['Client-Child'] || '0',
-          Infant: '0',
-          Budget: leadData?.['Client-Budget'] || '',
-          DepartureCity: leadData?.['Client-DepartureCity'] || '',
-          DestinationName: leadData?.['Client-Destination'] || '',
-          Days: leadData?.['Client-Days'] || 2,
+          FullName: leadData?.clientName || '',
+          Contact: leadData?.clientContact || '',
+          Email: leadData?.clientEmail || '',
+          TravelDate: leadData?.travelDate || '',
+          Pax: leadData?.pax || '1',
+          Child: leadData?.child || '0',
+          Infant: leadData?.infant || '0',
+          Budget: leadData?.budget || '',
+          DepartureCity: leadData?.departureCity || '',
+          DestinationName: leadData?.destination || '',
+          Days: leadData?.days || 2,
         },
         AssignDate: new Date().toISOString().split('T')[0],
       };

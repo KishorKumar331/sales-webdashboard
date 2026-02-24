@@ -17,7 +17,7 @@ const FilterBar = ({ data, onFilterChange }) => {
 
   // Extract unique destinations for autocomplete
   const destinations = useMemo(() => {
-    const uniqueDestinations = [...new Set(data?.map(item => item['Client-Destination'])?.filter(Boolean) || [])];
+    const uniqueDestinations = [...new Set(data?.map(item => item.destination)?.filter(Boolean) || [])];
     return uniqueDestinations.sort();
   }, [data]);
 
