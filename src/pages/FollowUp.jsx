@@ -5,9 +5,10 @@ import { useState, useMemo } from "react";
 import FollowUpCards from "../components/cards/FollowUpCards";
 import FilterBar from "../components/FilterBar";
 import { useUserProfile } from "../hooks/useUserProfile";
+import { useAuth } from "../hooks/useAuth";
 
 export default function FollowUp() {
-  const { user, loading } = useUserProfile();
+    const {user,loading } = useAuth();
   const [filters, setFilters] = useState({});
 
   const {
@@ -19,13 +20,7 @@ export default function FollowUp() {
     queryKey: ["followup", user?.FullName],
     queryFn: async () => {
       const res = await axios.get(
-        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`,
-        {
-          params: {
-            SalesPersonUid: user.FullName,
-            SalesStatus: "Cold",
-          },
-        }
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.Email}&latestStatus=Cold&case=maxcase`,
       );
       return res.data;
     },
@@ -43,10 +38,10 @@ export default function FollowUp() {
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
         const searchableText = [
-          lead['Client-Name'] || '',
+          lead.clientName || '',
           lead.TripId?.toString() || '',
-          lead['Client-Email'] || '',
-          lead['Client-Contact'] || ''
+          lead.clientEmail || '',
+          lead.clientContact || ''
         ].join(' ').toLowerCase();
         
         if (!searchableText.includes(searchTerm)) {
@@ -55,12 +50,12 @@ export default function FollowUp() {
       }
 
       // Destination filter
-      if (filters.destination && lead['Client-Destination'] !== filters.destination) {
+      if (filters.destination && lead.destination !== filters.destination) {
         return false;
       }
 
       // Budget range filter
-      const budget = parseFloat(lead['Client-Budget']) || 0;
+      const budget = parseFloat(lead.budget) || 0;
       if (filters.minBudget && budget < parseFloat(filters.minBudget)) {
         return false;
       }
@@ -70,7 +65,7 @@ export default function FollowUp() {
 
       // Travel date range filter
       if (filters.minTravelDate || filters.maxTravelDate) {
-        const travelDate = new Date(lead['Client-TravelDate']);
+        const travelDate = new Date(lead.travelDate);
         if (!isNaN(travelDate.getTime())) {
           if (filters.minTravelDate && travelDate < new Date(filters.minTravelDate)) {
             return false;
@@ -82,7 +77,7 @@ export default function FollowUp() {
       }
 
       // Pax range filter
-      const pax = parseInt(lead['Client-Adults']) || 0;
+      const pax = parseInt(lead.pax) || 0;
       if (filters.minPax && pax < parseInt(filters.minPax)) {
         return false;
       }

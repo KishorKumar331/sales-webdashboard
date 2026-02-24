@@ -27,7 +27,7 @@ const FollowUpCards = ({ data }) => {
 
   const [currentPage, setCurrentPage] = useState(0);
   const [notes, setNotes] = useState(
-    data?.Comments?.[0]?.Message || "No notes yet."
+    data?.comments?.[0]?.Message || "No notes yet."
   );
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -39,7 +39,7 @@ const FollowUpCards = ({ data }) => {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
   const { status, isLoading, updateStatus } = useStatusChange(
-    data?.Status || "New",
+    data?.latestStatus || "New",
     data
   );
 
@@ -95,18 +95,18 @@ const navigate=useNavigate()
           </div>
 
           <h3 className="font-semibold text-lg text-gray-900 mb-2">
-            {data["Client-Name"]}
+            {data.clientName}
           </h3>
 
           <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
             <span className="flex items-center gap-1">
               <Phone size={14} className="text-green-600" />
-              <a href={`tel:${data["Client-Contact"]}`} className="hover:text-green-600 transition-colors">
-                {data["Client-Contact"] || "No contact"}
+              <a href={`tel:${data.clientContact}`} className="hover:text-green-600 transition-colors">
+                {data.clientContact || "No contact"}
               </a>
             </span>
             <span className="truncate max-w-xs">
-              {data["Client-Email"]}
+              {data.clientEmail}
             </span>
           </div>
         </div>
@@ -126,7 +126,7 @@ const navigate=useNavigate()
               <MapPin size={16} className="text-gray-400" />
               <div>
                 <p className="text-xs text-gray-500 font-medium">From</p>
-                <p className="font-semibold text-gray-900">{data["Client-DepartureCity"] || "N/A"}</p>
+                <p className="font-semibold text-gray-900">{data.departureCity || "N/A"}</p>
               </div>
             </div>
 
@@ -144,14 +144,14 @@ const navigate=useNavigate()
               <MapPin size={16} className="text-gray-400" />
               <div>
                 <p className="text-xs text-gray-500 font-medium">To</p>
-                <p className="font-semibold text-gray-900">{data["Client-Destination"] || "N/A"}</p>
+                <p className="font-semibold text-gray-900">{data.destination || "N/A"}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 text-xs px-3 py-2 rounded-full flex items-center gap-1.5 font-medium border border-blue-200 w-full sm:w-auto justify-center">
             <Calendar size={12} />
-            {new Date(data["Client-TravelDate"]).toLocaleDateString('en-US', { 
+            {new Date(data.travelDate).toLocaleDateString('en-US', { 
               month: 'short', 
               day: 'numeric',
               year: 'numeric'
@@ -169,7 +169,7 @@ const navigate=useNavigate()
           <div>
             <p className="text-xs text-gray-600 font-medium">Budget</p>
             <p className="text-xl font-bold text-purple-600">
-              ₹{data["Client-Budget"]?.toLocaleString('en-IN') || "N/A"}
+              ₹{data.budget?.toLocaleString('en-IN') || "N/A"}
             </p>
           </div>
         </div>
@@ -179,15 +179,15 @@ const navigate=useNavigate()
           <div className="flex gap-3 sm:gap-4 text-sm flex-1 sm:flex-none">
             <div className="text-center flex-1">
               <p className="text-xs text-gray-500 font-medium">Adults</p>
-              <p className="font-semibold text-gray-900">{data["Client-Adults"] || 0}</p>
+              <p className="font-semibold text-gray-900">{data.pax || 0}</p>
             </div>
             <div className="text-center flex-1">
               <p className="text-xs text-gray-500 font-medium">Children</p>
-              <p className="font-semibold text-gray-900">{data["Client-Children"] || 0}</p>
+              <p className="font-semibold text-gray-900">{data.child || 0}</p>
             </div>
             <div className="text-center flex-1">
               <p className="text-xs text-gray-500 font-medium">Infants</p>
-              <p className="font-semibold text-gray-900">{data["Client-Infants"] || 0}</p>
+              <p className="font-semibold text-gray-900">{data.infant || 0}</p>
             </div>
           </div>
         </div>

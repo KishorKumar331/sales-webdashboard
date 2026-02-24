@@ -116,11 +116,11 @@ const QuotationScreen = () => {
       console.log("✅ Quotation created:", res.data);
 
       const updateData = {
-        TripId: leadData?.TripId,
-        CreatedAt: leadData?.CreatedAt,
-        company: leadData?.company,
-        quotations: Array.isArray(leadData?.quotations)
-          ? [...leadData.quotations, res.data.QuoteId]
+        TripId: leadData?.TripId||followUpData?.TripId,
+        CreatedAt: leadData?.CreatedAt||followUpData?.CreatedAt,
+        company: leadData?.company||followUpData?.company,
+        quotations: Array.isArray(leadData?.quotations) || Array.isArray(followUpData?.quotations)
+          ? [...(leadData?.quotations || followUpData?.quotations || []), res.data.QuoteId]
           : [res.data.QuoteId],
         latestStatus: "Cold",
         latestQuotationId: res.data.QuoteId,
