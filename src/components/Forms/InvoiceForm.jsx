@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
-import { getUserProfile } from "../../utils/getUserProfile";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import CalendarDatePicker from "../DatePicker";
 import PdfPreviewModal from "../modals/PdfPreviewModal";
 import CustomPicker from "../CustomPicker";
 import { toast } from "react-toastify";
+import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function InvoiceForm({
   tripId,
   onSubmit,
   initialData = null,
-  onCancel,
+  tripData = null,
+  isEdit = false,
   defaultCustomerName = "",
   defaultEmail = "",
   defaultContact = "",
@@ -24,19 +26,18 @@ export default function InvoiceForm({
   console.log(initialData);
   const [step, setStep] = useState("fillForm"); // 'selectQuotation' or 'fillForm'
   const [quotations, setQuotations] = useState([]);
+  const [TripDetail, setTripDetail] = useState([]);
+  console.log(TripDetail);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
-  console.log(selectedQuotation)
   const [quotationsLoading, setQuotationsLoading] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [formDataToSubmit, setFormDataToSubmit] = useState(null);
-
+  const { user: userProfile } = useAuth();
   const [formData, setFormData] = useState({
     invoiceId: "",
     invoiceNumber: "",
@@ -92,25 +93,12 @@ export default function InvoiceForm({
         : [{ panNumber: "", name: "", percentage: 0 }],
     },
     payment: {
-      dueDate: "",
-      totalPaid: 0,
-      balanceAmount: 0,
       installments: [
         {
-          installmentId: "",
           sequence: 1,
           installmentAmount: 0,
           installmentDate: "",
           status: "Pending",
-          paymentMethod: "",
-          paymentVerification: null,
-          receivedDate: "",
-          amountReceived: 0,
-          utrNumber: "",
-          amountReceivedBy: "",
-          amountConfirmedBy: "",
-          lastUpdatedDate: "",
-          lastUpdatedBy: "",
         },
       ],
     },
@@ -160,21 +148,12 @@ export default function InvoiceForm({
     ],
     notes: "",
     meta: {
-      createdBy: "",
-      lastUpdatedBy: "",
-      source: "mobile",
-      companyProfileId: "",
-      companyName: "",
+      lastUpdatedBy: userProfile?.Email,
+      source: "website",
+      companyProfileId: userProfile?.CompanyId,
+      companyName: userProfile?.CompanyName,
       bankDetails: {},
     },
-    auditTrail: [
-      {
-        action: "CREATE",
-        performedBy: "",
-        timestamp: "",
-        details: "",
-      },
-    ],
   });
 
   // Load quotations when TripId is available
@@ -182,6 +161,7 @@ export default function InvoiceForm({
     if (tripId) {
       setFormData((prev) => ({ ...prev, tripId }));
       fetchQuotations();
+      fetchTrips();
     }
   }, [tripId]);
 
@@ -190,7 +170,125 @@ export default function InvoiceForm({
     if (initialData) {
       setFormData((prev) => ({
         ...prev,
-        ...initialData,
+        invoiceId: initialData?.invoiceId || prev.invoiceId,
+        invoiceNumber: initialData?.invoiceNumber || prev.invoiceNumber,
+        tripId: initialData?.tripId || prev.tripId,
+        finalPackageQuotationId:
+          initialData?.finalPackageQuotationId || prev.finalPackageQuotationId,
+        leadId: initialData?.LeadId || prev.leadId,
+        createdAt: initialData?.createdAt || prev.createdAt,
+        updatedAt: initialData?.updatedAt || prev.updatedAt,
+        invoiceDate: initialData?.invoiceDate || prev.invoiceDate,
+        invoiceStatus: initialData?.invoiceStatus || prev.invoiceStatus,
+        customer: {
+          ...prev.customer,
+          name: initialData?.customer?.name || prev.customer.name,
+          email: initialData?.customer?.email || prev.customer.email,
+          contact: initialData?.customer?.contact || prev.customer.contact,
+          address: {
+            ...prev.customer.address,
+            street:
+              initialData?.customer?.address?.street ||
+              prev.customer.address.street,
+            city:
+              initialData?.customer?.address?.city ||
+              prev.customer.address.city,
+            state:
+              initialData?.customer?.address?.state ||
+              prev.customer.address.state,
+            zipCode:
+              initialData?.customer?.address?.zipCode ||
+              prev.customer.address.zipCode,
+            country:
+              initialData?.customer?.address?.country ||
+              prev.customer.address.country,
+          },
+        },
+        travelerSummary: {
+          ...prev.travelerSummary,
+          adults:
+            initialData?.travelerSummary?.adults || prev.travelerSummary.adults,
+          children:
+            initialData?.travelerSummary?.children ||
+            prev.travelerSummary.children,
+          infants:
+            initialData?.travelerSummary?.infants ||
+            prev.travelerSummary.infants,
+          totalTravelers:
+            initialData?.travelerSummary?.totalTravelers ||
+            prev.travelerSummary.totalTravelers,
+        },
+        destination: initialData?.destination || prev.destination,
+        travelDate: initialData?.travelDate || prev.travelDate,
+        startDate: initialData?.startDate || prev.startDate,
+        endDate: initialData?.endDate || prev.endDate,
+        pricing: {
+          ...prev.pricing,
+          baseAmount:
+            initialData?.pricing?.baseAmount || prev.pricing.baseAmount,
+          discountAmount:
+            initialData?.pricing?.discountAmount || prev.pricing.discountAmount,
+          taxableAmount:
+            initialData?.pricing?.taxableAmount || prev.pricing.taxableAmount,
+          gstPercentage:
+            initialData?.pricing?.gstPercentage || prev.pricing.gstPercentage,
+          gstAmount: initialData?.pricing?.gstAmount || prev.pricing.gstAmount,
+          tcsAmount: initialData?.pricing?.tcsAmount || prev.pricing.tcsAmount,
+          tcsPercentage:
+            initialData?.pricing?.tcsPercentage || prev.pricing.tcsPercentage,
+          totalAmount:
+            initialData?.pricing?.totalAmount || prev.pricing.totalAmount,
+          amountInWords:
+            initialData?.pricing?.amountInWords || prev.pricing.amountInWords,
+          tcsClaim: initialData?.pricing?.tcsClaim || prev.pricing.tcsClaim,
+          otherCharges:
+            initialData?.pricing?.otherCharges || prev.pricing.otherCharges,
+        },
+        payment: {
+          ...prev.payment,
+          dueDate: initialData?.payment?.dueDate || prev.payment.dueDate,
+          totalPaid: initialData?.payment?.totalPaid || prev.payment.totalPaid,
+          balanceAmount:
+            initialData?.payment?.balanceAmount || prev.payment.balanceAmount,
+          installments:
+            initialData?.payment?.installments || prev.payment.installments,
+        },
+        cancellationPolicy: {
+          ...prev.cancellationPolicy,
+          flights:
+            initialData?.cancellationPolicy?.flights ||
+            prev.cancellationPolicy.flights,
+          hotel:
+            initialData?.cancellationPolicy?.hotel ||
+            prev.cancellationPolicy.hotel,
+          land:
+            initialData?.cancellationPolicy?.land ||
+            prev.cancellationPolicy.land,
+          nonRefundableComponents:
+            initialData?.cancellationPolicy?.nonRefundableComponents ||
+            prev.cancellationPolicy.nonRefundableComponents,
+          jrCancellationChargePerPax:
+            initialData?.cancellationPolicy?.jrCancellationChargePerPax ||
+            prev.cancellationPolicy.jrCancellationChargePerPax,
+          rescheduleChargePerPax:
+            initialData?.cancellationPolicy?.rescheduleChargePerPax ||
+            prev.cancellationPolicy.rescheduleChargePerPax,
+          latePaymentFee:
+            initialData?.cancellationPolicy?.latePaymentFee ||
+            prev.cancellationPolicy.latePaymentFee,
+        },
+        deliverables: initialData?.deliverables || prev.deliverables,
+        notes: initialData?.notes || prev.notes,
+        meta: {
+          ...prev.meta,
+          createdBy: initialData?.meta?.createdBy || prev.meta.createdBy,
+          companyProfileId:
+            initialData?.meta?.companyProfileId || prev.meta.companyProfileId,
+          companyName: initialData?.meta?.companyName || prev.meta.companyName,
+          bankDetails: initialData?.meta?.bankDetails || prev.meta.bankDetails,
+          source: initialData?.meta?.source || prev.meta.source,
+        },
+        auditTrail: initialData?.auditTrail || prev.auditTrail,
       }));
     }
   }, [initialData]);
@@ -228,29 +326,6 @@ export default function InvoiceForm({
   ]);
 
   // Load user profile
-  useEffect(() => {
-    const loadUserProfile = async () => {
-      try {
-        const profile = await getUserProfile();
-        if (profile) {
-          setUserProfile(profile);
-          setFormData((prev) => ({
-            ...prev,
-            meta: {
-              ...prev.meta,
-              createdBy: profile.email || profile.name || "",
-              companyProfileId: profile.companyId || "",
-              companyName: profile.companyName || "",
-              bankDetails: profile.bankDetails || {},
-            },
-          }));
-        }
-      } catch (error) {
-        console.error("Error loading user profile:", error);
-      }
-    };
-    loadUserProfile();
-  }, []);
 
   const fetchQuotations = async () => {
     try {
@@ -268,6 +343,22 @@ export default function InvoiceForm({
       toast.error("Error", "Failed to load quotations");
     } finally {
       setQuotationsLoading(false);
+    }
+  };
+
+  const fetchTrips = async () => {
+    try {
+      const response = await fetch(
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?company=${userProfile?.CompanyName}&tripId=${tripId}`
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch quotations");
+
+      const data = await response.json();
+      setTripDetail(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching quotations:", error);
+      toast.error("Error", "Failed to load quotations");
     }
   };
 
@@ -306,31 +397,24 @@ export default function InvoiceForm({
   };
 
   const addInstallment = () => {
+    console.log("Adding new installment...");
     setFormData((prev) => {
       const currentInstallments = prev?.payment?.installments || [];
+      const newInstallments = [
+        ...currentInstallments,
+        {
+          sequence: currentInstallments.length + 1,
+          installmentAmount: 0,
+          installmentDate: "",
+          status: "Pending",
+        },
+      ];
+      console.log("New installments array:", newInstallments);
       return {
         ...prev,
         payment: {
           ...prev.payment,
-          installments: [
-            ...currentInstallments,
-            {
-              installmentId: "",
-              sequence: currentInstallments.length + 1,
-              installmentAmount: 0,
-              installmentDate: "",
-              status: "Pending",
-              paymentMethod: "",
-              paymentVerification: null,
-              receivedDate: "",
-              amountReceived: 0,
-              utrNumber: "",
-              amountReceivedBy: "",
-              amountConfirmedBy: "",
-              lastUpdatedDate: "",
-              lastUpdatedBy: "",
-            },
-          ],
+          installments: newInstallments,
         },
       };
     });
@@ -353,15 +437,20 @@ export default function InvoiceForm({
   };
 
   const updateInstallment = (index, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      payment: {
-        ...prev.payment,
-        installments: (prev?.payment?.installments || []).map((inst, i) =>
-          i === index ? { ...inst, [field]: value } : inst
-        ),
-      },
-    }));
+    console.log(`Updating installment ${index}, ${field}:`, value);
+    setFormData((prev) => {
+      const updatedInstallments = (prev?.payment?.installments || []).map(
+        (inst, i) => (i === index ? { ...inst, [field]: value } : inst)
+      );
+      console.log("Updated installments:", updatedInstallments);
+      return {
+        ...prev,
+        payment: {
+          ...prev.payment,
+          installments: updatedInstallments,
+        },
+      };
+    });
   };
 
   const addTcsClaim = () => {
@@ -449,8 +538,6 @@ export default function InvoiceForm({
     setIsGeneratingPdf(true);
 
     try {
-    
-
       const dataWithUser = {
         ...formData,
         user: userProfile,
@@ -466,10 +553,10 @@ export default function InvoiceForm({
           // renderOnly: true,
           data: dataWithUser,
           templateName: "invoiceip.hbs",
-mode: "html",
-        fileName: `$test.pdf`,
-        tripId: formData?.tripId,
-        quoteId:formData?.finalPackageQuotationId ,
+          mode: "html",
+          fileName: `$test.pdf`,
+          tripId: formData?.tripId,
+          quoteId: formData?.finalPackageQuotationId,
         }
       );
 
@@ -525,8 +612,11 @@ mode: "html",
       (Number(quotation.Costs?.FlightCost) || 0) +
       (Number(quotation.Costs?.VisaCost) || 0) +
       (Number(quotation.Costs?.LandPackageCost) || 0);
-console.log(totalCost)
-    const adults = (quotation.NoOfPax || 0) - (quotation.Child || 0) - (parseInt(quotation.Infant) || 0);
+    console.log(totalCost);
+    const adults =
+      (quotation.NoOfPax || 0) -
+      (quotation.Child || 0) -
+      (parseInt(quotation.Infant) || 0);
 
     setSelectedQuotation(quotation);
     setFormData((prev) => ({
@@ -566,7 +656,7 @@ console.log(totalCost)
     }));
     setStep("fillForm");
   };
-
+  const navigate = useNavigate();
   const validateForm = () => {
     if (!formData.finalPackageQuotationId) {
       toast.error("Please select a quotation");
@@ -595,9 +685,9 @@ console.log(totalCost)
       const auditEntry = {
         action: "Created",
         timestamp: today,
-        performedBy: userProfile?.email || "system",
+        performedBy: userProfile?.Email || "system",
         changes: {
-          status: "Pending",
+          status: "FullFilled",
           invoiceNumber,
         },
       };
@@ -620,16 +710,17 @@ console.log(totalCost)
         notes: formData.notes,
         invoiceDate: today.split("T")[0],
         meta: {
-          createdBy: userProfile?.email || "",
-          companyProfileId: userProfile?.companyId || "",
-          companyName: userProfile?.companyName || "",
+          createdBy: userProfile?.Email || "",
+          companyProfileId: userProfile?.CompanyId || "",
+          companyName: userProfile?.CompanyName || "",
           bankDetails: userProfile?.bankDetails || {},
-          source: "mobile",
+          source: "Website",
         },
         auditTrail: [auditEntry],
       };
 
       console.log("📋 Invoice Payload:", cleanedData);
+      console.log("💰 Installments Data:", cleanedData.payment.installments);
 
       const response = await fetch(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice",
@@ -648,18 +739,24 @@ console.log(totalCost)
       let data = null;
       try {
         data = await response.json();
-        console.log(data);
+        console.log(tripData, "dojojopij");
         await axios.put(
           `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`,
           {
             invoiceId: data?.invoiceId,
-            TripId: initialData?.TripId,
-            LeadId: initialData?.leadId,
+            TripId: TripDetail[0]?.TripId,
+            LeadId: TripDetail[0]?.LeadId,
+            company: TripDetail[0]?.company,
+            CreatedAt: TripDetail[0]?.CreatedAt,
             LatestQuotationId: cleanedData?.finalPackageQuotationId,
+            InvoiceCreated: true,
           }
         );
+        setTimeout(() => {
+          navigate("/followup");
+        }, 1000);
       } catch {
-        // if no json body
+        toast.error("Error", "Failed to update lead");
       }
       await query.invalidateQueries({ queryKey: ["followup"] });
 
@@ -736,7 +833,9 @@ console.log(totalCost)
             Customer Details
           </span>
 
-          <span className="text-sm font-medium text-gray-700 mb-2 block">Name *</span>
+          <span className="text-sm font-medium text-gray-700 mb-2 block">
+            Name *
+          </span>
           <input
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
             value={formData?.customer?.name || ""}
@@ -746,7 +845,9 @@ console.log(totalCost)
             placeholder="Customer name"
           />
 
-          <span className="text-sm font-medium text-gray-700 mb-2 block">Email</span>
+          <span className="text-sm font-medium text-gray-700 mb-2 block">
+            Email
+          </span>
           <input
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
             value={formData?.customer?.email || ""}
@@ -775,7 +876,9 @@ console.log(totalCost)
             Address
           </span>
 
-          <span className="text-sm font-medium text-gray-700 mb-2 block">Street</span>
+          <span className="text-sm font-medium text-gray-700 mb-2 block">
+            Street
+          </span>
           <input
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
             value={formData?.customer?.address?.street || ""}
@@ -845,7 +948,9 @@ console.log(totalCost)
 
           {/* Package Amount (Read-only from quotation) */}
           <div className="bg-gray-50 rounded-lg p-3 mb-3">
-            <span className="text-sm text-gray-600 mb-1 block">Package Amount</span>
+            <span className="text-sm text-gray-600 mb-1 block">
+              Package Amount
+            </span>
             <span className="text-2xl font-bold text-gray-900 block">
               ₹
               {parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString(
@@ -1126,7 +1231,9 @@ console.log(totalCost)
                 <input
                   className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
                   value={claim.name}
-                  onChange={(e) => updateTcsClaim(index, "name", e.target.value)}
+                  onChange={(e) =>
+                    updateTcsClaim(index, "name", e.target.value)
+                  }
                   placeholder="Name"
                 />
 
@@ -1137,7 +1244,11 @@ console.log(totalCost)
                   className="border border-gray-300 rounded-lg p-3 bg-white w-full"
                   value={claim.percentage.toString()}
                   onChange={(e) =>
-                    updateTcsClaim(index, "percentage", parseFloat(e.target.value) || 0)
+                    updateTcsClaim(
+                      index,
+                      "percentage",
+                      parseFloat(e.target.value) || 0
+                    )
                   }
                   placeholder="Percentage"
                   type="number"

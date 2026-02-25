@@ -6,7 +6,8 @@ const InvoicePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const { initialData, tripId, isEdit } = location.state || {};
+  const { editData, tripId, isEdit } = location.state || {};
+  console.log("InvoicePage received editData:", editData);
 
   const handleSubmit = () => {
     // Handle successful submission
@@ -21,7 +22,7 @@ const InvoicePage = () => {
     <div className="w-full">
       <InvoiceForm
         tripId={tripId}
-        initialData={initialData}
+        initialData={editData}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isEdit={isEdit}

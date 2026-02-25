@@ -23,8 +23,6 @@ import { useNavigate } from "react-router-dom";
 import useStatusChange from "../../hooks/useStatusChange";
 
 const FollowUpCards = ({ data }) => {
-  const router = useNavigate();
-
   const [currentPage, setCurrentPage] = useState(0);
   const [notes, setNotes] = useState(
     data?.comments?.[0]?.Message || "No notes yet."
@@ -43,13 +41,10 @@ const FollowUpCards = ({ data }) => {
     data
   );
 
-  // Remove fixed width calculation to allow full width
-  const cardWidth = '100%';
-
   const pages = useMemo(() => ["page1", "page2"], []);
-const navigate=useNavigate()
+  const navigate = useNavigate();
   const handleCreateNewInvoice = () => {
-  navigate("/invoices/create", {
+    navigate("/invoices/create", {
       state: {
         initialData: data,
         tripId: data.TripId,
@@ -61,7 +56,7 @@ const navigate=useNavigate()
   const handleSaveNotes = async () => {
     setIsSavingNotes(true);
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setHasUnsavedChanges(false);
     setIsSavingNotes(false);
     setIsEditingNotes(false);
@@ -101,13 +96,14 @@ const navigate=useNavigate()
           <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
             <span className="flex items-center gap-1">
               <Phone size={14} className="text-green-600" />
-              <a href={`tel:${data.clientContact}`} className="hover:text-green-600 transition-colors">
+              <a
+                href={`tel:${data.clientContact}`}
+                className="hover:text-green-600 transition-colors"
+              >
                 {data.clientContact || "No contact"}
               </a>
             </span>
-            <span className="truncate max-w-xs">
-              {data.clientEmail}
-            </span>
+            <span className="truncate max-w-xs">{data.clientEmail}</span>
           </div>
         </div>
 
@@ -115,85 +111,93 @@ const navigate=useNavigate()
           onClick={() => setCurrentPage(1)}
           className="bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 p-2.5 rounded-full transition-all duration-200 shadow-sm hover:shadow-md group"
         >
-          <ChevronRight size={18} className="text-purple-600 group-hover:translate-x-0.5 transition-transform" />
+          <ChevronRight
+            size={18}
+            className="text-purple-600 group-hover:translate-x-0.5 transition-transform"
+          />
         </button>
       </div>
-<div className="flex justify-between">
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-xl  border border-gray-200">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <MapPin size={16} className="text-gray-400" />
-              <div>
-                <p className="text-xs text-gray-500 font-medium">From</p>
-                <p className="font-semibold text-gray-900">{data.departureCity || "N/A"}</p>
+      <div className="flex justify-between">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-xl  border border-gray-200">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2">
+                <MapPin size={16} className="text-gray-400" />
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">From</p>
+                  <p className="font-semibold text-gray-900">
+                    {data.departureCity || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1 text-gray-400 sm:hidden">
+                <ChevronRight size={16} />
+              </div>
+
+              <div className="hidden sm:flex items-center gap-1 text-gray-400">
+                <div className="w-8 h-0.5 bg-gray-300"></div>
+                <ChevronRight size={16} />
+                <div className="w-8 h-0.5 bg-gray-300"></div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <MapPin size={16} className="text-gray-400" />
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">To</p>
+                  <p className="font-semibold text-gray-900">
+                    {data.destination || "N/A"}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 text-gray-400 sm:hidden">
-              <ChevronRight size={16} />
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 text-xs px-3 py-2 rounded-full flex items-center gap-1.5 font-medium border border-blue-200 w-full sm:w-auto justify-center">
+              <Calendar size={12} />
+              {new Date(data.travelDate).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
             </div>
-            
-            <div className="hidden sm:flex items-center gap-1 text-gray-400">
-              <div className="w-8 h-0.5 bg-gray-300"></div>
-              <ChevronRight size={16} />
-              <div className="w-8 h-0.5 bg-gray-300"></div>
-            </div>
+          </div>
+        </div>
 
-            <div className="flex items-center gap-2">
-              <MapPin size={16} className="text-gray-400" />
-              <div>
-                <p className="text-xs text-gray-500 font-medium">To</p>
-                <p className="font-semibold text-gray-900">{data.destination || "N/A"}</p>
+        {/* Budget & Passengers */}
+        <div className="flex h-[4.5rem] flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200">
+          <div className="flex items-center gap-3">
+            <div className="bg-white p-2 rounded-lg shadow-sm">
+              <DollarSign size={18} className="text-purple-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-600 font-medium">Budget</p>
+              <p className="text-xl font-bold text-purple-600">
+                ₹{data.budget?.toLocaleString("en-IN") || "N/A"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Users size={16} className="text-gray-400" />
+            <div className="flex gap-3 sm:gap-4 text-sm flex-1 sm:flex-none">
+              <div className="text-center flex-1">
+                <p className="text-xs text-gray-500 font-medium">Adults</p>
+                <p className="font-semibold text-gray-900">{data.pax || 0}</p>
+              </div>
+              <div className="text-center flex-1">
+                <p className="text-xs text-gray-500 font-medium">Children</p>
+                <p className="font-semibold text-gray-900">{data.child || 0}</p>
+              </div>
+              <div className="text-center flex-1">
+                <p className="text-xs text-gray-500 font-medium">Infants</p>
+                <p className="font-semibold text-gray-900">
+                  {data.infant || 0}
+                </p>
               </div>
             </div>
           </div>
-
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 text-xs px-3 py-2 rounded-full flex items-center gap-1.5 font-medium border border-blue-200 w-full sm:w-auto justify-center">
-            <Calendar size={12} />
-            {new Date(data.travelDate).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric',
-              year: 'numeric'
-            })}
-          </div>
         </div>
       </div>
-
-      {/* Budget & Passengers */}
-      <div className="flex h-[4.5rem] flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200">
-        <div className="flex items-center gap-3">
-          <div className="bg-white p-2 rounded-lg shadow-sm">
-            <DollarSign size={18} className="text-purple-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-600 font-medium">Budget</p>
-            <p className="text-xl font-bold text-purple-600">
-              ₹{data.budget?.toLocaleString('en-IN') || "N/A"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Users size={16} className="text-gray-400" />
-          <div className="flex gap-3 sm:gap-4 text-sm flex-1 sm:flex-none">
-            <div className="text-center flex-1">
-              <p className="text-xs text-gray-500 font-medium">Adults</p>
-              <p className="font-semibold text-gray-900">{data.pax || 0}</p>
-            </div>
-            <div className="text-center flex-1">
-              <p className="text-xs text-gray-500 font-medium">Children</p>
-              <p className="font-semibold text-gray-900">{data.child || 0}</p>
-            </div>
-            <div className="text-center flex-1">
-              <p className="text-xs text-gray-500 font-medium">Infants</p>
-              <p className="font-semibold text-gray-900">{data.infant || 0}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-</div>
       {/* Route */}
     </div>
   );
@@ -206,13 +210,15 @@ const navigate=useNavigate()
           <span className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-sm">
             Trip #{data.TripId}
           </span>
-          <div className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 ${
-            status === "Converted" 
-              ? "bg-green-100 text-green-700 border border-green-200" 
-              : status === "Dumped" 
-              ? "bg-red-100 text-red-700 border border-red-200"
-              : "bg-gray-100 text-gray-700 border border-gray-200"
-          }`}>
+          <div
+            className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 ${
+              status === "Converted"
+                ? "bg-green-100 text-green-700 border border-green-200"
+                : status === "Dumped"
+                ? "bg-red-100 text-red-700 border border-red-200"
+                : "bg-gray-100 text-gray-700 border border-gray-200"
+            }`}
+          >
             {isLoading ? (
               <Loader2 size={12} className="animate-spin" />
             ) : status === "Converted" ? (
@@ -232,7 +238,11 @@ const navigate=useNavigate()
             className="w-full sm:w-auto bg-white border-2 border-gray-200 hover:border-purple-300 px-4 py-2 rounded-xl flex items-center justify-center sm:justify-start gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
           >
             <span className="text-sm font-medium">Change Status</span>
-            {isStatusDropdownOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {isStatusDropdownOpen ? (
+              <ChevronUp size={14} />
+            ) : (
+              <ChevronDown size={14} />
+            )}
           </button>
 
           {isStatusDropdownOpen && (
@@ -246,15 +256,23 @@ const navigate=useNavigate()
                     setIsStatusDropdownOpen(false);
                   }}
                   className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100 last:border-b-0 ${
-                    status === s ? "bg-gray-50 cursor-not-allowed opacity-50" : ""
+                    status === s
+                      ? "bg-gray-50 cursor-not-allowed opacity-50"
+                      : ""
                   }`}
                 >
-                  {s === "Converted" && <CheckCircle size={16} className="text-green-600" />}
-                  {s === "Dumped" && <XCircle size={16} className="text-red-600" />}
+                  {s === "Converted" && (
+                    <CheckCircle size={16} className="text-green-600" />
+                  )}
+                  {s === "Dumped" && (
+                    <XCircle size={16} className="text-red-600" />
+                  )}
                   <div>
                     <p className="font-medium text-sm">{s}</p>
                     <p className="text-xs text-gray-500">
-                      {s === "Converted" ? "Mark as successful conversion" : "Mark as lost opportunity"}
+                      {s === "Converted"
+                        ? "Mark as successful conversion"
+                        : "Mark as lost opportunity"}
                     </p>
                   </div>
                 </button>
@@ -296,7 +314,9 @@ const navigate=useNavigate()
             <div className="text-left">
               <span className="font-medium text-gray-900">Notes</span>
               {hasUnsavedChanges && (
-                <span className="ml-2 text-xs text-amber-600 font-medium">Unsaved changes</span>
+                <span className="ml-2 text-xs text-amber-600 font-medium">
+                  Unsaved changes
+                </span>
               )}
             </div>
           </div>
@@ -304,7 +324,11 @@ const navigate=useNavigate()
             {hasUnsavedChanges && (
               <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
             )}
-            {isEditingNotes ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {isEditingNotes ? (
+              <ChevronUp size={16} />
+            ) : (
+              <ChevronDown size={16} />
+            )}
           </div>
         </button>
 
@@ -362,12 +386,8 @@ const navigate=useNavigate()
         className="flex transition-all duration-500 ease-in-out w-full"
         style={{ transform: `translateX(-${currentPage * 100}%)` }}
       >
-        <div className="w-full flex-shrink-0 p-6">
-          {renderPage1()}
-        </div>
-        <div className="w-full flex-shrink-0 p-6">
-          {renderPage2()}
-        </div>
+        <div className="w-full flex-shrink-0 p-6">{renderPage1()}</div>
+        <div className="w-full flex-shrink-0 p-6">{renderPage2()}</div>
       </div>
 
       {/* Enhanced Navigation Dots */}
@@ -395,7 +415,9 @@ const navigate=useNavigate()
           <ChevronRight size={18} className="rotate-180 text-gray-600" />
         </button>
         <button
-          onClick={() => setCurrentPage(Math.min(pages.length - 1, currentPage + 1))}
+          onClick={() =>
+            setCurrentPage(Math.min(pages.length - 1, currentPage + 1))
+          }
           disabled={currentPage === pages.length - 1}
           className="bg-white/90 backdrop-blur-sm shadow-lg rounded-full p-2 pointer-events-auto transition-all duration-200 hover:bg-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
         >

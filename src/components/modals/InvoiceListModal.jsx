@@ -47,23 +47,21 @@ export default function InvoiceListModal({
     }
   };
 
-  const handleEditInvoice = (invoice) => {
+  const handleEditInvoice = ({invoice,data}) => {
+    console.log("Invoice data being passed to edit:", data);
     onClose();
     navigate("/invoices/create", {
       state: {
-        initialData: invoice,
+        editData: invoice,
         tripId: invoice.tripId,
         isEdit: true,
+        tripData:data
+
       },
     });
   };
 
-  const handleViewInvoice = (invoice) => {
-    onClose();
-    navigate(`/invoices/${invoice.invoiceId}`, {
-      state: { invoice },
-    });
-  };
+ 
 
   const handleShareInvoice = (invoice) => {
     const html = generateInvoiceHtml(invoice);
@@ -149,7 +147,8 @@ export default function InvoiceListModal({
 
         <div className="p-6 overflow-y-auto max-h-[75vh]">
           {/* Create Button */}
-          <button
+         { error && 
+         (  <button
             onClick={() => {
               onClose();
               onCreateNew();
@@ -157,8 +156,9 @@ export default function InvoiceListModal({
             className="bg-green-500 text-white px-4 py-2 rounded mb-4"
           >
             + Create New Invoice
-          </button>
-
+          </button>)
+       
+}
           {loading && <p>Loading invoices...</p>}
 
           {error && (
@@ -186,9 +186,7 @@ export default function InvoiceListModal({
                 <h3 className="text-purple-600 font-bold">
                   {invoice.invoiceNumber}
                 </h3>
-                <span className="text-sm bg-gray-100 px-2 py-1 rounded">
-                  {invoice.invoiceStatus}
-                </span>
+          
               </div>
 
               <p className="font-semibold mt-2">
@@ -200,7 +198,7 @@ export default function InvoiceListModal({
 
               <div className="flex gap-3 mt-3">
                 <button
-                  onClick={() => handleEditInvoice(invoice)}
+                  onClick={() => handleEditInvoice({invoice,data})}
                   className="bg-blue-100 px-3 py-1 rounded"
                 >
                   Edit
@@ -213,12 +211,6 @@ export default function InvoiceListModal({
                   Preview / Print
                 </button>
 
-                <button
-                  onClick={() => handleViewInvoice(invoice)}
-                  className="bg-gray-100 px-3 py-1 rounded"
-                >
-                  View
-                </button>
               </div>
             </div>
           ))}
