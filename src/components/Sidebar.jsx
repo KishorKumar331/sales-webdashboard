@@ -1,7 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import { Home, FilePlus, Clock, CheckCircle, Search, User, Users, TrendingUp, Sparkles, Zap } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 const Sidebar = () => {
+  const {user} = useAuth();
   const navItems = [
     { to: "/", icon: <Home className="w-5 h-5" />, label: "Create Quote", badge: null },
     // { to: "/create-quote", icon: <FilePlus className="w-5 h-5" />, label: "Create Quote", badge: "New" },
@@ -139,7 +141,7 @@ const Sidebar = () => {
                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white/20 animate-pulse"></div>
               </div>
               <div className="flex-1">
-                <p className="text-white text-sm font-semibold">Admin</p>
+                <p className="text-white text-sm font-semibold">{user?.FullName}</p>
                 <div className="flex items-center gap-2">
                   <p className="text-white/60 text-xs">Pro</p>
                   <span className="inline-flex items-center rounded-full bg-gradient-to-r from-green-400 to-emerald-400 px-2 py-0.5 text-xs font-bold text-white">

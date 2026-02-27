@@ -1,7 +1,10 @@
 import { useState, useCallback } from 'react';
 import axios from "axios";
+import { toast } from "react-toastify";
+import { useAuth } from "../hooks/useAuth";
 
 const useStatusChange = (initialStatus, quotationData) => {
+  const {user}=useAuth();
   const [status, setStatus] = useState(initialStatus);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -30,19 +33,53 @@ const useStatusChange = (initialStatus, quotationData) => {
 
   const updateStatus = useCallback(
     async (newStatus) => {
-      const isConfirmed = window.confirm(`Are you sure you want to change status to ${newStatus}?`);
-      
-      if (!isConfirmed) return;
+      const isConfirmed = toast(
+        ({ closeToast }) => (
+          <div>
+            <p>Are you sure you want to change status to {newStatus}?</p>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => {
+                  closeToast();
+                  performStatusUpdate(newStatus);
+                }}
+                className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+              >
+                Yes
+              </button>
+              <button
+                onClick={closeToast}
+                className="bg-gray-500 text-white px-3 py-1 rounded text-sm"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          position: "top-center",
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+        }
+      );
+    },
+    [sendHandoverEmail, quotationData]
+  );
 
+  const performStatusUpdate = useCallback(
+    async (newStatus) => {
       try {
         setIsLoading(true);
         const res = await axios.put(
           "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote",
           {
+            company: user?.CompanyName,
+            CreatedAt:quotationData?.CreatedAt,
             TripId: quotationData?.TripId,
             LeadId: quotationData?.LeadId,
-            LatestStatus: newStatus,
-            SalesStatus: newStatus,
+            latestStatus: newStatus,
+            // SalesStatus: newStatus,
           }
         );
 
@@ -52,16 +89,16 @@ const useStatusChange = (initialStatus, quotationData) => {
           try {
             console.log('handover runs');
             await sendHandoverEmail(quotationData);
-            window.alert("Success: Status Converted & handover email sent ✅");
+            toast.success("Success: Status Converted & handover email sent ✅");
           } catch (emailError) {
-            window.alert("Status Updated: Converted ho gaya, but handover email fail ho gaya.");
+            toast.error("Status Updated: Converted ho gaya, but handover email fail ho gaya.");
           }
         } else {
-          window.alert(`Success: Status updated to ${newStatus}`);
+          toast.success(`Success: Status updated to ${newStatus}`);
         }
       } catch (error) {
         console.error("Status update error:", error);
-        window.alert("Error: Failed to update status. Please try again.");
+        toast.error("Error: Failed to update status. Please try again.");
       } finally {
         setIsLoading(false);
       }

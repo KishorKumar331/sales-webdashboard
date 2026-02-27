@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   X,
   User,
@@ -7,7 +7,11 @@ import {
   Receipt,
   CheckCircle,
   XCircle,
+  FileText,
 } from "lucide-react";
+import PdfPreviewModal from "./PdfPreviewModal";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 /* ------------------ REUSABLE UI ------------------ */
 
@@ -35,8 +39,37 @@ const DetailRow = ({ label, value, isLast }) => (
 );
 
 /* ------------------ MODAL ------------------ */
+const API_URL =
+  "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html";
 
 export default function QuoteDetailsModal({ visible, onClose, quote }) {
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfHtml, setPdfHtml] = useState(null);
+  const [selectedQuotation, setSelectedQuotation] = useState(null);
+
+ const handleInvoicePreview = async (quotation) => {
+    try {
+      const response = await axios.post(API_URL, {
+          type: "quotation",
+        mode: "html",
+        tripId: quotation.TripId,
+        quoteId: quotation.QuoteId,
+        templateName: "ip_pdf.hbs",
+      });
+
+      if (!response.data) {
+        throw new Error("HTML not returned");
+      }
+
+      setPdfHtml(response.data);
+      setShowPdfModal(true);
+    } catch (err) {
+      console.error("Preview error:", err);
+      toast.error("Failed to load preview");
+    }
+  };
+
+
   if (!visible) return null;
 
   if (!quote) {
@@ -100,11 +133,11 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
             title="Contact Information"
             icon={<User size={18} className="text-purple-600" />}
           >
-            <DetailRow label="Customer Name" value={quote["Client-Name"]} />
-            <DetailRow label="Email" value={quote["Client-Email"]} />
+            <DetailRow label="Customer Name" value={quote.clientName || quote["Client-Name"]} />
+            <DetailRow label="Email" value={quote.clientEmail || quote["Client-Email"]} />
             <DetailRow
               label="Phone"
-              value={quote["Client-Contact"]}
+              value={quote.clientContact || quote["Client-Contact"]}
               isLast
             />
           </DetailCard>
@@ -116,23 +149,23 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
           >
             <DetailRow
               label="Destination"
-              value={quote.DestinationName}
+              value={quote.destination || quote.DestinationName}
             />
             <DetailRow
               label="Travel Dates"
               value={`${formatDate(
-                quote.TravelDate
-              )} - ${formatDate(quote.TravelEndDate)}`}
+                quote.travelDate || quote.TravelDate
+              )} - ${formatDate(quote.travelEndDate || quote.TravelEndDate)}`}
             />
             <DetailRow
               label="Travelers"
-              value={`${quote.NoOfPax} Adults ${
-                quote.Child > 0 ? `, ${quote.Child} Children` : ""
+              value={`${quote.pax || quote.NoOfPax} Adults ${
+                (quote.child || quote.Child) > 0 ? `, ${quote.child || quote.Child} Children` : ""
               }`}
             />
             <DetailRow
               label="Duration"
-              value={`${quote.Days} Days / ${quote.Nights} Nights`}
+              value={`${quote.days || quote.Days} Days / ${quote.nights || quote.Nights} Nights`}
               isLast
             />
             <div className="bg-blue-50 p-3 rounded-lg mt-3 text-center font-medium text-blue-800">
@@ -175,7 +208,7 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
               )}
               <DetailRow
                 label="Total Amount"
-                value={formatCurrency(quote.Costs.TotalCost)}
+                value={formatCurrency(quote.Costs?.TotalCost || quote.totalAmount)}
                 isLast
               />
             </DetailCard>
@@ -191,13 +224,24 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
             Close
           </button>
           <button
-            onClick={() => window.print()}
+            onClick={() => handleInvoicePreview(quote)}
             className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-medium"
           >
             Share Quote
           </button>
         </div>
       </div>
+        <PdfPreviewModal
+        visible={showPdfModal}
+        pdfHtml={pdfHtml}
+        clientName={
+           "Quotation"
+        }
+        onClose={() => {
+          setShowPdfModal(false);
+          setSelectedQuotation(null);
+        }}
+      />
     </div>
   );
 }

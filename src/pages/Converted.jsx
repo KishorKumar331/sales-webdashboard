@@ -1,13 +1,12 @@
 import { useRef, useState, useCallback, useMemo, useEffect } from "react";
-import { AlertCircle, FileText, RefreshCw } from "lucide-react";
+import { AlertCircle, FileText, RefreshCw, Filter } from "lucide-react";
 import ConvertedCards from "../components/cards/ConvertedCard";
 import FilterBar from "../components/FilterBar";
-import {useUserProfile} from "../hooks/useUserProfile";
+import {useAuth} from "../hooks/useAuth";
 
 export default function Converted() {
   const scrollRef = useRef(null);
-  const { user, loading: userLoading } = useUserProfile();
-
+const {user} = useAuth();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,7 +29,7 @@ export default function Converted() {
       try {
         setError(null);
 
-        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?SalesPersonUid=${user.FullName}&SalesStatus=Converted`;
+        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.Email}&latestStatus=Converted&case=maxcase`
 
         const response = await fetch(url, {
           signal,
@@ -86,10 +85,10 @@ export default function Converted() {
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
         const searchableText = [
-          lead['Client-Name'] || '',
+          lead.clientName || lead['Client-Name'] || '',
           lead.TripId?.toString() || '',
-          lead['Client-Email'] || '',
-          lead['Client-Contact'] || ''
+          lead.clientEmail || lead['Client-Email'] || '',
+          lead.clientContact || lead['Client-Contact'] || ''
         ].join(' ').toLowerCase();
         
         if (!searchableText.includes(searchTerm)) {
@@ -98,12 +97,12 @@ export default function Converted() {
       }
 
       // Destination filter
-      if (filters.destination && lead['Client-Destination'] !== filters.destination) {
+      if (filters.destination && lead.destination !== filters.destination) {
         return false;
       }
 
       // Budget range filter
-      const budget = parseFloat(lead['Client-Budget']) || 0;
+      const budget = parseFloat(lead.budget) || 0;
       if (filters.minBudget && budget < parseFloat(filters.minBudget)) {
         return false;
       }
@@ -113,7 +112,7 @@ export default function Converted() {
 
       // Travel date range filter
       if (filters.minTravelDate || filters.maxTravelDate) {
-        const travelDate = new Date(lead['Client-TravelDate']);
+        const travelDate = new Date(lead.travelDate);
         if (!isNaN(travelDate.getTime())) {
           if (filters.minTravelDate && travelDate < new Date(filters.minTravelDate)) {
             return false;
@@ -125,7 +124,7 @@ export default function Converted() {
       }
 
       // Pax range filter
-      const pax = parseInt(lead['Client-Pax']) || 0;
+      const pax = parseInt(lead.pax) || 0;
       if (filters.minPax && pax < parseInt(filters.minPax)) {
         return false;
       }
@@ -152,7 +151,7 @@ export default function Converted() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Filter Bar - Sticky */}
-      {!loading && !userLoading && !error && leads.length > 0 && (
+      {!loading && !error && leads.length > 0 && (
         <FilterBar 
           data={leads} 
           onFilterChange={setFilters}
@@ -160,7 +159,7 @@ export default function Converted() {
       )}
    
       {/* LOADING */}
-      {loading || userLoading ? (
+      {loading ? (
         <div className="flex flex-col items-center justify-center h-[70vh]">
           <div className="animate-spin h-10 w-10 border-b-2 border-purple-600 rounded-full" />
           <p className="mt-4 text-gray-500">Loading leads...</p>
