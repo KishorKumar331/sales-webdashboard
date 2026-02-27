@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
+import { PersonalInfo } from "./(profile)/PersonalInfo";
 import { 
   User, 
   CreditCard, 
@@ -66,17 +67,6 @@ const Profile = () => {
     }
   };
 
-  const [profileData, setProfileData] = useState({
-    name: user?.name || user?.username || 'Admin User',
-    email: user?.email || 'admin@Quick Quotes.com',
-    phone: user?.phone || '+1 234 567 8900',
-    location: user?.location || 'New York, USA',
-    bio: user?.bio || 'Travel enthusiast and sales professional',
-    company: user?.company || 'Quick Quotes Pro',
-    website: user?.website || 'www.Quick Quotes.com',
-    joinDate: user?.joinDate || '2024-01-15'
-  });
-
   const tabs = [
     { id: 'personal', label: 'Personal Info', icon: User },
     { id: 'payment', label: 'Payment', icon: CreditCard },
@@ -140,92 +130,6 @@ const Profile = () => {
     setNotifications(notifications.filter(notif => notif.id !== id));
   };
 
-  // Personal Info Tab
-  const renderPersonalInfo = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Personal Information</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-            <input
-              type="text"
-              value={profileData.name}
-              onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input
-              type="email"
-              value={profileData.email}
-              onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-            <input
-              type="tel"
-              value={profileData.phone}
-              onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-            <input
-              type="text"
-              value={profileData.location}
-              onChange={(e) => setProfileData({...profileData, location: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
-            <input
-              type="text"
-              value={profileData.company}
-              onChange={(e) => setProfileData({...profileData, company: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
-            <input
-              type="url"
-              value={profileData.website}
-              onChange={(e) => setProfileData({...profileData, website: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-        </div>
-        
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-          <textarea
-            value={profileData.bio}
-            onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-          />
-        </div>
-        
-        <div className="mt-6 flex justify-end">
-          <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   // Payment Tab
   const renderPayment = () => (
@@ -763,7 +667,7 @@ const Profile = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'personal': return renderPersonalInfo();
+      case 'personal': return <PersonalInfo />;
       case 'payment': return renderPayment();
       case 'marketplace': return renderMarketplace();
       case 'documents': return renderDocuments();
@@ -771,7 +675,7 @@ const Profile = () => {
       case 'notifications': return renderNotifications();
       case 'settings': return renderSettings();
       case 'help': return renderHelp();
-      default: return renderPersonalInfo();
+      default: return null;
     }
   };
 
