@@ -132,7 +132,7 @@ const OnBoardingPage = () => {
     setIsLoading(true);
     
     try {
-      let apiUrl = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/Auth?';
+      let apiUrl = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
       
       if (isValidEmail(loginInput)) {
         apiUrl += `Email=${encodeURIComponent(loginInput)}`;

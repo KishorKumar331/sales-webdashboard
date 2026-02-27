@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "../store/authStore";
 
 const SESSION_API =
-  "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/session";
+  "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/session";
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
