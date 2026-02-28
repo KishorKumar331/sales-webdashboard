@@ -9,6 +9,7 @@ const useStatusChange = (initialStatus, quotationData) => {
   const [isLoading, setIsLoading] = useState(false);
   
   const sendHandoverEmail = useCallback(async (quotation) => {
+    console.log(quotation)
     if (!quotation) {
       return;
     }
@@ -18,7 +19,7 @@ const useStatusChange = (initialStatus, quotationData) => {
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/handovermail-manager",
         {
           TripId: quotation?.TripId,
-          QuoteId: quotation?.LatestQuotationId,
+          QuoteId: quotation?.latestQuotationId,
         }
       );
       return response.data;

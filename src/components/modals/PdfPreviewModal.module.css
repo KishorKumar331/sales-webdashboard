@@ -1,0 +1,154 @@
+.container {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal {
+  background-color: rgb(249 250 251);
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgb(229 231 235);
+}
+
+.headerButton {
+  padding: 0.5rem;
+  background-color: rgb(243 244 246);
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.headerButton:hover {
+  background-color: rgb(229 231 235);
+}
+
+.headerButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.headerTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(17 24 39);
+}
+
+.previewArea {
+  flex: 1;
+  background-color: rgb(243 244 246);
+  overflow: auto;
+  padding: 1rem;
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgb(239 68 68);
+}
+
+.errorIcon {
+  margin-bottom: 0.5rem;
+}
+
+.errorTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: rgb(17 24 39);
+}
+
+.errorDescription {
+  color: rgb(107 114 128);
+  text-align: center;
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  border: none;
+}
+
+.footer {
+  background-color: white;
+  padding: 1rem;
+  border-top: 1px solid rgb(229 231 235);
+}
+
+.downloadButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background-color: rgb(147 51 234);
+  color: white;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+}
+
+.downloadButton:hover:not(:disabled) {
+  background-color: rgb(126 34 206);
+}
+
+.downloadButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loadingSpinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive design */
+@media (min-width: 768px) {
+  .modal {
+    width: 90%;
+    height: 90%;
+    max-width: 1200px;
+    max-height: 800px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal {
+    width: 95%;
+    height: 95%;
+  }
+}

@@ -3,6 +3,9 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
+import PdfPreviewModal from "./PdfPreviewModal";
 
 export default function InvoiceListModal({
   visible,
@@ -15,6 +18,11 @@ export default function InvoiceListModal({
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfHtml, setPdfHtml] = useState(null);
+
+  const API_URL =
+    "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html";
 
   useEffect(() => {
     if (visible && data?.TripId) {
@@ -63,12 +71,27 @@ export default function InvoiceListModal({
 
  
 
-  const handleShareInvoice = (invoice) => {
-    const html = generateInvoiceHtml(invoice);
 
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(html);
-    newWindow.document.close();
+    const handleShareInvoice = async (invoice) => {
+    try {
+      const response = await axios.post(API_URL, {
+        type: "invoice",
+        mode: "html",
+        tripId: data?.TripId,
+        invoiceId: invoice?.invoiceId || invoice?.TripId,
+        templateName: "invoiceip.hbs",
+      });
+
+      if (!response.data) {
+        throw new Error("HTML not returned");
+      }
+
+      setPdfHtml(response.data);
+      setShowPdfModal(true);
+    } catch (err) {
+      console.error("Preview error:", err);
+      toast.error("Failed to load preview");
+    }
   };
 
   const generateInvoiceHtml = (invoice) => {
@@ -216,6 +239,21 @@ export default function InvoiceListModal({
           ))}
         </div>
       </div>
+      
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        visible={showPdfModal}
+        pdfHtml={pdfHtml}
+          onShare={() => {
+          setShowPdfModal(false);
+          setPdfHtml(null);
+        }}
+        clientName="InvoicePdf"
+        onClose={() => {
+          setShowPdfModal(false);
+          setPdfHtml(null);
+        }}
+      />
     </div>
   );
 }

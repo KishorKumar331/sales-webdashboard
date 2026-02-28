@@ -237,9 +237,12 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
         clientName={
            "Quotation"
         }
-        onClose={() => {
+        onShare={()=>{
           setShowPdfModal(false);
-          setSelectedQuotation(null);
+        }}
+        onClose={() => {
+            setShowPdfModal(false);
+            setSelectedQuotation(null);
         }}
       />
     </div>

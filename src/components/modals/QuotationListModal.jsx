@@ -265,6 +265,9 @@ export default function QuotationListModal({
 
       {/* PDF PREVIEW MODAL */}
       <PdfPreviewModal
+       onShare={()=>{
+          setShowPdfModal(false);
+        }}
         visible={showPdfModal}
         pdfHtml={pdfHtml}
         clientName={

@@ -229,7 +229,7 @@ const [showPdfModal,setShowPdfModal]=useState(false);
         visible={showPdfModal}
         pdfHtml={pdfHtml}
         clientName={
-           "Quotation"
+           "InvoicePdf"
         }
         onClose={() => {
           setShowPdfModal(false);

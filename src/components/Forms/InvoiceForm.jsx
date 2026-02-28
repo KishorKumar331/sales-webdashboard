@@ -760,7 +760,7 @@ export default function InvoiceForm({
       }
       await query.invalidateQueries({ queryKey: ["followup"] });
 
-      toast.error("Success", "Invoice submitted successfully!", [
+      toast.success("Success", "Invoice submitted successfully!", [
         {
           text: "OK",
           onPress: () => {
