@@ -29,13 +29,12 @@ const {user} = useAuth();
       try {
         setError(null);
 
-        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.Email}&latestStatus=Converted&case=maxcase`
+        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.Email}&latestStatus=Converted`
 
         const response = await fetch(url, {
           signal,
           headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache",
+            "Content-Type": "application/json"
           },
         });
 
