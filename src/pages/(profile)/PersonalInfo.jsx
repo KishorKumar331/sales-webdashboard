@@ -131,6 +131,7 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
               <input
                 type="text"
+                disabled
                 value={profileData.company}
                 onChange={(e) => setProfileData({...profileData, company: e.target.value})}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
