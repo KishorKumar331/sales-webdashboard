@@ -204,8 +204,17 @@ const FollowUpCards = ({ data }) => {
 
   const renderPage2 = () => (
     <div>
+      
       {/* Status */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+      <div className="flex flex-col pointer sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+       <div className="flex gap-8">
+          <button
+          onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+          disabled={currentPage === 0}
+          className="bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 p-2.5 rounded-full transition-all duration-200 shadow-sm hover:shadow-md group"
+        >
+          <ChevronRight size={18} className="rotate-180 text-gray-600" />
+        </button>
         <div className="flex flex-wrap items-center gap-3">
           <span className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-sm">
             Trip #{data.TripId}
@@ -231,6 +240,8 @@ const FollowUpCards = ({ data }) => {
             {status}
           </div>
         </div>
+
+       </div>
 
         <div className="relative sm:w-auto w-full">
           <button
@@ -381,7 +392,7 @@ const FollowUpCards = ({ data }) => {
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden w-full border border-gray-100 group">
+    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden w-full border border-gray-100 group relative">
       <div
         className="flex transition-all duration-500 ease-in-out w-full"
         style={{ transform: `translateX(-${currentPage * 100}%)` }}
@@ -391,7 +402,7 @@ const FollowUpCards = ({ data }) => {
       </div>
 
       {/* Enhanced Navigation Dots */}
-      <div className="flex justify-center items-center gap-3 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-100">
+      <div className="flex justify-center items-center gap-3 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-100 relative z-10">
         {pages.map((_, i) => (
           <button
             key={i}
@@ -405,25 +416,8 @@ const FollowUpCards = ({ data }) => {
         ))}
       </div>
 
-      {/* Page Navigation Buttons */}
-      <div className="absolute top-1/2 -translate-y-1/2 flex justify-between w-full px-4 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <button
-          onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-          disabled={currentPage === 0}
-          className="bg-white/90 backdrop-blur-sm shadow-lg rounded-full p-2 pointer-events-auto transition-all duration-200 hover:bg-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ChevronRight size={18} className="rotate-180 text-gray-600" />
-        </button>
-        <button
-          onClick={() =>
-            setCurrentPage(Math.min(pages.length - 1, currentPage + 1))
-          }
-          disabled={currentPage === pages.length - 1}
-          className="bg-white/90 backdrop-blur-sm shadow-lg rounded-full p-2 pointer-events-auto transition-all duration-200 hover:bg-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ChevronRight size={18} className="text-gray-600" />
-        </button>
-      </div>
+      {/* Page Navigation Buttons - Fixed positioning within each card */}
+      
 
       {/* Modals */}
       <InvoiceListModal
