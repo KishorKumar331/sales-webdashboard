@@ -132,28 +132,26 @@ const ActivitySelector = ({
             {/* LIST OR ADD FORM */}
             {!showAddForm ? (
               <>
-                <div style={styles.list}>
+                <div style={styles.gridContainer}>
                   {loading ? (
                     <div style={styles.loading}>Loading activities...</div>
                   ) : (
                     filteredActivities.map((item, index) => {
                       console.log('Rendering item:', item.Title);
                       return (
-                        <button
+                        <div
                           key={`${item.Title}-${item.Destination}-${index}-${forceUpdate}`}
-                          type="button"
-                          style={styles.activityItem}
+                          style={styles.gridItem}
                           onClick={() => handleSelectActivity(item)}
                         >
-                          {item.ImageUrl && (
-                            <img
-                              src={item.ImageUrl}
-                              alt={item.Title}
-                              style={styles.activityImage}
-                            />
-                          )}
+                          <div style={styles.activityIcon}>
+                            🎯
+                          </div>
 
                           <div style={styles.activityInfo}>
+                            <div style={styles.destinationTag}>
+                              {item.Destination || "Unknown"}
+                            </div>
                             <div style={styles.activityTitle}>
                               {item.Title}
                             </div>
@@ -161,7 +159,7 @@ const ActivitySelector = ({
                               {item.Activity || "No description available"}
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })
                   )}
@@ -312,6 +310,7 @@ const styles = {
   activityItem: {
     display: "flex",
     gap: 12,
+    width:'100%',
     padding: 12,
     borderBottom: "1px solid #eee",
     background: "white",
@@ -326,32 +325,126 @@ const styles = {
   },
   activityInfo: {
     flex: 1,
+    width: "100%",
   },
   activityTitle: {
-    fontWeight: 600,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1f2937",
     marginBottom: 4,
+    lineHeight: 1.4,
   },
   activityDescription: {
     fontSize: 14,
-    color: "#666",
+    color: "#6b7280",
+    lineHeight: 1.4,
+  },
+  gridContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gap: 16,
+    maxHeight: 400,
+    overflowY: "auto",
+    padding: 8,
+  },
+  gridItem: {
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    borderRadius: 16,
+    padding: 20,
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center",
+    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+    border: "2px solid transparent",
+    position: "relative",
+    overflow: "hidden",
+    ":hover": {
+      transform: "translateY(-4px)",
+      boxShadow: "0 12px 30px rgba(0,0,0,0.2)",
+      borderColor: "#ffffff",
+    },
+    "::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      height: "4px",
+      background: "linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1)",
+    },
+  },
+  activityIcon: {
+    fontSize: 32,
+    marginBottom: 12,
+    filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
+  },
+  activityInfo: {
+    flex: 1,
+    width: "100%",
+    color: "white",
+  },
+  destinationTag: {
+    display: "inline-block",
+    background: "rgba(255, 255, 255, 0.2)",
+    color: "white",
+    padding: "4px 12px",
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 12,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    backdropFilter: "blur(4px)",
+  },
+  activityTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 8,
+    lineHeight: 1.3,
+    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+  },
+  activityDescription: {
+    fontSize: 14,
+    opacity: 0.9,
+    lineHeight: 1.4,
+    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
   },
   loading: {
-    padding: 20,
+    gridColumn: "1 / -1",
+    padding: 40,
     textAlign: "center",
-    color: "#666",
+    color: "#6b7280",
+    fontSize: 16,
   },
   noResults: {
-    padding: 20,
+    gridColumn: "1 / -1",
+    padding: 40,
     textAlign: "center",
+    color: "#6b7280",
+    background: "white",
+    borderRadius: 12,
+    border: "2px dashed #d1d5db",
   },
   addButton: {
-    marginTop: 12,
-    padding: 10,
-    borderRadius: 8,
-    background: "#007AFF",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     color: "white",
     border: "none",
+    padding: "12px 24px",
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: "600",
     cursor: "pointer",
+    marginTop: 16,
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+    ":hover": {
+      transform: "translateY(-2px)",
+      boxShadow: "0 8px 25px rgba(102, 126, 234, 0.6)",
+    },
   },
   form: {
     padding: 20,
