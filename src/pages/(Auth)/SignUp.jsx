@@ -506,7 +506,7 @@ export default function SignUp() {
       const completeFormData = fillEmptyFields(formData);
 
       const response = await fetch(
-        "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/Auth",
+        "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
