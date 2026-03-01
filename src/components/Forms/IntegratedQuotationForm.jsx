@@ -22,12 +22,8 @@ const calculateTravelEndDate = (startDate, days) => {
 
 const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpData }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  console.log("Lead Data:", lead);
-  console.log("FollowUp Data:", followUpData);
 
   const tripId = followUpData?.TripId || lead?.TripId || "";
-console.log(tripId)
   const userData = {
     CompanyId: "12345",
     AssignDate: new Date().toISOString(),
@@ -106,7 +102,8 @@ console.log(tripId)
           CheckOutDateKey: null,
           Comments: "",
         },
-      ],
+      ], 
+
       Inclusions: followUpData?.Inclusions || [],
       Exclusions: followUpData?.Exclusions || [],
       Itinearies: followUpData?.Itinearies || [

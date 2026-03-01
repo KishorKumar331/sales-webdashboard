@@ -5,20 +5,22 @@ import { ChevronDown, Search, X } from "lucide-react";
  * Props:
  * - onSelectActivity(activity)
  * - selectedActivity
- * - destination
+ * - activities (array of activities from parent)
+ * - loading (boolean)
  * - style
  */
 const ActivitySelector = ({
   onSelectActivity,
   selectedActivity,
-  destination,
+  activities,
+  loading = false,
   style,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activities, setActivities] = useState([]);
   const [filteredActivities, setFilteredActivities] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   const [newActivity, setNewActivity] = useState({
     Title: "",
@@ -26,42 +28,39 @@ const ActivitySelector = ({
     ImageUrl: "",
   });
 
-  /* ================= Fetch activities ================= */
+  /* ================= Initialize ================= */
 
   useEffect(() => {
-    if (!destination) return;
-
-    const fetchActivities = async () => {
-      try {
-        const res = await fetch(
-          `https://2rltmjilx9.execute-api.ap-south-1.amazonaws.com/DataTransaction/activitysightseen?DestinationName=${destination}`
-        );
-        const data = await res.json();
-        setActivities(data?.Items || []);
-      } catch (err) {
-        console.error("Error fetching activities:", err);
-      }
-    };
-
-    fetchActivities();
-  }, [destination]);
+    setFilteredActivities(activities);
+  }, [activities]);
 
   /* ================= Filter ================= */
 
   useEffect(() => {
+    console.log('Search effect triggered');
+    console.log('Search query:', searchQuery);
+    console.log('Activities length:', activities?.length);
+    console.log('Activities sample:', activities?.slice(0, 3));
+    
+    let result = activities;
+    
     if (!searchQuery.trim()) {
-      setFilteredActivities(activities);
+      console.log('Empty search, showing all activities');
+      result = activities;
     } else {
+      console.log('Filtering activities for:', searchQuery);
       const q = searchQuery.toLowerCase();
-      setFilteredActivities(
-        activities.filter(
-          (a) =>
-            a.Title?.toLowerCase().includes(q) ||
-            a.Description?.toLowerCase().includes(q) ||
-            a.DetailDescription?.toLowerCase().includes(q)
-        )
-      );
+      result = activities.filter((a) => {
+        const titleMatch = a.Title?.toString().toLowerCase().includes(q);
+        const activityMatch = a.Activity?.toString().toLowerCase().includes(q);
+        console.log(`Item: ${a.Title}, Title match: ${titleMatch}, Activity match: ${activityMatch}`);
+        return titleMatch || activityMatch;
+      });
+      console.log('Filtered results count:', result.length);
     }
+    
+    setFilteredActivities(result);
+    setForceUpdate(prev => prev + 1); // Force re-render
   }, [searchQuery, activities]);
 
   /* ================= Handlers ================= */
@@ -69,10 +68,9 @@ const ActivitySelector = ({
   const handleSelectActivity = (activity) => {
     onSelectActivity({
       Title: activity.Title,
-      Description:
-        activity.Description || activity.DetailDescription || "",
-      ImageUrl: activity.Url || activity.ImageUrl || "",
-      ActivityId: activity.ActivityId,
+      Activity: activity.Activity,
+      Description: "",
+      ImageUrl: activity.ImageUrl,
     });
 
     setShowModal(false);
@@ -135,35 +133,40 @@ const ActivitySelector = ({
             {!showAddForm ? (
               <>
                 <div style={styles.list}>
-                  {filteredActivities.map((item) => (
-                    <button
-                      key={item.ActivityId || item.Title}
-                      type="button"
-                      style={styles.activityItem}
-                      onClick={() => handleSelectActivity(item)}
-                    >
-                      {item.Url && (
-                        <img
-                          src={item.Url}
-                          alt={item.Title}
-                          style={styles.activityImage}
-                        />
-                      )}
+                  {loading ? (
+                    <div style={styles.loading}>Loading activities...</div>
+                  ) : (
+                    filteredActivities.map((item, index) => {
+                      console.log('Rendering item:', item.Title);
+                      return (
+                        <button
+                          key={`${item.Title}-${item.Destination}-${index}-${forceUpdate}`}
+                          type="button"
+                          style={styles.activityItem}
+                          onClick={() => handleSelectActivity(item)}
+                        >
+                          {item.ImageUrl && (
+                            <img
+                              src={item.ImageUrl}
+                              alt={item.Title}
+                              style={styles.activityImage}
+                            />
+                          )}
 
-                      <div style={styles.activityInfo}>
-                        <div style={styles.activityTitle}>
-                          {item.Title}
-                        </div>
-                        <div style={styles.activityDescription}>
-                          {item.Description ||
-                            item.DetailDescription ||
-                            "No description available"}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+                          <div style={styles.activityInfo}>
+                            <div style={styles.activityTitle}>
+                              {item.Title}
+                            </div>
+                            <div style={styles.activityDescription}>
+                              {item.Activity || "No description available"}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
 
-                  {filteredActivities.length === 0 && (
+                  {!loading && filteredActivities.length === 0 && (
                     <div style={styles.noResults}>
                       <div>No activities found</div>
                       <button
@@ -330,6 +333,11 @@ const styles = {
   },
   activityDescription: {
     fontSize: 14,
+    color: "#666",
+  },
+  loading: {
+    padding: 20,
+    textAlign: "center",
     color: "#666",
   },
   noResults: {

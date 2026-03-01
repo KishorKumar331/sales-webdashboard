@@ -4,8 +4,8 @@ import axios from "axios";
 
 import IntegratedQuotationForm from "../components/Forms/IntegratedQuotationForm";
 import { clearQuotationDraft } from "../storage/quotationDraft";
-import { useUserProfile } from "../hooks/useUserProfile";
 import PdfPreviewModal from "../components/modals/PdfPreviewModal";
+import { useAuth } from "../hooks/useAuth";
 
 const QuotationScreen = () => {
   const navigate = useNavigate();
@@ -14,12 +14,7 @@ const QuotationScreen = () => {
   // Get lead data from navigation state
   const leadData = location.state?.leadData || null;
   const followUpData = location.state?.followUpData || null;
-
-  console.log('Lead Data:', leadData);
-  console.log('Follow-up Data:', followUpData);
-
-  const { user, loading: userLoading } = useUserProfile();
-
+  const { user } = useAuth();
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);
@@ -59,7 +54,7 @@ const QuotationScreen = () => {
       };
 
       console.log("Data with user:", dataWithUser);
-      // Call the new API endpoint to get HTML
+      // Pdf Api
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
@@ -106,11 +101,10 @@ const QuotationScreen = () => {
     }
 
     try {
-      console.log("📤 Submitting quotation to API...");
 
       const res = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations",
-        formDataToSubmit
+        {...formDataToSubmit,CompanyEmail:user?.Email}
       );
 
       console.log("✅ Quotation created:", res.data);
