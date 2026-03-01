@@ -497,7 +497,7 @@ const ItinerarySection = () => {
     const fetchActivities = async (destination) => {
       try {
         const response = await fetch(
-          `https://d38jn0rpth8ttn.cloudfront.net/activity-storage/${destination.toLowerCase()}.json`
+          `https://cdn.infinitepackages.com/activity-storage/${destination.toLowerCase()}.json`
         );
 
         if (!response.ok) {
