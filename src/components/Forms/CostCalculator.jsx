@@ -151,6 +151,22 @@ const CostCalculator = () => {
           <Calculator size={20} color="#3b82f6" />
         </div>
         <div style={styles.sectionTitle}>Quotation Price</div>
+        <div style={styles.totalContainer}>
+          <div style={styles.totalLabel}> Cost</div>
+          <Controller
+            control={control}
+            name="Costs.TotalCost"
+            render={({ field: { value } }) => {
+              const numVal = NumberParser(value);
+              const display = Number.isFinite(numVal)
+                ? numVal.toLocaleString("en-IN")
+                : "0";
+              return (
+                <div style={styles.totalAmount}>₹{display}</div>
+              );
+            }}
+          />
+        </div>
       </div>
 
       {/* Basic Costs */}
@@ -193,22 +209,7 @@ const CostCalculator = () => {
       </div>
 
       {/* Total Cost Display */}
-      <div style={styles.totalContainer}>
-        <div style={styles.totalLabel}>Total Package Cost</div>
-        <Controller
-          control={control}
-          name="Costs.TotalCost"
-          render={({ field: { value } }) => {
-            const numVal = NumberParser(value);
-            const display = Number.isFinite(numVal)
-              ? numVal.toLocaleString("en-IN")
-              : "0";
-            return (
-              <div style={styles.totalAmount}>₹{display}</div>
-            );
-          }}
-        />
-      </div>
+
     </div>
   );
 };
@@ -257,7 +258,9 @@ const styles = {
     backgroundColor: "#f9fafb",
     padding: 16,
     borderRadius: 12,
-    marginTop: 16,
+    width: 134,
+    position: "relative",
+    left: 776,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",

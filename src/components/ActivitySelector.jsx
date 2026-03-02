@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 
+// Add shimmer animation keyframes
+const shimmerKeyframes = `
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+`;
+
+// Inject the keyframes into the document head
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = shimmerKeyframes;
+  document.head.appendChild(style);
+}
+
 /**
  * Props:
  * - onSelectActivity(activity)
@@ -185,40 +200,62 @@ const ActivitySelector = ({
                     filteredActivities.map((item, index) => {
                       console.log('Rendering item:', item.Title);
                       return (
-                        <div
-                          key={`${item.Title}-${item.Destination}-${index}-${forceUpdate}`}
-                          style={{
-                            ...styles.gridItem,
-                            opacity: selectedActivityLoading === item.Title ? 0.7 : 1,
-                            pointerEvents: selectedActivityLoading === item.Title ? 'none' : 'auto',
-                          }}
-                          onClick={() => handleSelectActivity(item)}
-                        >
-                          {selectedActivityLoading === item.Title ? (
-                            <div style={styles.loadingOverlay}>
-                              <div style={styles.loadingSpinner}></div>
-                              <div style={styles.loadingText}>Generating AI description...</div>
-                            </div>
-                          ) : (
-                            <>
-                              <div style={styles.activityIcon}>
-                                🎯
+                        <React.Fragment key={`${item.Title}-${item.Destination}-${index}-${forceUpdate}`}>
+                          <div
+                            style={{
+                              ...styles.gridItem,
+                              opacity: selectedActivityLoading === item.Title ? 0.7 : 1,
+                              pointerEvents: selectedActivityLoading === item.Title ? 'none' : 'auto',
+                              borderBottom: (index === 5 && filteredActivities.length > 6) ? '3px solid rgba(255, 255, 255, 0.3)' : 'none',
+                              marginBottom: (index === 5 && filteredActivities.length > 6) ? '20px' : '0',
+                              paddingBottom: (index === 5 && filteredActivities.length > 6) ? '24px' : '20px',
+                            }}
+                            onClick={() => handleSelectActivity(item)}
+                          >
+                            {selectedActivityLoading === item.Title ? (
+                              <div style={styles.loadingOverlay}>
+                                <div style={styles.loadingSpinner}></div>
+                                <div style={styles.loadingText}>Generating AI description...</div>
                               </div>
+                            ) : (
+                              <>
+                                {/* Show image for first 6 activities, icon for others */}
+                                {index < 6 && item.ImageUrl ? (
+                                  <div style={styles.imageContainer}>
+                                    <img
+                                      src={item.ImageUrl}
+                                      alt={item.Title}
+                                      style={styles.activityImage}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div style={styles.activityIcon}>
+                                    🎯
+                                  </div>
+                                )}
 
-                              <div style={styles.activityInfo}>
-                                <div style={styles.destinationTag}>
-                                  {item.Destination || "Unknown"}
+                                <div style={styles.activityInfo}>
+                                  <div style={styles.destinationTag}>
+                                    {item.Destination || "Unknown"}
+                                  </div>
+                                  <div style={styles.activityTitle}>
+                                    {item.Title}
+                                  </div>
+                                  <div style={styles.activityDescription}>
+                                    {item.Activity || "No description available"}
+                                  </div>
                                 </div>
-                                <div style={styles.activityTitle}>
-                                  {item.Title}
-                                </div>
-                                <div style={styles.activityDescription}>
-                                  {item.Activity || "No description available"}
-                                </div>
-                              </div>
-                            </>
+                              </>
+                            )}
+                          </div>
+                          
+                          {/* Show "Other Activities" label after 6th activity when there are more than 6 */}
+                          {index === 5 && filteredActivities.length > 6 && (
+                            <div style={styles.sectionLabel}>
+                              ------Other Activities----
+                            </div>
                           )}
-                        </div>
+                        </React.Fragment>
                       );
                     })
                   )}
@@ -400,7 +437,7 @@ const styles = {
   },
   gridContainer: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: 16,
     maxHeight: 400,
     overflowY: "auto",
@@ -411,7 +448,7 @@ const styles = {
     borderRadius: 16,
     padding: 20,
     cursor: "pointer",
-    transition: "all 0.3s ease",
+    transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -420,10 +457,12 @@ const styles = {
     border: "2px solid transparent",
     position: "relative",
     overflow: "hidden",
+    transform: "translateY(0)",
     ":hover": {
-      transform: "translateY(-4px)",
-      boxShadow: "0 12px 30px rgba(0,0,0,0.2)",
-      borderColor: "#ffffff",
+      transform: "translateY(-8px) scale(1.05)",
+      boxShadow: "0 20px 40px rgba(0,0,0,0.25), 0 0 30px rgba(102, 126, 234, 0.3)",
+      borderColor: "rgba(255, 255, 255, 0.4)",
+      background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
     },
     "::before": {
       content: '""',
@@ -432,13 +471,45 @@ const styles = {
       left: 0,
       right: 0,
       height: "4px",
-      background: "linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1)",
+      background: "linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #f093fb, #f5576c)",
+      backgroundSize: "200% 100%",
+      animation: "shimmer 3s ease-in-out infinite",
+      transition: "all 0.3s ease",
+    },
+    "::after": {
+      content: '""',
+      position: "absolute",
+      inset: 0,
+      borderRadius: 16,
+      padding: 2,
+      background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0))",
+      mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+      maskComposite: "subtract",
+      opacity: 0,
+      transition: "opacity 0.3s ease",
+    },
+    ":hover::after": {
+      opacity: 1,
     },
   },
   activityIcon: {
     fontSize: 32,
     marginBottom: 12,
     filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
+  },
+  imageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 12,
+    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+  },
+  activityImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    borderRadius: 12,
   },
   activityInfo: {
     flex: 1,
@@ -472,12 +543,16 @@ const styles = {
     lineHeight: 1.4,
     textShadow: "0 1px 2px rgba(0,0,0,0.2)",
   },
-  loading: {
+  sectionLabel: {
     gridColumn: "1 / -1",
-    padding: 40,
     textAlign: "center",
     color: "#6b7280",
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: "600",
+    margin: "16px 0 8px 0",
+    textTransform: "uppercase",
+    letterSpacing: "1px",
+    opacity: 0.8,
   },
 
   loadingOverlay: {

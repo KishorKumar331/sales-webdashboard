@@ -155,25 +155,24 @@ const DateRangeSelector = ({
   /* ===================== UI ===================== */
 
   return (
-    <div className="mb-4" style={containerStyle}>
+    <div className="" style={containerStyle}>
       {showLabel && <div className="text-base font-medium mb-2 text-gray-700">{label}</div>}
 
       <button
         type="button"
-        className="flex items-center justify-between gap-4 w-full p-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 shadow-sm transition-colors cursor-pointer"
+        className="flex items-center justify-between gap-4 w-[34rem] p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 shadow-sm transition-colors cursor-pointer"
         onClick={() => setShowModal(true)}
       >
         <div className="flex-1">
-          <div className="text-xs text-gray-500 mb-1">Check-in</div>
+          {/* <div className="text-xs text-gray-500 mb-1">Check-in</div> */}
           <div className="text-base font-medium text-gray-900">
-            {startDate ? formatDisplayDate(startDate) : "Select date"}
+            {startDate ? formatDisplayDate(startDate) : "CheckIn date"}
           </div>
         </div>
 
         <div className="flex-1">
-          <div className="text-xs text-gray-500 mb-1">Check-out</div>
           <div className="text-base font-medium text-gray-900">
-            {endDate ? formatDisplayDate(endDate) : "Select date"}
+            {endDate ? formatDisplayDate(endDate) : "CheckOut date"}
           </div>
         </div>
 

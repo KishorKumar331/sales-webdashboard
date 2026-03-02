@@ -80,7 +80,7 @@ const HotelsSection = () => {
         <div key={field.id} style={styles.hotelCard}>
           {/* Hotel Name + Remove */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ flex: 1 }}>
+            <div style={{justifyContent:'space-between'}} className="flex gap-4">
               <FormField
                 label="Hotel Name"
                 required
@@ -104,21 +104,31 @@ const HotelsSection = () => {
                   )}
                 />
               </FormField>
-            </div>
-
-            {fields.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeHotel(index)}
-                style={styles.removeButton}
+              <div className="flex gap-2">
+              <FormField
+                label="City"
+                required
+                error={errors?.Hotels?.[index]?.City}
               >
-                <Trash2 size={18} color="#ef4444" />
-              </button>
-            )}
-          </div>
-
-          {/* Date Range */}
-          <DateRangeSelector
+                <Controller
+                  control={control}
+                  name={`Hotels.${index}.City`}
+                  rules={{ required: "City is required" }}
+                  render={({ field }) => (
+                    <input
+                      {...field}
+                      style={{
+                        ...styles.input,
+                        ...(errors?.Hotels?.[index]?.City
+                          ? styles.errorInput
+                          : {}),
+                      }}
+                      placeholder="Enter city"
+                    />
+                  )}
+                />
+              </FormField>
+               <DateRangeSelector
             startDate={watch(`Hotels.${index}.CheckInDate`)}
             endDate={watch(`Hotels.${index}.CheckOutDate`)}
             onStartDateChange={(date) => {
@@ -166,36 +176,28 @@ const HotelsSection = () => {
               return t;
             })()}
           />
+            </div>
+            </div>
+
+            {fields.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeHotel(index)}
+                style={styles.removeButton}
+              >
+                <Trash2 size={18} color="#ef4444" />
+              </button>
+            )}
+          </div>
+
+          {/* Date Range */}
+         
 
           {/* City + Nights */}
           <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <FormField
-                label="City"
-                required
-                error={errors?.Hotels?.[index]?.City}
-              >
-                <Controller
-                  control={control}
-                  name={`Hotels.${index}.City`}
-                  rules={{ required: "City is required" }}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      style={{
-                        ...styles.input,
-                        ...(errors?.Hotels?.[index]?.City
-                          ? styles.errorInput
-                          : {}),
-                      }}
-                      placeholder="Enter city"
-                    />
-                  )}
-                />
-              </FormField>
-            </div>
+            
 
-            <div style={{ flex: 1 }}>
+            <div >
               <FormField
                 label="Nights"
                 required
@@ -230,9 +232,7 @@ const HotelsSection = () => {
                 />
               </FormField>
             </div>
-          </div>
-
-          {/* Room Type + Category */}
+                   {/* Room Type + Category */}
           <div style={{ display: "flex", gap: 12 }}>
             <div style={{ flex: 1 }}>
               <FormField label="Room Type">
@@ -285,6 +285,9 @@ const HotelsSection = () => {
               )}
             />
           </FormField>
+          </div>
+
+   
         </div>
       ))}
 

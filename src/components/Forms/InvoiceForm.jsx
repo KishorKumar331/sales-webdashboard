@@ -632,7 +632,7 @@ export default function InvoiceForm({
       destination: quotation.DestinationName || "",
       startDate: quotation.TravelDate || "",
       endDate: quotation.TravelEndDate || "",
-      travelDate: quotation.TravelDate || "",
+      // travelDate: quotation.TravelDate || "",
       travelerSummary: {
         ...prev.travelerSummary,
         adults: adults,

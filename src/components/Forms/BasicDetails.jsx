@@ -78,34 +78,55 @@ const BasicDetails = () => {
           <User size={18} color="#7c3aed" />
         </div>
         <div style={styles.sectionTitle}>Basic Details</div>
-      </div>
-
-      {/* ===== Client Name ===== */}
-      <FormField
-        label="Client Full Name"
-        required
-        error={errors["Client-Name"]}
-      >
+          <FormField >
         <Controller
           control={control}
-          name="Client-Name"
-          rules={{ required: "Full name is required" }}
+          name="IsMultiDestination"
           render={({ field }) => (
-            <input
-              {...field}
-              style={{
-                ...styles.input,
-                ...(errors["Client-Name"] ? styles.errorInput : {}),
-              }}
-              placeholder="Enter customer full name"
-            />
+            <div style={styles.switchRow}>
+              <span style={{ color: "#374151", fontSize: 16 }}>
+                Enable multiple destinations
+              </span>
+              <input
+                type="checkbox"
+                checked={!!field.value}
+                onChange={(e) => field.onChange(e.target.checked)}
+              />
+            </div>
           )}
         />
       </FormField>
+      </div>
+
+      {/* ===== Client Name ===== */}
+
 
       {/* ===== Contact + Email ===== */}
-      <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: "flex", gap: 12, justifyContent: "space-between" }}>
+
+        <div className="flex-1">
+          <FormField
+            label="Client Full Name"
+            required
+            error={errors["Client-Name"]}
+          >
+            <Controller
+              control={control}
+              name="Client-Name"
+              rules={{ required: "Full name is required" }}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  style={{
+                    ...styles.input,
+                    ...(errors["Client-Name"] ? styles.errorInput : {}),
+                  }}
+                  placeholder="Enter customer full name"
+                />
+              )}
+            />
+          </FormField></div>
+        <div className="flex-1">
           <FormField
             label="Contact Number"
             required
@@ -133,8 +154,7 @@ const BasicDetails = () => {
             />
           </FormField>
         </div>
-
-        <div style={{ flex: 1 }}>
+        <div className="flex-1">
           <FormField label="Email Address" error={errors["Client-Email"]}>
             <Controller
               control={control}
@@ -161,6 +181,11 @@ const BasicDetails = () => {
           </FormField>
         </div>
       </div>
+
+
+
+
+
 
       {/* ===== Travel Date ===== */}
       <FormField label="Travel Date" required error={errors.TravelDate}>
@@ -272,29 +297,7 @@ const BasicDetails = () => {
             />
           </FormField>
         </div>
-      </div>
-
-      {/* ===== Multi Destination Toggle ===== */}
-      <FormField label="Multi-Destination Trip">
-        <Controller
-          control={control}
-          name="IsMultiDestination"
-          render={({ field }) => (
-            <div style={styles.switchRow}>
-              <span style={{ color: "#374151", fontSize: 16 }}>
-                Enable multiple destinations
-              </span>
-              <input
-                type="checkbox"
-                checked={!!field.value}
-                onChange={(e) => field.onChange(e.target.checked)}
-              />
-            </div>
-          )}
-        />
-      </FormField>
-
-      {/* ===== Departure City ===== */}
+        <div className="flex-1">
       <FormField
         label="Departure City"
         required
@@ -316,9 +319,16 @@ const BasicDetails = () => {
           )}
         />
       </FormField>
+        </div>
+      </div>
 
-      {/* ===== Destination(s) ===== */}
-      {!isMultiDestination ? (
+      {/* ===== Multi Destination Toggle ===== */}
+   
+
+      {/* ===== Departure City ===== */}
+
+      <div className="flex">
+           {!isMultiDestination ? (
         <FormField
           label="Destination"
           required
@@ -362,6 +372,11 @@ const BasicDetails = () => {
           />
         </FormField>
       )}
+
+      {/* ===== Destination(s) ===== */}
+   
+      </div>
+ 
     </div>
   );
 };
@@ -418,6 +433,7 @@ const styles = {
     // justifyContent: "space-between",
     alignItems: "center",
     gap: 8,
-    padding: "8px 0",
+    position: "relative",
+left: 746,
   },
 };
