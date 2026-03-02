@@ -56,7 +56,7 @@ const Carousel = () => {
 
   return (
     <div className="relative max-w-6xl mx-auto w-full">
-      
+
       {/* Left Button */}
       <button
         disabled={activeIndex === 0}
@@ -112,3 +112,4 @@ const Carousel = () => {
 };
 
 export default Carousel;
+

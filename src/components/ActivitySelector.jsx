@@ -16,17 +16,14 @@ const ActivitySelector = ({
   loading = false,
   style,
 }) => {
+  // State declarations
+  const [selectedActivityLoading, setSelectedActivityLoading] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredActivities, setFilteredActivities] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
-
-  const [newActivity, setNewActivity] = useState({
-    Title: "",
-    Description: "",
-    ImageUrl: "",
-  });
+  const [newActivity, setNewActivity] = useState({ Title: "", Description: "", ImageUrl: "" });
 
   /* ================= Initialize ================= */
 
@@ -63,18 +60,67 @@ const ActivitySelector = ({
     setForceUpdate(prev => prev + 1); // Force re-render
   }, [searchQuery, activities]);
 
+  const generateActivityDescription = async (activity) => {
+    try {
+      const response = await fetch(
+        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/ai",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            activitykey: activity.ImageUrl || `${activity.Title?.toLowerCase().replace(/\s+/g, '_')}.jpg`,
+            destination: activity.Destination || "bali",
+            activityName: activity.Title || "Activity"
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        title: data.title || activity.Title,
+        description: data.description || activity.Activity
+      };
+    } catch (error) {
+      console.error("AI API error:", error);
+      // Fallback to original data
+      return {
+        title: activity.Title,
+        description: activity.Activity || "No description available"
+      };
+    }
+  };
+
   /* ================= Handlers ================= */
 
-  const handleSelectActivity = (activity) => {
-    onSelectActivity({
-      Title: activity.Title,
-      Activity: activity.Activity,
-      Description: "",
-      ImageUrl: activity.ImageUrl,
-    });
+  const handleSelectActivity = async (activity) => {
+    setSelectedActivityLoading(activity.Title);
 
-    setShowModal(false);
-    setSearchQuery("");
+    try {
+      const generatedActivity = await generateActivityDescription(activity);
+      console.log('Generated activity:', generatedActivity);
+      console.log('Original activity:', activity);
+
+      const activityData = {
+        Title: generatedActivity.title,
+        Activity: activity.Activity || "",
+        Description: generatedActivity.description,
+        ImageUrl: activity.ImageUrl,
+      };
+
+      console.log('Activity data being passed:', activityData);
+      onSelectActivity(activityData);
+
+      setShowModal(false);
+      setSearchQuery("");
+    } finally {
+      setSelectedActivityLoading(null);
+    }
   };
 
   const handleAddNewActivity = () => {
@@ -141,24 +187,37 @@ const ActivitySelector = ({
                       return (
                         <div
                           key={`${item.Title}-${item.Destination}-${index}-${forceUpdate}`}
-                          style={styles.gridItem}
+                          style={{
+                            ...styles.gridItem,
+                            opacity: selectedActivityLoading === item.Title ? 0.7 : 1,
+                            pointerEvents: selectedActivityLoading === item.Title ? 'none' : 'auto',
+                          }}
                           onClick={() => handleSelectActivity(item)}
                         >
-                          <div style={styles.activityIcon}>
-                            🎯
-                          </div>
+                          {selectedActivityLoading === item.Title ? (
+                            <div style={styles.loadingOverlay}>
+                              <div style={styles.loadingSpinner}></div>
+                              <div style={styles.loadingText}>Generating AI description...</div>
+                            </div>
+                          ) : (
+                            <>
+                              <div style={styles.activityIcon}>
+                                🎯
+                              </div>
 
-                          <div style={styles.activityInfo}>
-                            <div style={styles.destinationTag}>
-                              {item.Destination || "Unknown"}
-                            </div>
-                            <div style={styles.activityTitle}>
-                              {item.Title}
-                            </div>
-                            <div style={styles.activityDescription}>
-                              {item.Activity || "No description available"}
-                            </div>
-                          </div>
+                              <div style={styles.activityInfo}>
+                                <div style={styles.destinationTag}>
+                                  {item.Destination || "Unknown"}
+                                </div>
+                                <div style={styles.activityTitle}>
+                                  {item.Title}
+                                </div>
+                                <div style={styles.activityDescription}>
+                                  {item.Activity || "No description available"}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       );
                     })
@@ -419,6 +478,38 @@ const styles = {
     textAlign: "center",
     color: "#6b7280",
     fontSize: 16,
+  },
+
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0, 0, 0, 0.8)",
+    borderRadius: 16,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+
+  loadingSpinner: {
+    width: 40,
+    height: 40,
+    border: "4px solid rgba(255, 255, 255, 0.3)",
+    borderTop: "4px solid white",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  },
+
+  loadingText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 12,
+    textAlign: "center",
   },
   noResults: {
     gridColumn: "1 / -1",
