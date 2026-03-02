@@ -231,6 +231,7 @@ const ItinerarySection = () => {
             className="bg-gray-50 rounded-xl border border-gray-200 p-5"
           >
             <div className="flex items-center justify-between mb-5">
+              <div className="flex w-full justify-between">
               <div className="flex items-center gap-3">
                 <div className="inline-flex items-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm">
                   Day {index + 1}
@@ -238,6 +239,18 @@ const ItinerarySection = () => {
                 <span className="text-sm text-gray-500">
                   {getItineraryDate(index) || "No date set"}
                 </span>
+              </div>
+  <ActivitySelector
+                  onSelectActivity={(a) =>
+                    handleActivitySelect(a, index)
+                  }
+                  selectedActivity={{
+                    Title: watch(`Itinearies.${index}.Title`) || "",
+                    ImageUrl: watch(`Itinearies.${index}.ImageUrl`) || "",
+                  }}
+                  activities={activities}
+                  loading={isLoading}
+                />
               </div>
 
               {fields.length > 1 && (
@@ -250,99 +263,77 @@ const ItinerarySection = () => {
                 </button>
               )}
             </div>
+            <div style={{ flexDirection: 'row-reverse' }} className="flex justify-between">
+              <Controller
+                control={control}
+                name={`Itinearies.${index}.ImageUrl`}
+                render={({ field: { value } }) =>
+                  value ? (
+                    <div className="mb-5 h-fit rounded-xl overflow-hidden border">
+                      <img
+                        src={value}
+                        alt="Itinerary"
+                        className="w-full h-48 object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="mb-5 flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
+                      <Camera className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )
+                }
+              />
 
+
+              <div className="w-[42rem]">
+                {/* Activity Selector */}
+              
+
+                {/* Title */}
+                <div className="mb-5">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    <Edit3 className="mr-2 inline h-4 w-4 text-gray-400" />
+                    Day Title
+                  </label>
+                  <Controller
+                    control={control}
+                    name={`Itinearies.${index}.Title`}
+                    render={({ field }) => (
+                      <input
+                        {...field}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="Enter day title"
+                      />
+                    )}
+                  />
+                </div>
+
+
+                {/* Description */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    <Edit3 className="mr-2 inline h-4 w-4 text-gray-400" />
+                    Description
+                  </label>
+                  <Controller
+                    control={control}
+                    name={`Itinearies.${index}.Description`}
+                    render={({ field }) => (
+                      <textarea
+                        {...field}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-vertical"
+                        rows={3}
+                        placeholder="Detailed description of the day"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
             {/* Image Preview */}
-            <Controller
-              control={control}
-              name={`Itinearies.${index}.ImageUrl`}
-              render={({ field: { value } }) =>
-                value ? (
-                  <div className="mb-5 rounded-xl overflow-hidden border">
-                    <img
-                      src={value}
-                      alt="Itinerary"
-                      className="w-full h-48 object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="mb-5 flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
-                    <Camera className="h-8 w-8 text-gray-400" />
-                  </div>
-                )
-              }
-            />
 
-            {/* Activity Selector */}
-            <ActivitySelector
-              onSelectActivity={(a) =>
-                handleActivitySelect(a, index)
-              }
-              selectedActivity={{
-                Title: watch(`Itinearies.${index}.Title`) || "",
-                ImageUrl: watch(`Itinearies.${index}.ImageUrl`) || "",
-              }}
-              activities={activities}
-              loading={isLoading}
-            />
 
-            {/* Title */}
-            <div className="mb-5">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                <Edit3 className="mr-2 inline h-4 w-4 text-gray-400" />
-                Day Title
-              </label>
-              <Controller
-                control={control}
-                name={`Itinearies.${index}.Title`}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="Enter day title"
-                  />
-                )}
-              />
-            </div>
 
-            {/* Activity */}
-            <div className="mb-5">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                <MapPin className="mr-2 inline h-4 w-4 text-gray-400" />
-                Activities
-              </label>
-              <Controller
-                control={control}
-                name={`Itinearies.${index}.Activity`}
-                render={({ field }) => (
-                  <textarea
-                    {...field}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-vertical"
-                    rows={2}
-                    placeholder="List activities for this day"
-                  />
-                )}
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                <Edit3 className="mr-2 inline h-4 w-4 text-gray-400" />
-                Description
-              </label>
-              <Controller
-                control={control}
-                name={`Itinearies.${index}.Description`}
-                render={({ field }) => (
-                  <textarea
-                    {...field}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-vertical"
-                    rows={3}
-                    placeholder="Detailed description of the day"
-                  />
-                )}
-              />
-            </div>
           </div>
         ))}
       </div>

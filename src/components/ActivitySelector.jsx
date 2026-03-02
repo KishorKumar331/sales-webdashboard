@@ -139,7 +139,7 @@ const ActivitySelector = ({
   /* ================= UI ================= */
 
   return (
-    <div style={{ width: "100%", ...style }}>
+    <div style={{ width: "28%", ...style }}>
       {/* Selector */}
       <button
         type="button"
@@ -147,7 +147,7 @@ const ActivitySelector = ({
         onClick={() => setShowModal(true)}
       >
         <span style={styles.selectorText}>
-          {selectedActivity?.Title || "Select an activity"}
+          {selectedActivity?.Title.slice(0,24)+'...' || "Select an activity"}
         </span>
         <ChevronDown size={18} />
       </button>
