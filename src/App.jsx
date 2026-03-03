@@ -17,6 +17,7 @@ import PaymentPage from './pages/(Auth)/PaymentGateway/PaymentGateWay';
 import Teams from './pages/Teams';
 import InvoicePage from './pages/InvoicePage';
 import { useAuth } from './hooks/useAuth';
+import InvoiceTrackingDashboard from './components/Accounting/InvoiceTrackingDashboard';
 
 // Protected Route Component - redirects to /auth if not authenticated
 const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) => {
@@ -120,7 +121,10 @@ const App = () => {
             path="/follow-up"
             element={renderWithLayout(<FollowUp />, "Follow Up")}
           />
-
+            <Route
+            path="/accounting"
+            element={renderWithLayout(<InvoiceTrackingDashboard />, "Accounting")}
+          />
           <Route
             path="/invoices/create"
             element={renderWithLayout(<InvoicePage />, "Create Invoice")}

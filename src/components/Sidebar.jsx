@@ -10,6 +10,7 @@ const Sidebar = () => {
     { to: "/follow-up", icon: <Clock className="w-5 h-5" />, label: "Follow Up", badge: null },
     { to: "/converted", icon: <CheckCircle className="w-5 h-5" />, label: "Converted", badge: null },
     { to: "/teams", icon: <Users className="w-5 h-5" />, label: "Teams", badge: null },
+    { to: "/accounting", icon: <Users className="w-5 h-5" />, label: "Accounting", badge: null },
     { to: "/profile", icon: <User className="w-5 h-5" />, label: "Profile", badge: null },
   ];
 

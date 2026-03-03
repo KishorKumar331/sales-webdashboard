@@ -171,6 +171,7 @@ export default function InvoiceForm({
       setFormData((prev) => ({
         ...prev,
         invoiceId: initialData?.invoiceId || prev.invoiceId,
+        companyEmail: userProfile?.email,
         invoiceNumber: initialData?.invoiceNumber || prev.invoiceNumber,
         tripId: initialData?.tripId || prev.tripId,
         finalPackageQuotationId:
@@ -780,9 +781,8 @@ export default function InvoiceForm({
   };
 
   const quotationOptions = quotations.map((q) => ({
-    label: `${q.QuoteId} - ₹${
-      q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
-    }`,
+    label: `${q.QuoteId} - ₹${q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
+      }`,
     value: q.QuoteId,
   }));
 

@@ -25,6 +25,7 @@ import {
   BanknoteIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { FileToDataUrl, uploadCompanyLogo, uploadPaymentQR } from "../../utils/fileToDataUrl";
 
 const Field = ({ label, required, children, icon }) => (
   <div className="space-y-2">
@@ -172,7 +173,7 @@ const Step1 = ({ formData, updateFormData }) => (
   </>
 );
 
-const Step2 = ({ formData, updateFormData }) => (
+const Step2 = ({ formData, updateFormData, handleLogoUpload }) => (
   <div className="px-6 space-y-4">
     <Card
       icon={<Building2 className="w-8 h-8" />}
@@ -243,7 +244,7 @@ const Step2 = ({ formData, updateFormData }) => (
   </div>
 );
 
-const Step3 = ({ formData, updateFormData }) => (
+const Step3 = ({ formData, updateFormData, handleQRUpload }) => (
   <div className="px-6 space-y-4">
     <Card
       icon={<CreditCard className="w-8 h-8" />}
@@ -316,48 +317,6 @@ const Step3 = ({ formData, updateFormData }) => (
 
 const LS_FORM_KEY = "createAccountFormData";
 const LS_STEP_KEY = "createAccountCurrentStep";
-
-const handleQRUpload = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  if (file.size > 2 * 1024 * 1024) {
-    alert("Please select an image smaller than 2MB.");
-    return;
-  }
-
-  try {
-    const dataUrl = await fileToDataUrl(file);
-    updateFormData("QrCode", dataUrl);
-    showToast("QR code uploaded successfully!");
-  } catch (err) {
-    console.error("QR upload error:", err);
-    alert("Failed to upload QR code. Please try again.");
-  } finally {
-    e.target.value = "";
-  }
-};
-
-const handleLogoUpload = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  if (file.size > 5 * 1024 * 1024) {
-    alert("Please select an image smaller than 5MB.");
-    return;
-  }
-
-  try {
-    const dataUrl = await fileToDataUrl(file);
-    updateFormData("CompanyLogoUrl", dataUrl);
-    showToast("Logo uploaded successfully!");
-  } catch (err) {
-    console.error("Logo upload error:", err);
-    alert("Failed to upload logo. Please try again.");
-  } finally {
-    e.target.value = "";
-  }
-};
 
 export default function SignUp() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -437,6 +396,65 @@ export default function SignUp() {
     alert(message);
   };
 
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    console.log(file,'fasfda')
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Please select an image smaller than 5MB.");
+      return;
+    }
+
+    try {
+      // Get company name from form data, fallback to a default
+      const companyName = formData.CompanyName || 'unknown-company';
+      console.log('Uploading logo for company:', companyName);
+      
+      // Upload to API and get URL
+      const logoUrl = await uploadCompanyLogo(file, formData.CompanyName);
+      console.log('Logo uploaded successfully, URL:', logoUrl);
+      
+      // Update form data with the returned URL
+      updateFormData("CompanyLogoUrl", logoUrl);
+      showToast("Logo uploaded successfully!");
+    } catch (err) {
+      console.error("Logo upload error:", err);
+      alert("Failed to upload logo. Please try again.");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  const handleQRUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Please select an image smaller than 2MB.");
+      return;
+    }
+
+    try {
+      // Get company name from form data, fallback to a default
+      const companyName = formData.CompanyName || 'unknown-company';
+      console.log('Uploading QR code for company:', companyName);
+      
+      // Upload to API and get URL
+      const qrUrl = await uploadPaymentQR(file, companyName);
+      console.log('QR code uploaded successfully, URL:', qrUrl);
+      
+      // Update form data with the returned URL
+      updateFormData("QrCode", qrUrl);
+      showToast("QR code uploaded successfully!");
+    } catch (err) {
+      console.error("QR upload error:", err);
+      alert("Failed to upload QR code. Please try again.");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
   const validateStep = (step) => {
     switch (step) {
       case 1:
@@ -462,14 +480,7 @@ export default function SignUp() {
     if (currentStep > 1) setCurrentStep((s) => s - 1);
   };
 
-  const fileToDataUrl = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
+ 
   const navigate = useNavigate();
 
   const fillEmptyFields = (data) => {
@@ -644,8 +655,8 @@ export default function SignUp() {
 
         <div className="pb-6">
           {currentStep === 1 && <Step1 formData={formData} updateFormData={updateFormData} />}
-          {currentStep === 2 && <Step2 formData={formData} updateFormData={updateFormData} />}
-          {currentStep === 3 && <Step3 formData={formData} updateFormData={updateFormData} />}
+          {currentStep === 2 && <Step2 formData={formData} updateFormData={updateFormData} handleLogoUpload={handleLogoUpload} />}
+          {currentStep === 3 && <Step3 formData={formData} updateFormData={updateFormData} handleQRUpload={handleQRUpload} />}
         </div>
 
         <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-lg">
