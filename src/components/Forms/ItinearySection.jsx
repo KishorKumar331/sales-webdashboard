@@ -91,12 +91,23 @@ const ItinerarySection = () => {
     console.log('Activity description:', activity.Description);
     console.log('Setting for index:', index);
 
+    // Calculate the date for this day
+    const itineraryDate = getItineraryDate(index);
+    const dateKey = Number(itineraryDate.replace(/-/g, ""));
+
+    console.log('Calculated date:', itineraryDate);
+    console.log('Calculated dateKey:', dateKey);
+
     setValue(`Itinearies.${index}.Title`, activity.Title || `Day ${index + 1} Itinerary`);
     setValue(`Itinearies.${index}.Activity`, activity.Activity || "");
     setValue(`Itinearies.${index}.ImageUrl`, activity.ImageUrl || "");
     setValue(`Itinearies.${index}.Description`, activity.Description || "");
+    setValue(`Itinearies.${index}.Date`, itineraryDate);
+    setValue(`Itinearies.${index}.DateKey`, dateKey);
 
     console.log('Description set to:', activity.Description);
+    console.log('Date set to:', itineraryDate);
+    console.log('DateKey set to:', dateKey);
 
     // Verify the value was set
     const currentValues = getValues();

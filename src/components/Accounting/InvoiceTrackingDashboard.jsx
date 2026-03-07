@@ -182,7 +182,6 @@ const updateInstallmentStatus = async (invoiceId, installmentSequence, newStatus
     
     if (allPaid && allInstallments.length > 0) {
       console.log('All installments paid, updating invoice status to PAID');
-      await updateInvoiceStatus(invoiceId, 'PAID');
     } else {
       console.log('Not all installments paid yet, skipping invoice status update');
     }
@@ -756,24 +755,6 @@ const updateInstallmentStatus = async (invoiceId, installmentSequence, newStatus
               </div>
               <div className="bg-yellow-100 p-3 rounded-full">
                 <Clock className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Profit / Loss</p>
-                <p className={`text-2xl font-bold ${summary.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(summary.profitLoss)}
-                </p>
-              </div>
-              <div className={`${summary.profitLoss >= 0 ? 'bg-green-100' : 'bg-red-100'} p-3 rounded-full`}>
-                {summary.profitLoss >= 0 ? (
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                ) : (
-                  <TrendingDown className="w-6 h-6 text-red-600" />
-                )}
               </div>
             </div>
           </div>
