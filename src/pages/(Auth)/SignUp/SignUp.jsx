@@ -209,7 +209,7 @@ export default function SignUp() {
       const logoUrl = await uploadCompanyLogo(file, companyName);
       console.log('Logo uploaded successfully, URL:', logoUrl);
 
-      setValue("logourl", logoUrl, { shouldValidate: true, shouldDirty: true });
+      setValue("logourl", logoUrl.cdn_url, { shouldValidate: true, shouldDirty: true });
       showToast("Logo uploaded successfully!");
     } catch (err) {
       console.error("Logo upload error:", err);
@@ -235,7 +235,7 @@ export default function SignUp() {
       const qrUrl = await uploadPaymentQR(file, companyName);
       console.log('QR code uploaded successfully, URL:', qrUrl);
 
-      setValue("qrurl", qrUrl, { shouldValidate: true, shouldDirty: true });
+      setValue("qrurl", qrUrl.cdn_url, { shouldValidate: true, shouldDirty: true });
       showToast("QR code uploaded successfully!");
     } catch (err) {
       console.error("QR upload error:", err);
