@@ -620,15 +620,7 @@ const styles = {
     backgroundColor: "white",
     boxSizing: "border-box",
   },
-  "@media (hover: hover)": {
-    input: {
-      ":focus": {
-        outline: "none",
-        borderColor: "#3b82f6",
-        boxShadow: "0 0 0 3px rgba(59,130,246,0.1)",
-      },
-    },
-  },
+
   errorInput: {
     borderColor: "#ef4444",
   },
@@ -649,14 +641,7 @@ const styles = {
     transition: "all 0.2s ease",
     boxShadow: "0 4px 6px rgba(59,130,246,0.25)",
   },
-  "@media (hover: hover)": {
-    searchButton: {
-      ":hover": {
-        transform: "translateY(-2px)",
-        boxShadow: "0 8px 12px rgba(59,130,246,0.35)",
-      },
-    },
-  },
+
   selectedFlightsSection: {
     marginTop: 24,
   },
@@ -695,15 +680,7 @@ const styles = {
     boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
     transition: "all 0.2s ease",
   },
-  "@media (hover: hover)": {
-    selectedCard: {
-      ":hover": {
-        borderColor: "#3b82f6",
-        boxShadow: "0 4px 12px rgba(59,130,246,0.1)",
-        transform: "translateY(-1px)",
-      },
-    },
-  },
+
   selectedCardHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -745,14 +722,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
-  "@media (hover: hover)": {
-    removeBtn: {
-      ":hover": {
-        background: "rgba(239,68,68,0.1)",
-        color: "#ef4444",
-      },
-    },
-  },
+
   routeInfo: {
     display: "flex",
     alignItems: "center",
@@ -819,15 +789,7 @@ const styles = {
     fontSize: 14,
     transition: "all 0.2s ease",
   },
-  "@media (hover: hover)": {
-    priceInput: {
-      ":focus": {
-        outline: "none",
-        borderColor: "#3b82f6",
-        boxShadow: "0 0 0 2px rgba(59,130,246,0.1)",
-      },
-    },
-  },
+
   modalOverlay: {
     position: "fixed",
     inset: 0,
@@ -882,13 +844,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
-  "@media (hover: hover)": {
-    modalCloseBtn: {
-      ":hover": {
-        background: "rgba(0,0,0,0.05)",
-      },
-    },
-  },
+
   searchBar: {
     position: "relative",
     marginBottom: 20,
@@ -911,28 +867,7 @@ const styles = {
     backgroundColor: "#f9fafb",
     boxSizing: "border-box",
   },
-  "@media (hover: hover)": {
-    searchInput: {
-      ":focus": {
-        outline: "none",
-        borderColor: "#3b82f6",
-        backgroundColor: "white",
-        boxShadow: "0 0 0 3px rgba(59,130,246,0.1)",
-      },
-    },
-  },
-  "@media (hover: hover)": {
-    searchBar: {
-      "::before": {
-        content: '""',
-        position: "absolute",
-        left: 12,
-        top: "50%",
-        transform: "translateY(-50%)",
-        pointerEvents: "none",
-      },
-    },
-  },
+
   loaderContainer: {
     display: "flex",
     flexDirection: "column",
@@ -986,15 +921,7 @@ const styles = {
     position: "relative",
     overflow: "hidden",
   },
-  "@media (hover: hover)": {
-    flightCard: {
-      ":hover": {
-        borderColor: "#3b82f6",
-        boxShadow: "0 4px 12px rgba(59,130,246,0.15)",
-        transform: "translateX(2px)",
-      },
-    },
-  },
+
   flightSelected: {
     borderColor: "#10b981",
     background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
@@ -1103,14 +1030,7 @@ const styles = {
     transition: "all 0.2s ease",
     boxShadow: "0 4px 6px rgba(16,185,129,0.25)",
   },
-  "@media (hover: hover)": {
-    saveBtn: {
-      ":hover": {
-        transform: "translateY(-2px)",
-        boxShadow: "0 8px 12px rgba(16,185,129,0.35)",
-      },
-    },
-  },
+
   buttonAnimating: {
     transform: "scale(0.95)",
     opacity: 0.8,

@@ -311,15 +311,7 @@ const styles = {
     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
   },
 
-  "@media (hover: hover)": {
-    selector: {
-      ":hover": {
-        borderColor: "#7c3aed",
-        boxShadow: "0 4px 12px rgba(124,58,237,0.15)",
-        transform: "translateY(-1px)",
-      },
-    },
-  },
+
 
   disabled: {
     opacity: 0.5,
@@ -365,14 +357,7 @@ const styles = {
     transition: "all 0.2s ease",
   },
 
-  "@media (hover: hover)": {
-    selectedChip: {
-      ":hover": {
-        transform: "translateY(-1px)",
-        boxShadow: "0 4px 8px rgba(124,58,237,0.2)",
-      },
-    },
-  },
+
 
   selectedChipText: {
     color: "#7c3aed",
@@ -392,14 +377,7 @@ const styles = {
     justifyContent: "center",
   },
 
-  "@media (hover: hover)": {
-    removeButton: {
-      ":hover": {
-        backgroundColor: "rgba(124,58,237,0.1)",
-        transform: "scale(1.1)",
-      },
-    },
-  },
+
 
   modalOverlay: {
     position: "fixed",
@@ -486,15 +464,7 @@ const styles = {
     backgroundColor: "#f9fafb",
   },
 
-  "@media (hover: hover)": {
-    searchInput: {
-      ":focus": {
-        borderColor: "#7c3aed",
-        backgroundColor: "white",
-        boxShadow: "0 0 0 3px rgba(124,58,237,0.1)",
-      },
-    },
-  },
+
 
   actionButtons: {
     display: "flex",
@@ -515,15 +485,7 @@ const styles = {
     color: "#6b7280",
   },
 
-  "@media (hover: hover)": {
-    actionButton: {
-      ":hover:not(:disabled)": {
-        backgroundColor: "#f9fafb",
-        borderColor: "#7c3aed",
-        color: "#7c3aed",
-      },
-    },
-  },
+
 
   destinationList: {
     overflowY: "auto",
@@ -546,15 +508,7 @@ const styles = {
     overflow: "hidden",
   },
 
-  "@media (hover: hover)": {
-    destinationItem: {
-      ":hover": {
-        backgroundColor: "#f3f4f6",
-        borderColor: "#e5e7eb",
-        transform: "translateX(2px)",
-      },
-    },
-  },
+
 
   selectedDestinationItem: {
     background: "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)",
@@ -592,14 +546,7 @@ const styles = {
     fontSize: 15,
   },
 
-  "@media (hover: hover)": {
-    cancelButton: {
-      ":hover": {
-        backgroundColor: "#e5e7eb",
-        borderColor: "#d1d5db",
-      },
-    },
-  },
+
 
   cancelButtonText: {
     color: "#6b7280",
@@ -624,14 +571,7 @@ const styles = {
     boxShadow: "none",
   },
 
-  "@media (hover: hover)": {
-    confirmButton: {
-      ":hover:not(:disabled)": {
-        boxShadow: "0 6px 12px rgba(124,58,237,0.35)",
-        transform: "translateY(-1px)",
-      },
-    },
-  },
+
 
   buttonAnimating: {
     transform: "scale(0.95)",

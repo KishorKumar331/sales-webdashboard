@@ -162,7 +162,8 @@ const OnBoardingPage = () => {
           const userObj = Array.isArray(result) ? result[0] : result;
           
           // Set full user data in Zustand store directly
-          const email = userObj?.Email || userObj?.email;
+          // The new response structure is { user: {...}, organization: {...} }
+          const email = userObj?.user?.Email || userObj?.user?.email || userObj?.Email || userObj?.email;
           if (email) {
             setUserEmail(email);
           }
