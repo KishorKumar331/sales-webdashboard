@@ -6,7 +6,7 @@ import { useUserProfile } from "../hooks/useUserProfile";
 import { useAuth } from "../hooks/useAuth";
 
 export default function CreateQuote() {
-    const {user } = useAuth();
+  const { user } = useAuth();
 
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,13 +23,13 @@ export default function CreateQuote() {
 
   const fetchLeads = useCallback(
     async (mode = "initial", signal) => {
-      if (!user?.FullName) return;
+      if (!user?.user?.Email) return;
 
       mode === "initial" ? setLoading(true) : setRefreshing(true);
 
       try {
         setError(null);
-        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.Email}&latestStatus=LeadCreate&case=maxcase`;
+        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user?.user?.Email}&latestStatus=LeadCreate&case=maxcase`;
 
         const res = await fetch(url, { signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -62,7 +62,7 @@ export default function CreateQuote() {
           lead['Client-Email'] || '',
           lead['Client-Contact'] || ''
         ].join(' ').toLowerCase();
-        
+
         if (!searchableText.includes(searchTerm)) {
           return false;
         }
@@ -109,7 +109,7 @@ export default function CreateQuote() {
   }, [leads, filters]);
 
   useEffect(() => {
-    if (!user?.FullName) return;
+    if (!user?.user?.Email) return;
     const controller = new AbortController();
     fetchLeads("initial", controller.signal);
     return () => controller.abort();
@@ -118,9 +118,9 @@ export default function CreateQuote() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Filter Bar - Sticky */}
-      {!loading  && !error && leads.length > 0 && (
-        <FilterBar 
-          data={leads} 
+      {!loading && !error && leads.length > 0 && (
+        <FilterBar
+          data={leads}
           onFilterChange={setFilters}
         />
       )}
