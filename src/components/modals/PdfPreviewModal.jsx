@@ -9,11 +9,13 @@ const API_URL =
 
 const PdfPreviewModal = ({
   visible,
+  data,
   pdfHtml,
   onClose,
   clientName = "Quotation",
   onShare,
 }) => {
+  console.log(data)
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(false);
@@ -34,9 +36,9 @@ const PdfPreviewModal = ({
         type: "quotation",
         html: pdfHtml,
         fileName: `${clientName}.pdf`,
-        tripId: "000163-7658",
-        quoteId: "QUO-20260224-DUB-4-0c01",
-        templateName: "ip_pdf.hbs",
+        tripId: data?.TripId,
+        quoteId: data?.QuoteId,
+
       });
 
       const fileUrl = response?.data?.url;
@@ -68,10 +70,10 @@ const PdfPreviewModal = ({
       window.URL.revokeObjectURL(blobUrl);
 
       toast.success("PDF downloaded successfully ✅");
-      
+
       // Only call onShare if it's provided
-        onShare();
-      
+      onShare();
+
     } catch (err) {
       console.error("Download error:", err);
       toast.error("Failed to generate PDF");

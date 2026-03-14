@@ -44,14 +44,14 @@ const QuotationScreen = () => {
 
   /* ================= FORM SUBMIT ================= */
   const handleFormSubmit = async (data) => {
+    console.log(data)
     if (isPrinting) return;
     setIsPrinting(true);
 
     try {
       const dataWithUser = {
         ...data,
-
-        user,
+        company: user?.user?.company
       };
 
       console.log("Data with user:", dataWithUser);
@@ -61,9 +61,7 @@ const QuotationScreen = () => {
         {
           mode: "html",
           type: "quotation",
-          // renderOnly: true,
           data: dataWithUser,
-          templateName: "ip_pdf.hbs",
         }
       );
 
@@ -74,8 +72,8 @@ const QuotationScreen = () => {
         setPdfUri(null);
         setFormDataToSubmit({
           ...data,
-          CompanyId: user?.CompanyId,
-          CompanyEmail: user?.Email,
+          company: user?.user?.company,
+          CompanyEmail: user?.user?.Email,
         });
         setShowPdfModal(true);
         setRefreshKey((prev) => prev + 1);
@@ -104,7 +102,7 @@ const QuotationScreen = () => {
 
       const res = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations",
-        { ...formDataToSubmit, CompanyEmail: user?.Email }
+        { ...formDataToSubmit, CompanyEmail: user?.user?.Email }
       );
 
       console.log("✅ Quotation created:", res.data);
@@ -144,6 +142,7 @@ const QuotationScreen = () => {
         followUpData={followUpData}
       />
       <PdfPreviewModal
+        data={formDataToSubmit}
         key={refreshKey}
         visible={showPdfModal}
         pdfUri={pdfUri}

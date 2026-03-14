@@ -25,7 +25,6 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
 
   const tripId = followUpData?.TripId || lead?.TripId || "";
   const userData = {
-    CompanyId: "12345",
     AssignDate: new Date().toISOString(),
     AssignDateKey: +new Date().toISOString().slice(0, 10).replace(/-/g, ""),
   };
@@ -34,20 +33,20 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
   const sourceData = followUpData || lead;
   const client = followUpData
     ? {
-        FullName: followUpData["Client-Name"],
-        Contact: followUpData["Client-Contact"],
-        Email: followUpData["Client-Email"],
-        TravelDate: followUpData.TravelDate,
-        Pax: followUpData.NoOfPax,
-        Child: followUpData.Child,
-        Infant: followUpData.Infant,
-        Budget: followUpData.Budget,
-        DepartureCity: followUpData.DepartureCity,
-        DestinationName: followUpData.DestinationName,
-        Destinations: followUpData.Destinations || [followUpData.DestinationName],
-        Days: followUpData.Days,
-        IsMultiDestination: followUpData.IsMultiDestination,
-      }
+      FullName: followUpData["Client-Name"],
+      Contact: followUpData["Client-Contact"],
+      Email: followUpData["Client-Email"],
+      TravelDate: followUpData.TravelDate,
+      Pax: followUpData.NoOfPax,
+      Child: followUpData.Child,
+      Infant: followUpData.Infant,
+      Budget: followUpData.Budget,
+      DepartureCity: followUpData.DepartureCity,
+      DestinationName: followUpData.DestinationName,
+      Destinations: followUpData.Destinations || [followUpData.DestinationName],
+      Days: followUpData.Days,
+      IsMultiDestination: followUpData.IsMultiDestination,
+    }
     : sourceData?.ClientLeadDetails || {};
 
   // ------------------ Default form values -------------------
@@ -102,7 +101,7 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
           CheckOutDateKey: null,
           Comments: "",
         },
-      ], 
+      ],
 
       Inclusions: followUpData?.Inclusions || [],
       Exclusions: followUpData?.Exclusions || [],
@@ -134,8 +133,8 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
   // Skip loading cached draft when opening existing quotation (followUpData exists)
   // Pass QuoteId as uniqueId to track when quotation changes
   const { methods, loading } = useQuotationDraft(
-    tripId, 
-    defaults, 
+    tripId,
+    defaults,
     !!followUpData,
     followUpData?.QuoteId
   );
@@ -173,36 +172,36 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
             <Component />
           </div>
         ))}
-      <div className="flex justify-center">
+        <div className="flex justify-center">
           <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          style={{
-            backgroundColor: isSubmitting ? '#9ca3af' : '#7c3aed',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            fontSize: '16px',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            opacity: isSubmitting ? 0.8 : 1,
-            transition: 'all 0.2s ease'
-          }}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-              <span>Submitting...</span>
-            </>
-          ) : (
-            <span>Submit</span>
-          )}
-        </button>
-      </div>
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            style={{
+              backgroundColor: isSubmitting ? '#9ca3af' : '#7c3aed',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              opacity: isSubmitting ? 0.8 : 1,
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Submitting...</span>
+              </>
+            ) : (
+              <span>Submit</span>
+            )}
+          </button>
+        </div>
       </div>
     </FormProvider>
   );
