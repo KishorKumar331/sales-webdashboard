@@ -24,6 +24,16 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+
+      // 👇 Remove too many empty lines
+      'no-multiple-empty-lines': [
+        'error',
+        {
+          max: 1,        // max empty lines anywhere
+          maxBOF: 0,     // beginning of file
+          maxEOF: 0      // end of file
+        }
+      ]
     },
   },
 ])

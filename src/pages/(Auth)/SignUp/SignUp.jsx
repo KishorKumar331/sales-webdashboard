@@ -129,7 +129,7 @@ export default function SignUp() {
 
   const methods = useForm({
     defaultValues: {
-      companyid: "",
+      company: "",
       email: "",
       phone: "",
       fullname: "",
@@ -192,7 +192,6 @@ export default function SignUp() {
   const showToast = (message) => {
     alert(message);
   };
-
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -252,7 +251,7 @@ export default function SignUp() {
         fieldsToValidate = ['fullname', 'email', 'phone'];
         break;
       case 2:
-        fieldsToValidate = ['companyid', 'companyname', 'address'];
+        fieldsToValidate = ['company', 'companyname', 'address'];
         break;
       case 3:
         fieldsToValidate = ['bankname', 'branchname', 'accountnumber', 'ifsccode'];
@@ -275,6 +274,7 @@ export default function SignUp() {
   };
 
   const onSubmit = async (data) => {
+    console.log(data)
     if (currentStep !== 3) return;
 
     const isValid = await validateStep(3);
@@ -419,7 +419,7 @@ export default function SignUp() {
           <ProgressBar />
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-4xl">
+        <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-4xl" noValidate>
           <StepTitle />
 
           <div className="pb-6">

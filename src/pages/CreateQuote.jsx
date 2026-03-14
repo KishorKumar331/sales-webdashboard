@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { AlertCircle, FileText } from "lucide-react";
 import QuotationCards from "../components/cards/QuotationCards";
 import FilterBar from "../components/FilterBar";
-import { useUserProfile } from "../hooks/useUserProfile";
 import { useAuth } from "../hooks/useAuth";
 
 export default function CreateQuote() {

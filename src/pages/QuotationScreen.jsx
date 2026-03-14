@@ -50,6 +50,7 @@ const QuotationScreen = () => {
     try {
       const dataWithUser = {
         ...data,
+
         user,
       };
 
@@ -69,6 +70,7 @@ const QuotationScreen = () => {
       if (response.data) {
         console.log("HTML Content received from API");
         setPdfHtml(response.data);
+
         setPdfUri(null);
         setFormDataToSubmit({
           ...data,
@@ -83,7 +85,6 @@ const QuotationScreen = () => {
       }
     } catch (error) {
       console.error("❌ Error generating preview:", error);
-      Alert.alert("Error", "Failed to generate preview. Please try again.");
     } finally {
       setIsPrinting(false);
     }
@@ -96,7 +97,6 @@ const QuotationScreen = () => {
   const handleShare = async () => {
     // This runs when user clicks download/share button
     if (!formDataToSubmit) {
-      Alert.alert("Error", "No quotation data to submit");
       return;
     }
 
@@ -104,15 +104,15 @@ const QuotationScreen = () => {
 
       const res = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations",
-        {...formDataToSubmit,CompanyEmail:user?.Email}
+        { ...formDataToSubmit, CompanyEmail: user?.Email }
       );
 
       console.log("✅ Quotation created:", res.data);
 
       const updateData = {
-        TripId: leadData?.TripId||followUpData?.TripId,
-        CreatedAt: leadData?.CreatedAt||followUpData?.CreatedAt,
-        company: leadData?.company||followUpData?.company,
+        TripId: leadData?.TripId || followUpData?.TripId,
+        CreatedAt: leadData?.CreatedAt || followUpData?.CreatedAt,
+        company: leadData?.company || followUpData?.company,
         quotations: Array.isArray(leadData?.quotations) || Array.isArray(followUpData?.quotations)
           ? [...(leadData?.quotations || followUpData?.quotations || []), res.data.QuoteId]
           : [res.data.QuoteId],
@@ -131,10 +131,7 @@ const QuotationScreen = () => {
       navigate("/")
     } catch (error) {
       console.error("❌ Error submitting:", error);
-      Alert.alert(
-        "Error",
-        "Failed to submit quotation: " + (error?.message || error)
-      );
+
     }
   };
 
@@ -159,7 +156,5 @@ const QuotationScreen = () => {
 };
 
 /* ================= STYLES ================= */
-
-
 
 export default QuotationScreen;

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
 import { PersonalInfo } from "./(profile)/PersonalInfo";
@@ -43,20 +44,37 @@ const Profile = () => {
   const { user, loading } = useUserProfile();
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([
     { id: 1, type: 'card', last4: '4242', brand: 'Visa', isDefault: true },
     { id: 2, type: 'card', last4: '5555', brand: 'Mastercard', isDefault: false },
   ]);
-  const [marketplaceListings, setMarketplaceListings] = useState([
-    { id: 1, title: 'Travel Package - Bali', price: 1299, status: 'active', downloads: 45 },
-    { id: 2, title: 'Europe Tour Guide', price: 899, status: 'draft', downloads: 0 },
-  ]);
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'payment', message: 'Payment received from John Doe', time: '2 hours ago', read: false },
     { id: 2, type: 'system', message: 'Your subscription will renew in 5 days', time: '1 day ago', read: true },
   ]);
+  const [marketTemplates, setMarketTemplates] = useState([]);
+  const [templateType, setTemplateType] = useState('quotation'); // 'invoice' or 'quotation'
+  const [activeTemplates, setActiveTemplates] = useState({
+    invoice: null,
+    quotation: null
+  });
+  const [fetchingTemplates, setFetchingTemplates] = useState(false);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setFetchingTemplates(true);
+      try {
+        const response = await axios.get('https://plans.infinitepackages.com/design-builder/min-info.json');
+        setMarketTemplates(response.data);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+      } finally {
+        setFetchingTemplates(false);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -107,17 +125,6 @@ const Profile = () => {
 
   const deletePaymentMethod = (id) => {
     setPaymentMethods(paymentMethods.filter(method => method.id !== id));
-  };
-
-  const addMarketplaceListing = () => {
-    const newListing = {
-      id: marketplaceListings.length + 1,
-      title: 'New Travel Package',
-      price: 999,
-      status: 'draft',
-      downloads: 0
-    };
-    setMarketplaceListings([...marketplaceListings, newListing]);
   };
 
   const markNotificationAsRead = (id) => {
@@ -205,81 +212,165 @@ const Profile = () => {
   );
 
   // Marketplace Tab
-  const renderMarketplace = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">My Listings</h3>
-          <button
-            onClick={addMarketplaceListing}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Listing
-          </button>
+  const renderMarketplace = () => {
+    const filteredTemplates = marketTemplates.filter(t => 
+      templateType === 'invoice' ? t.type === 'invoice' : t.type !== 'invoice'
+    );
+
+    const groupedTemplates = filteredTemplates.reduce((acc, template) => {
+      const category = template.category || 'other';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(template);
+      return acc;
+    }, {});
+
+    const handleSetTemplate = (template) => {
+      setActiveTemplates(prev => ({
+        ...prev,
+        [templateType]: template.name
+      }));
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Design Builder</h3>
+              <p className="text-sm text-gray-500 mt-1">Select and customize your document templates</p>
+            </div>
+            
+            <div className="flex p-1 bg-gray-100 rounded-xl w-full sm:w-auto">
+              <button
+                onClick={() => setTemplateType('quotation')}
+                className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  templateType === 'quotation' 
+                    ? 'bg-white text-purple-600 shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Quotation
+              </button>
+              <button
+                onClick={() => setTemplateType('invoice')}
+                className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  templateType === 'invoice' 
+                    ? 'bg-white text-purple-600 shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Invoice
+              </button>
+            </div>
+          </div>
+
+          {fetchingTemplates ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
+              <p className="text-gray-500 font-medium">Loading templates...</p>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {Object.entries(groupedTemplates).map(([category, templates]) => (
+                <div key={category} className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-gray-200"></div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2">{category}</span>
+                    <div className="h-px flex-1 bg-gray-200"></div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {templates.map((template, idx) => {
+                      const isActive = activeTemplates[templateType] === template.name;
+                      return (
+                        <div 
+                          key={idx}
+                          className={`group relative bg-white border-2 rounded-2xl p-5 transition-all duration-300 ${
+                            isActive 
+                              ? 'border-purple-600 shadow-lg ring-4 ring-purple-50' 
+                              : 'border-gray-100 hover:border-purple-200 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <div className={`p-3 rounded-xl ${isActive ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400'}`}>
+                              <FileText className="w-6 h-6" />
+                            </div>
+                            {isActive && (
+                              <span className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                                <Check className="w-3 h-3" />
+                                ACTIVE
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mb-6">
+                            <h4 className="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
+                              {template.original_name.replace('.hbs', '')}
+                            </h4>
+                            <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                              {template.name}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {!isActive ? (
+                              <button
+                                onClick={() => handleSetTemplate(template)}
+                                className="flex-1 px-4 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors shadow-sm"
+                              >
+                                Set Public
+                              </button>
+                            ) : (
+                              <>
+                                <button className="flex-1 px-4 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-md flex items-center justify-center gap-2">
+                                  <CreditCard className="w-4 h-4" />
+                                  Pay Now
+                                </button>
+                                <button className="p-2.5 text-gray-400 border border-gray-200 rounded-xl hover:text-purple-600 hover:border-purple-200 transition-all">
+                                  <Eye className="w-5 h-5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {filteredTemplates.length === 0 && (
+                <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                  <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mx-auto mb-4">
+                    <ShoppingCart className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900">No templates found</h4>
+                  <p className="text-gray-500 mt-2">We couldn't find any {templateType} templates in this category.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
-        <div className="space-y-4">
-          {marketplaceListings.map(listing => (
-            <div key={listing.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">{listing.title}</p>
-                <p className="text-sm text-gray-500">${listing.price} • {listing.downloads} downloads</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  listing.status === 'active' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {listing.status}
-                </span>
-                <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                  <Eye className="w-4 h-4" />
-                </button>
-              </div>
+        <div className="bg-linear-to-br from-purple-600 to-purple-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-400/20 rounded-full -ml-16 -mb-16 blur-2xl"></div>
+          
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="max-w-md">
+              <h3 className="text-2xl font-bold mb-3 italic">Custom Template Design?</h3>
+              <p className="text-purple-100 leading-relaxed">
+                Need a specific design for your company? Our designers can create a bespoke template tailored to your brand identity.
+              </p>
             </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Sales Analytics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600 font-medium">Total Sales</p>
-                <p className="text-2xl font-bold text-purple-900">$12,450</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-purple-600" />
-            </div>
-          </div>
-          <div className="p-4 bg-green-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Total Downloads</p>
-                <p className="text-2xl font-bold text-green-900">1,234</p>
-              </div>
-              <Download className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">Active Listings</p>
-                <p className="text-2xl font-bold text-blue-900">8</p>
-              </div>
-              <Package className="w-8 h-8 text-blue-600" />
-            </div>
+            <button className="px-8 py-4 bg-white text-purple-700 font-bold rounded-2xl hover:bg-purple-50 transition-all transform hover:scale-105 active:scale-95 shadow-xl">
+              Contact Design Team
+            </button>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Documents Tab
   const renderDocuments = () => (
@@ -400,7 +491,7 @@ const Profile = () => {
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
             </label>
           </div>
         </div>
@@ -498,7 +589,7 @@ const Profile = () => {
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked={pref.enabled} />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
               </label>
             </div>
           ))}
@@ -561,7 +652,7 @@ const Profile = () => {
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked={setting.enabled} />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
               </label>
             </div>
           ))}
@@ -696,7 +787,7 @@ const Profile = () => {
               Member since {user?.joinDate || '2024-01-15'}
             </p>
           </div>
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-12 h-12 bg-linear-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-lg">
             {loading ? '?' : ((user?.name || user?.username || 'Admin User').split(' ').map(n => n[0]).join(''))}
           </div>
           <button
