@@ -27,9 +27,8 @@ const DetailCard = ({ title, children, icon }) => (
 
 const DetailRow = ({ label, value, isLast }) => (
   <div
-    className={`flex justify-between py-2 ${
-      !isLast ? "border-b border-gray-100" : ""
-    }`}
+    className={`flex justify-between py-2 ${!isLast ? "border-b border-gray-100" : ""
+      }`}
   >
     <span className="text-gray-600">{label}</span>
     <span className="text-gray-800 font-medium text-right ml-4">
@@ -47,14 +46,13 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
   const [pdfHtml, setPdfHtml] = useState(null);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
 
- const handleInvoicePreview = async (quotation) => {
+  const handleInvoicePreview = async (quotation) => {
     try {
       const response = await axios.post(API_URL, {
-          type: "quotation",
+        type: "quotation",
         mode: "html",
         tripId: quotation.TripId,
         quoteId: quotation.QuoteId,
-        templateName: "ip_pdf.hbs",
       });
 
       if (!response.data) {
@@ -94,10 +92,10 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
   const formatDate = (d) =>
     d
       ? new Date(d).toLocaleDateString("en-IN", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
       : "N/A";
 
   const formatCurrency = (a) =>
@@ -159,9 +157,8 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
             />
             <DetailRow
               label="Travelers"
-              value={`${quote.pax || quote.NoOfPax} Adults ${
-                (quote.child || quote.Child) > 0 ? `, ${quote.child || quote.Child} Children` : ""
-              }`}
+              value={`${quote.pax || quote.NoOfPax} Adults ${(quote.child || quote.Child) > 0 ? `, ${quote.child || quote.Child} Children` : ""
+                }`}
             />
             <DetailRow
               label="Duration"
@@ -231,18 +228,18 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
           </button>
         </div>
       </div>
-        <PdfPreviewModal
+      <PdfPreviewModal
         visible={showPdfModal}
         pdfHtml={pdfHtml}
         clientName={
-           "Quotation"
+          "Quotation"
         }
-        onShare={()=>{
+        onShare={() => {
           setShowPdfModal(false);
         }}
         onClose={() => {
-            setShowPdfModal(false);
-            setSelectedQuotation(null);
+          setShowPdfModal(false);
+          setSelectedQuotation(null);
         }}
       />
     </div>

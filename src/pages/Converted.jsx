@@ -2,11 +2,11 @@ import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import { AlertCircle, FileText, RefreshCw, Filter } from "lucide-react";
 import ConvertedCards from "../components/cards/ConvertedCard";
 import FilterBar from "../components/FilterBar";
-import {useAuth} from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Converted() {
   const scrollRef = useRef(null);
-const {user} = useAuth();
+  const { user } = useAuth();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,14 +22,14 @@ const {user} = useAuth();
 
   const fetchLeads = useCallback(
     async (mode = "initial", signal) => {
-      if (!user?.FullName) return [];
+      if (!user?.user?.Email) return [];
 
       mode === "initial" ? setLoading(true) : setRefreshing(true);
 
       try {
         setError(null);
 
-        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.Email}&latestStatus=Converted`
+        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.user?.Email}&latestStatus=Converted`
 
         const response = await fetch(url, {
           signal,
@@ -65,13 +65,13 @@ const {user} = useAuth();
 
   // Replace useFocusEffect → useEffect
   useEffect(() => {
-    if (!user?.FullName) return;
+    if (!user?.user?.Email) return;
 
     const controller = new AbortController();
     fetchLeads("initial", controller.signal).catch(console.error);
 
     return () => controller.abort();
-  }, [fetchLeads, user?.FullName]);
+  }, [fetchLeads, user?.user?.Email]);
 
   const onRefresh = useCallback(() => fetchLeads("refresh"), [fetchLeads]);
 
@@ -89,7 +89,7 @@ const {user} = useAuth();
           lead.clientEmail || lead['Client-Email'] || '',
           lead.clientContact || lead['Client-Contact'] || ''
         ].join(' ').toLowerCase();
-        
+
         if (!searchableText.includes(searchTerm)) {
           return false;
         }
@@ -151,12 +151,12 @@ const {user} = useAuth();
     <div className="min-h-screen bg-gray-50">
       {/* Filter Bar - Sticky */}
       {!loading && !error && leads.length > 0 && (
-        <FilterBar 
-          data={leads} 
+        <FilterBar
+          data={leads}
           onFilterChange={setFilters}
         />
       )}
-   
+
       {/* LOADING */}
       {loading ? (
         <div className="flex flex-col items-center justify-center h-[70vh]">

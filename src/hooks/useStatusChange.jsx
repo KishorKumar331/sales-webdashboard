@@ -4,10 +4,10 @@ import { toast } from "react-toastify";
 import { useAuth } from "../hooks/useAuth";
 
 const useStatusChange = (initialStatus, quotationData) => {
-  const {user}=useAuth();
+  const { user } = useAuth();
   const [status, setStatus] = useState(initialStatus);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const sendHandoverEmail = useCallback(async (quotation) => {
     console.log(quotation)
     debugger
@@ -76,8 +76,8 @@ const useStatusChange = (initialStatus, quotationData) => {
         const res = await axios.put(
           "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote",
           {
-            company: user?.CompanyName,
-            CreatedAt:quotationData?.CreatedAt,
+            company: user?.user?.company,
+            CreatedAt: quotationData?.CreatedAt,
             TripId: quotationData?.TripId,
             LeadId: quotationData?.LeadId,
             latestStatus: newStatus,
@@ -86,7 +86,7 @@ const useStatusChange = (initialStatus, quotationData) => {
         );
 
         setStatus(newStatus);
-        
+
         if (newStatus === "Converted") {
           try {
             console.log('handover runs');
