@@ -8,12 +8,12 @@ const SESSION_API =
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   
-  // Get state from zustand store
   const { 
     userEmail, 
     userData, 
     isAuthenticated,
     setUserEmail,
+    setUserData,
     setIsAuthenticated,
     clearAuth 
   } = useAuthStore();
@@ -47,10 +47,10 @@ console.log(user)
            const response = await fetch(url, { method: "GET" });
            if (response.ok) {
              const result = await response.json();
-             // Just an example, assuming the context of Auth OnBoarding where we set userData
              if (result && Array.isArray(result) && result.length > 0) {
-                 // The auth store might not have a direct `setUserData` exposed here based on original code, 
-                 // but OnBoarding uses useAuthStore directly.
+                 setUserData(result[0]); // store the actual user object
+             } else if (result && !Array.isArray(result) && Object.keys(result).length > 0) {
+                 setUserData(result);
              }
            }
         }
@@ -63,7 +63,7 @@ console.log(user)
     } finally {
       setIsLoading(false);
     }
-  }, [userEmail, userData, setIsAuthenticated, setUserEmail]);
+  }, [userEmail, userData, setIsAuthenticated, setUserEmail, setUserData]);
 
   /**
    * Run on app mount
