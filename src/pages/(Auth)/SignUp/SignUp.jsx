@@ -10,6 +10,8 @@ import {
   Zap,
   ArrowRight,
   User,
+  X,
+  Mail
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { uploadCompanyLogo, uploadPaymentQR } from "../../../utils/fileToDataUrl";
@@ -125,6 +127,13 @@ const LS_STEP_KEY = "createAccountCurrentStep";
 export default function SignUp() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // OTP Modal State
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [signUpData, setSignUpData] = useState(null);
+
   const navigate = useNavigate();
 
   const methods = useForm({
@@ -132,6 +141,8 @@ export default function SignUp() {
       companyid: "",
       email: "",
       phone: "",
+      password: "",
+      confirmPassword: "",
       fullname: "",
       companyname: "",
       brandname: "",
@@ -249,7 +260,7 @@ export default function SignUp() {
     let fieldsToValidate = [];
     switch (step) {
       case 1:
-        fieldsToValidate = ['fullname', 'email', 'phone'];
+        fieldsToValidate = ['fullname', 'email', 'phone', 'password', 'confirmPassword'];
         break;
       case 2:
         fieldsToValidate = ['companyid', 'companyname', 'address'];
@@ -281,32 +292,107 @@ export default function SignUp() {
     if (!isValid) return;
 
     try {
-      const response = await fetch(
-        "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        }
-      );
+      setIsLoading(true);
+      const { signUp } = await import('aws-amplify/auth');
 
-      const result = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem("userProfile", JSON.stringify(data));
-        localStorage.removeItem(LS_FORM_KEY);
-        localStorage.setItem("accountCreated", "true");
-
-        showToast("Account created successfully!");
-        navigate("/(auth)/PaymentGateway/payment");
-      } else {
-        alert(result?.message || "Failed to create account. Please try again.");
-        console.error("API Error:", result);
+      let formattedPhone = data.phone.trim();
+      if (!formattedPhone.startsWith('+')) {
+         formattedPhone = '+91' + formattedPhone;
       }
+
+      // 1. Sign Up with Cognito
+      const signUpResult = await signUp({
+        username: data.email, // using email as username
+        password: data.password,
+        options: {
+          userAttributes: {
+             email: data.email,
+             phone_number: formattedPhone,
+             name: data.fullname,
+          }
+        }
+      });
+
+      // 2. Open OTP Modal if required
+      if (signUpResult.nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
+          setSignUpData(data); // Save form data
+          setShowOTPModal(true);
+      } else if (signUpResult.nextStep.signUpStep === 'DONE') {
+         // Auto confirmed
+         await saveBusinessDetails(data);
+      }
+
     } catch (error) {
-      console.error("Submit error:", error);
-      alert("Network error. Please check your connection and try again.");
+      console.error("Cognito SignUp error full object:", error);
+      console.error("Cognito SignUp error response:", error.response);
+      console.error("Cognito SignUp error name:", error.name);
+      console.error("Cognito SignUp error message:", error.message);
+      alert(`Cognito Error [${error.name}]: ${error.message || "Failed to create account."} Please check console for details.`);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleVerifyOTP = async () => {
+     if (!otp.trim()) {
+        alert("Please enter the verification code.");
+        return;
+     }
+
+     setIsVerifying(true);
+     try {
+       const { confirmSignUp } = await import('aws-amplify/auth');
+       
+       const result = await confirmSignUp({
+         username: signUpData.email,
+         confirmationCode: otp
+       });
+
+       if (result.isSignUpComplete || result.nextStep.signUpStep === 'DONE') {
+          setShowOTPModal(false);
+          await saveBusinessDetails(signUpData);
+       }
+     } catch (error) {
+       console.error("OTP verification error:", error);
+       alert(error.message || "Invalid verification code.");
+     } finally {
+       setIsVerifying(false);
+     }
+  };
+
+  const saveBusinessDetails = async (data) => {
+      try {
+        setIsLoading(true);
+        // Exclude passwords from data sent to backend
+        const { password, confirmPassword, ...backendData } = data;
+
+        const response = await fetch(
+          "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(backendData),
+          }
+        );
+
+        const result = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem("userProfile", JSON.stringify(backendData));
+          localStorage.removeItem(LS_FORM_KEY);
+          localStorage.setItem("accountCreated", "true");
+
+          showToast("Account created and verified successfully!");
+          navigate("/(auth)/PaymentGateway/payment");
+        } else {
+          alert(result?.message || "Failed to save business details.");
+        }
+      } catch (error) {
+        console.error("Submit business details error:", error);
+        alert("Network error. Please check your connection and try again.");
+      } finally {
+        setIsLoading(false);
+      }
   };
 
   const stepMeta = useMemo(
@@ -419,7 +505,7 @@ export default function SignUp() {
           <ProgressBar />
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-4xl">
+        <form noValidate onSubmit={handleSubmit(onSubmit, (errors) => console.error("Form validation errors:", errors))} className="mx-auto max-w-4xl">
           <StepTitle />
 
           <div className="pb-6">
@@ -438,6 +524,56 @@ export default function SignUp() {
             <Buttons />
           </div>
         </form>
+
+        {/* OTP Verification Modal */}
+        {showOTPModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl transform transition-all duration-300 scale-100">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Verify Email</h2>
+                  <p className="text-gray-600 mt-1">We sent a verification code to your email.</p>
+                </div>
+                <button 
+                  onClick={() => setShowOTPModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Verification Code</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="Enter 6-digit code"
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white transition-colors"
+                      disabled={isVerifying}
+                    />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                      <Mail className="w-5 h-5 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <button
+                    onClick={handleVerifyOTP}
+                    disabled={isVerifying}
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white font-semibold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isVerifying ? 'Verifying...' : 'Verify Code'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </FormProvider>
   );

@@ -21,6 +21,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useAuth } from '../../hooks/useAuth';
 import './Auth.css';
 
 const OnBoardingPage = () => {
@@ -36,6 +37,7 @@ const OnBoardingPage = () => {
   
   // Get Zustand store actions
   const { setUserEmail, setUserData, setIsAuthenticated } = useAuthStore();
+  const { checkSession } = useAuth();
   
   // Enhanced carousel data with better content
   const carouselData = [
@@ -124,65 +126,39 @@ const OnBoardingPage = () => {
   };
 
   const handleLogin = async () => {
-    if (!loginInput.trim()) {
-      showToast('Please enter your email or phone number', 'error');
+    if (!loginInput.trim() || !password.trim()) {
+      showToast('Please enter your email/phone and password', 'error');
       return;
     }
 
     setIsLoading(true);
     
     try {
-      let apiUrl = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+      // Import here to avoid top-level import issues if not needed globally
+      const { signIn } = await import('aws-amplify/auth');
       
-      if (isValidEmail(loginInput)) {
-        apiUrl += `Email=${encodeURIComponent(loginInput)}`;
-      } else if (isValidPhone(loginInput)) {
-        apiUrl += `Phone=${encodeURIComponent(loginInput)}`;
-      } else {
-        showToast('Please enter a valid email or phone number', 'error');
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const { isSignedIn, nextStep } = await signIn({
+        username: loginInput,
+        password,
       });
 
-      const result = await response.json();
-      
-      if (response.ok) {
-        const hasData = Array.isArray(result) ? result.length > 0 : (result && Object.keys(result).length > 0);
+      if (isSignedIn) {
+        showToast('Login successful!');
         
-        if (Array.isArray(result) && result.length === 0) {
-          showToast('No account found. Please create an account first.', 'error');
-        } else if (hasData) {
-          const userObj = Array.isArray(result) ? result[0] : result;
-          
-          // Set full user data in Zustand store directly
-          const email = userObj?.Email || userObj?.email;
-          if (email) {
-            setUserEmail(email);
-          }
-          setUserData(userObj); // Store complete user data from login API
-          setIsAuthenticated(true);
-          
-          showToast('Login successful!');
-          setShowLoginModal(false);
-          
-          setTimeout(() => {
-            navigate('/');
-          }, 100);
-        } else {
-          showToast('No account found. Please create an account first.', 'error');
-        }
+        // Let the useAuth hook logic re-validate session and fetch user data
+        await checkSession(loginInput);
+        
+        setShowLoginModal(false);
+        setTimeout(() => {
+          navigate('/');
+        }, 100);
       } else {
-        showToast(result.message || 'Login failed. Please try again.', 'error');
+         // Handle other steps like MFA if necessary
+         showToast(`Login step required: ${nextStep.signInStep}`, 'info');
       }
+
     } catch (error) {
-      showToast('Network error. Please check your connection and try again.', 'error');
+      showToast(error.message || 'Login failed. Please check your credentials.', 'error');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);

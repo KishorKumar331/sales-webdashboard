@@ -413,28 +413,7 @@ const styles = {
     cursor: "pointer",
     textAlign: "left",
   },
-  activityImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    objectFit: "cover",
-  },
-  activityInfo: {
-    flex: 1,
-    width: "100%",
-  },
-  activityTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 4,
-    lineHeight: 1.4,
-  },
-  activityDescription: {
-    fontSize: 14,
-    color: "#6b7280",
-    lineHeight: 1.4,
-  },
+
   gridContainer: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",

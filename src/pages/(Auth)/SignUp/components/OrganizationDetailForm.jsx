@@ -68,7 +68,6 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                         <Input
                             {...register("website")}
                             placeholder="https://www.example.com"
-                            type="url"
                             autoCapitalize="none"
                             icon={<Globe className="w-5 h-5" />}
                         />
