@@ -23,6 +23,8 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useAuth } from '../../hooks/useAuth';
 import './Auth.css';
+import { fetchAuthSession, getCurrentUser, signOut } from "aws-amplify/auth";
+
 
 const OnBoardingPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -36,8 +38,46 @@ const OnBoardingPage = () => {
   const navigate = useNavigate();
   
   // Get Zustand store actions
-  const { setUserEmail, setUserData, setIsAuthenticated } = useAuthStore();
+  const { setUserEmail, setUserData, setIsAuthenticated, userEmail, isAuthenticated } = useAuthStore();
   const { checkSession } = useAuth();
+
+  // PROFILE_API constant
+  const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+
+  useEffect(() => {
+    if (isAuthenticated && userEmail) {
+      const fetchProfileData = async () => {
+        try {
+          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
+          
+          const response = await fetch(profileUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            const profileData = await response.json();
+            console.log('🔥 OnBoarding: Profile API response:', profileData);
+            
+            // Set user data in store
+            const userData = Array.isArray(profileData) ? profileData[0] : profileData;
+            if (userData) {
+              setUserData(userData);
+              console.log('🔥 OnBoarding: User data set in store:', userData);
+            }
+          } else {
+            console.log('🔥 OnBoarding: Profile API failed:', response.status);
+          }
+        } catch (apiError) {
+          console.error('🔥 OnBoarding: Profile API error:', apiError);
+        }
+      };
+
+      fetchProfileData();
+    }
+  }, [isAuthenticated, userEmail, setUserData]);
   
   // Enhanced carousel data with better content
   const carouselData = [
@@ -112,10 +152,7 @@ const OnBoardingPage = () => {
     return emailRegex.test(email);
   };
 
-  const isValidPhone = (phone) => {
-    const phoneRegex = /^[+]?[0-9]{10,15}$/;
-    return phoneRegex.test(phone.replace(/\s+/g, ''));
-  };
+
 
   const handleAuth = async () => {
     if (isLogin) {
@@ -141,35 +178,45 @@ const OnBoardingPage = () => {
         username: loginInput,
         password,
       });
+      console.log(isSignedIn)
 
       if (isSignedIn) {
         showToast('Login successful!');
         
-        if (Array.isArray(result) && result.length === 0) {
-          showToast('No account found. Please create an account first.', 'error');
-        } else if (hasData) {
-          const userObj = Array.isArray(result) ? result[0] : result;
+        // Get username from signIn response and make profile API call
+        const username = loginInput; // Use the login input as username
+        console.log('🔥 Login successful, username:', username);
+        
+        // Make profile API call with username
+        try {
+          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(username)}`;
+          console.log('🔥 Login: Calling profile API with username:', profileUrl);
           
-          // Set full user data in Zustand store directly
-          // The new response structure is { user: {...}, organization: {...} }
-          const email = userObj?.user?.Email || userObj?.user?.email || userObj?.Email || userObj?.email;
-          if (email) {
-            setUserEmail(email);
+          const response = await fetch(profileUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Include cookies for session
+          });
+          
+          if (response.ok) {
+            const profileData = await response.json();
+            console.log('🔥 Login: Profile API response:', profileData);
+            
+            // Set user data in store
+            const userData = Array.isArray(profileData) ? profileData[0] : profileData;
+            if (userData) {
+              setUserEmail(userData.Email || username);
+              setUserData(userData);
+              console.log('🔥 Login: User data set in store:', userData);
+            }
+          } else {
+            console.log('🔥 Login: Profile API failed:', response.status);
           }
-          setUserData(userObj); // Store complete user data from login API
-          setIsAuthenticated(true);
-          
-          showToast('Login successful!');
-          setShowLoginModal(false);
-          
-          setTimeout(() => {
-            navigate('/');
-          }, 100);
-        } else {
-          showToast('No account found. Please create an account first.', 'error');
+        } catch (apiError) {
+          console.error('🔥 Login: Profile API error:', apiError);
         }
-        // Let the useAuth hook logic re-validate session and fetch user data
-        await checkSession(loginInput);
         
         setShowLoginModal(false);
         setTimeout(() => {

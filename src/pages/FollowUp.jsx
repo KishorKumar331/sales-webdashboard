@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import FollowUpCards from "../components/cards/FollowUpCards";
 import FilterBar from "../components/FilterBar";
 import { useAuth } from "../hooks/useAuth";
+import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 
 export default function FollowUp() {
   const { user, loading } = useAuth();
@@ -28,6 +29,8 @@ export default function FollowUp() {
     refetchOnWindowFocus: true,
   });
 
+  const datass = getCurrentUser();
+  console.log(datass)
   // Apply frontend filters
   const filteredData = useMemo(() => {
     if (!data.length) return data;
