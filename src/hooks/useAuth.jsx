@@ -5,22 +5,24 @@ import { useAuthStore } from "../store/authStore";
 const SESSION_API =
   "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/session";
 
+const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
-  
-  const { 
-    userEmail, 
-    userData, 
+
+  // Get state from zustand store
+  const {
+    userEmail,
+    userData,
     isAuthenticated,
     setUserEmail,
-    setUserData,
     setIsAuthenticated,
-    clearAuth 
+    clearAuth
   } = useAuthStore();
-  
+
   // Derive user from store data
   const user = userData;
-console.log(user)
+  console.log(user)
   /**
    * Check session using Amplify
    */
@@ -31,28 +33,42 @@ console.log(user)
       const session = await fetchAuthSession();
       if (session.tokens) {
         setIsAuthenticated(true);
-        
-        // Optionally fetch the current user to get their email
-        const user = await getCurrentUser();
-        if (user.signInDetails?.loginId) {
-           setUserEmail(user.signInDetails.loginId);
-        }
 
-        // If we still need to load full user details from backend (since Cognito only has basic info)
-        const emailToFetch = emailToRevalidate || userEmail || user.signInDetails?.loginId;
+        // Get current user from Cognito
+        const user = await getCurrentUser();
+        const userEmail = user.signInDetails?.loginId || emailToRevalidate;
         
-        if (emailToFetch && (!userData || Object.keys(userData).length === 0)) {
-           // We can fetch full profile from the existing API if needed
-           const url = `${SESSION_API}?email=${encodeURIComponent(emailToFetch)}`;
-           const response = await fetch(url, { method: "GET" });
-           if (response.ok) {
-             const result = await response.json();
-             if (result && Array.isArray(result) && result.length > 0) {
-                 setUserData(result[0]); // store the actual user object
-             } else if (result && !Array.isArray(result) && Object.keys(result).length > 0) {
-                 setUserData(result);
-             }
-           }
+        if (userEmail) {
+          setUserEmail(userEmail);
+          
+          // Make API call to profile API with user email
+          try {
+            const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
+            console.log('🔥 Calling profile API:', profileUrl);
+            
+            const response = await fetch(profileUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (response.ok) {
+              const profileData = await response.json();
+              console.log('🔥 Profile API response:', profileData);
+              
+              // Set user data in store
+              const userData = Array.isArray(profileData) ? profileData[0] : profileData;
+              if (userData) {
+                useAuthStore.getState().setUserData(userData);
+                console.log('🔥 User data set in store:', userData);
+              }
+            } else {
+              console.log('🔥 Profile API failed:', response.status);
+            }
+          } catch (apiError) {
+            console.error('🔥 Profile API error:', apiError);
+          }
         }
       } else {
         setIsAuthenticated(false);
@@ -63,7 +79,7 @@ console.log(user)
     } finally {
       setIsLoading(false);
     }
-  }, [userEmail, userData, setIsAuthenticated, setUserEmail, setUserData]);
+  }, [setUserEmail, setIsAuthenticated]);
 
   /**
    * Run on app mount
@@ -78,22 +94,28 @@ console.log(user)
   const login = async (userData) => {
     let email = null;
     let fullUserData = null;
-    
+
     if (userData) {
       // Extract email and full user data
       const userObj = Array.isArray(userData) ? userData[0] : userData;
       email = userObj?.Email || userObj?.email;
       fullUserData = userObj;
-      
+
       // Store email and full user data in zustand store
       if (email) {
         setUserEmail(email);
       }
-      
+
       // Store complete user data from login API
       setIsAuthenticated(true);
+      
+      // Set user data in store if available from login
+      if (fullUserData) {
+        useAuthStore.getState().setUserData(fullUserData);
+        console.log('🔥 User data set from login:', fullUserData);
+      }
     }
-    
+
     // Revalidate with backend session, passing email from login response
     await checkSession(email);
   };

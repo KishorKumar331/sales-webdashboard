@@ -106,7 +106,7 @@ export default function QuotationListModal({
         mode: "html",
         tripId,
         quoteId: quotation.QuoteId,
-        templateName: "ip_pdf.hbs",
+        // templateName: "ip_pdf.hbs",
       });
 
       if (!response.data) {
@@ -265,7 +265,7 @@ export default function QuotationListModal({
 
       {/* PDF PREVIEW MODAL */}
       <PdfPreviewModal
-       onShare={()=>{
+        onShare={() => {
           setShowPdfModal(false);
         }}
         visible={showPdfModal}

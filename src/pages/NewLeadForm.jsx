@@ -40,8 +40,9 @@ export default function NewLeadForm() {
     reset,
     // setValue, // (kept in comments like your native file)
   } = useForm();
-    const {user:salesPersonInfo } = useAuth();
-  
+  const { user: salesPersonInfo } = useAuth();
+  console.log(salesPersonInfo)
+
 
   const navigate = useNavigate();
   // State for multi-select destinations
@@ -64,11 +65,11 @@ export default function NewLeadForm() {
       };
 
       // Get sales person info (same logic)
-  
+
 
       // Keep EXACT payload logic
       const leadData = {
-        company: salesPersonInfo.CompanyName,
+        company: salesPersonInfo.organization?.company,
 
         "clientName": data["Client-Name"],
         "clientEmail": data["Client-Email"],
@@ -93,24 +94,24 @@ export default function NewLeadForm() {
           : data["Client-TravelDate"],
         "travelEndDate": data["Client-TravelDate"]?.date
           ? calculateEndDate(
-              data["Client-TravelDate"].date,
-              parseInt(data["Client-Days"]) || 0
-            )
+            data["Client-TravelDate"].date,
+            parseInt(data["Client-Days"]) || 0
+          )
           : calculateEndDate(
-              data["Client-TravelDate"],
-              parseInt(data["Client-Days"]) || 0
-            ),
+            data["Client-TravelDate"],
+            parseInt(data["Client-Days"]) || 0
+          ),
 
         leadSource: data.LeadSource || "WebApp",
-      leadRating: data.LeadRating || "Warm",
+        leadRating: data.LeadRating || "Warm",
         latestStatus: "LeadCreate",
-        salesPersonUid: salesPersonInfo.Email,
+        salesPersonUid: salesPersonInfo.user?.Email,
 
         quotations: [],
 
         comments: [
           {
-            By: salesPersonInfo.salesPersonEmail,
+            By: salesPersonInfo.user?.Email,
             Role: "Sales",
             Message: data.Comments || "Initial lead created",
             At: new Date().toISOString(),
@@ -171,7 +172,7 @@ export default function NewLeadForm() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="mx-auto px-4 py-8">
         {/* Header */}
-       
+
 
         {/* Personal Information Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -198,9 +199,8 @@ export default function NewLeadForm() {
                 rules={{ required: "Client name is required" }}
                 render={({ field: { onChange, value } }) => (
                   <input
-                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
-                      errors["Client-Name"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
-                    }`}
+                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${errors["Client-Name"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                      }`}
                     placeholder="Enter client full name"
                     value={value || ""}
                     onChange={(e) => onChange(e.target.value)}
@@ -224,9 +224,8 @@ export default function NewLeadForm() {
                 }}
                 render={({ field: { onChange, value } }) => (
                   <input
-                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
-                      errors["Client-Contact"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
-                    }`}
+                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${errors["Client-Contact"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                      }`}
                     placeholder="Enter 10-digit number"
                     inputMode="numeric"
                     type="number"
@@ -256,9 +255,8 @@ export default function NewLeadForm() {
                 }}
                 render={({ field: { onChange, value } }) => (
                   <input
-                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
-                      errors["Client-Email"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
-                    }`}
+                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${errors["Client-Email"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                      }`}
                     placeholder="client@example.com"
                     value={value || ""}
                     onChange={(e) => onChange(e.target.value)}
@@ -334,9 +332,8 @@ export default function NewLeadForm() {
                   render={({ field: { onChange, value } }) => (
                     <input
                       type="number"
-                      className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
-                        errors["Client-Days"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
-                      }`}
+                      className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${errors["Client-Days"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                        }`}
                       placeholder="Number of days"
                       inputMode="numeric"
                       maxLength={3}
@@ -413,9 +410,8 @@ export default function NewLeadForm() {
                 render={({ field: { onChange, value } }) => (
                   <input
                     type="number"
-                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
-                      errors["Client-Pax"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
-                    }`}
+                    className={`w-full px-4 py-3 rounded-xl border text-base placeholder:text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${errors["Client-Pax"] ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"
+                      }`}
                     placeholder="Adults"
                     inputMode="numeric"
                     value={value || ""}
@@ -498,17 +494,16 @@ export default function NewLeadForm() {
           </FormField>
         </div>
 
-          {/* Submit Button */}
+        {/* Submit Button */}
         <div className="flex justify-center pt-4">
           <button
             onClick={handleSubmit(onSubmit)}
             disabled={isSubmitting}
             type="button"
-            className={`inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold text-white shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-              isSubmitting
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 active:translate-y-px"
-            }`}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold text-white shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${isSubmitting
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 active:translate-y-px"
+              }`}
           >
             {isSubmitting ? (
               <>
@@ -527,4 +522,3 @@ export default function NewLeadForm() {
     </div>
   );
 }
-  

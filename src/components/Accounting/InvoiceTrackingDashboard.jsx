@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, DollarSign, TrendingUp, TrendingDown, FileText, Grid, Table, Filter, Download, Eye, CheckCircle, Clock, XCircle, Edit2, Save, X } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 const InvoiceTrackingDashboard = () => {
   const [invoices, setInvoices] = useState([]);
@@ -20,16 +21,13 @@ const InvoiceTrackingDashboard = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   // Get user email from localStorage or context
-  const getUserEmail = () => {
-    const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    return userProfile.email || 'devesh@journeyrouters.com'; // fallback for testing
-  };
 
+  const { user } = useAuth();
   // Fetch invoices from API
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const userEmail = getUserEmail();
+      const userEmail = user?.user?.Email;
       let start = startDate;
       let end = endDate;
 
@@ -91,114 +89,114 @@ const InvoiceTrackingDashboard = () => {
     setSummary(totals);
   };
 
-const updateInstallmentStatus = async (invoiceId, installmentSequence, newStatus) => {
-  try {
-    setUpdatingStatus(true);
+  const updateInstallmentStatus = async (invoiceId, installmentSequence, newStatus) => {
+    try {
+      setUpdatingStatus(true);
 
-    // Get current invoice state from invoices array (not stale selectedInvoice)
-    const currentInvoice = invoices.find(inv => inv.invoiceId === invoiceId);
-    if (!currentInvoice) {
-      throw new Error('Invoice not found');
-    }
+      // Get current invoice state from invoices array (not stale selectedInvoice)
+      const currentInvoice = invoices.find(inv => inv.invoiceId === invoiceId);
+      if (!currentInvoice) {
+        throw new Error('Invoice not found');
+      }
 
-    // Create updated invoice with only the changed installment
-    const updatedInvoicePayload = {
-      ...currentInvoice,
-      payment: {
-        installments: currentInvoice.payment.installments.map(inst =>
-          inst.sequence === installmentSequence
-            ? { ...inst, status: newStatus }
-            : inst
+      // Create updated invoice with only the changed installment
+      const updatedInvoicePayload = {
+        ...currentInvoice,
+        payment: {
+          installments: currentInvoice.payment.installments.map(inst =>
+            inst.sequence === installmentSequence
+              ? { ...inst, status: newStatus }
+              : inst
+          )
+        }
+      };
+
+      console.log('🔥 API Payload:', JSON.stringify(updatedInvoicePayload, null, 2));
+
+      const response = await fetch(
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedInvoicePayload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update installment status");
+      }
+
+      const result = await response.json();
+      console.log('API Response:', result);
+      console.log('API Response installments:', result.payment?.installments);
+
+      // Use API response to update local state (not our payload)
+      const apiUpdatedInvoice = result.payment?.installments ? {
+        ...currentInvoice,
+        payment: {
+          ...currentInvoice.payment,
+          installments: result.payment.installments
+        }
+      } : {
+        ...currentInvoice,
+        payment: {
+          ...currentInvoice.payment,
+          installments: currentInvoice.payment.installments.map(inst =>
+            inst.sequence === installmentSequence
+              ? { ...inst, status: newStatus }
+              : inst
+          )
+        }
+      };
+
+      console.log('Final updated invoice for local state:', apiUpdatedInvoice);
+
+      setSelectedInvoice(apiUpdatedInvoice);
+
+      setInvoices(prev =>
+        prev.map(inv =>
+          inv.invoiceId === invoiceId ? apiUpdatedInvoice : inv
         )
-      }
-    };
+      );
 
-    console.log('🔥 API Payload:', JSON.stringify(updatedInvoicePayload, null, 2));
-
-    const response = await fetch(
-      `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedInvoicePayload),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to update installment status");
-    }
-
-    const result = await response.json();
-    console.log('API Response:', result);
-    console.log('API Response installments:', result.payment?.installments);
-
-    // Use API response to update local state (not our payload)
-    const apiUpdatedInvoice = result.payment?.installments ? {
-      ...currentInvoice,
-      payment: {
-        ...currentInvoice.payment,
-        installments: result.payment.installments
-      }
-    } : {
-      ...currentInvoice,
-      payment: {
-        ...currentInvoice.payment,
-        installments: currentInvoice.payment.installments.map(inst =>
-          inst.sequence === installmentSequence
-            ? { ...inst, status: newStatus }
-            : inst
+      calculateSummary(
+        invoices.map(inv =>
+          inv.invoiceId === invoiceId ? apiUpdatedInvoice : inv
         )
+      );
+
+      // Check if all installments are now paid and update invoice status
+      const allInstallments = apiUpdatedInvoice.payment?.installments || [];
+      const allPaid = allInstallments.every(installment => installment.status === 'Paid');
+
+      console.log('Installments check:', {
+        invoiceId,
+        allInstallments: allInstallments.map(i => ({ sequence: i.sequence, status: i.status })),
+        allPaid,
+        installmentsLength: allInstallments.length
+      });
+
+      if (allPaid && allInstallments.length > 0) {
+        console.log('All installments paid, updating invoice status to PAID');
+      } else {
+        console.log('Not all installments paid yet, skipping invoice status update');
       }
-    };
 
-    console.log('Final updated invoice for local state:', apiUpdatedInvoice);
-
-    setSelectedInvoice(apiUpdatedInvoice);
-
-    setInvoices(prev =>
-      prev.map(inv =>
-        inv.invoiceId === invoiceId ? apiUpdatedInvoice : inv
-      )
-    );
-
-    calculateSummary(
-      invoices.map(inv =>
-        inv.invoiceId === invoiceId ? apiUpdatedInvoice : inv
-      )
-    );
-
-    // Check if all installments are now paid and update invoice status
-    const allInstallments = apiUpdatedInvoice.payment?.installments || [];
-    const allPaid = allInstallments.every(installment => installment.status === 'Paid');
-    
-    console.log('Installments check:', {
-      invoiceId,
-      allInstallments: allInstallments.map(i => ({ sequence: i.sequence, status: i.status })),
-      allPaid,
-      installmentsLength: allInstallments.length
-    });
-    
-    if (allPaid && allInstallments.length > 0) {
-      console.log('All installments paid, updating invoice status to PAID');
-    } else {
-      console.log('Not all installments paid yet, skipping invoice status update');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to update installment status. Please try again.');
+    } finally {
+      setUpdatingStatus(false);
     }
-
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Failed to update installment status. Please try again.');
-  } finally {
-    setUpdatingStatus(false);
-  }
-};
+  };
 
   // Update invoice status when all installments are paid
   const updateInvoiceStatus = async (invoiceId, newStatus) => {
     try {
       console.log('🔥 Updating invoice status:', { invoiceId, newStatus });
-      
+
       const response = await fetch(`https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice-status`, {
         method: 'POST',
         headers: {
@@ -207,7 +205,7 @@ const updateInstallmentStatus = async (invoiceId, installmentSequence, newStatus
         body: JSON.stringify({
           invoiceId,
           status: newStatus,
-          companyEmail: getUserEmail()
+          companyEmail: user?.user?.Email
         })
       });
 
@@ -223,8 +221,8 @@ const updateInstallmentStatus = async (invoiceId, installmentSequence, newStatus
 
       // Update local invoice status
       setInvoices(prev => {
-        const updated = prev.map(invoice => 
-          invoice.invoiceId === invoiceId 
+        const updated = prev.map(invoice =>
+          invoice.invoiceId === invoiceId
             ? { ...invoice, status: newStatus }
             : invoice
         );
@@ -241,8 +239,8 @@ const updateInstallmentStatus = async (invoiceId, installmentSequence, newStatus
 
       // Recalculate summary
       calculateSummary(
-        invoices.map(invoice => 
-          invoice.invoiceId === invoiceId 
+        invoices.map(invoice =>
+          invoice.invoiceId === invoiceId
             ? { ...invoice, status: newStatus }
             : invoice
         )

@@ -44,13 +44,14 @@ const QuotationScreen = () => {
 
   /* ================= FORM SUBMIT ================= */
   const handleFormSubmit = async (data) => {
+    console.log(data)
     if (isPrinting) return;
     setIsPrinting(true);
 
     try {
       const dataWithUser = {
         ...data,
-        user,
+        company: user?.user?.company
       };
 
       console.log("Data with user:", dataWithUser);
@@ -60,20 +61,19 @@ const QuotationScreen = () => {
         {
           mode: "html",
           type: "quotation",
-          // renderOnly: true,
           data: dataWithUser,
-          templateName: "ip_pdf.hbs",
         }
       );
 
       if (response.data) {
         console.log("HTML Content received from API");
         setPdfHtml(response.data);
+
         setPdfUri(null);
         setFormDataToSubmit({
           ...data,
-          CompanyId: user?.CompanyId,
-          CompanyEmail: user?.Email,
+          company: user?.user?.company,
+          CompanyEmail: user?.user?.Email,
         });
         setShowPdfModal(true);
         setRefreshKey((prev) => prev + 1);
@@ -83,7 +83,6 @@ const QuotationScreen = () => {
       }
     } catch (error) {
       console.error("❌ Error generating preview:", error);
-      Alert.alert("Error", "Failed to generate preview. Please try again.");
     } finally {
       setIsPrinting(false);
     }
@@ -96,7 +95,6 @@ const QuotationScreen = () => {
   const handleShare = async () => {
     // This runs when user clicks download/share button
     if (!formDataToSubmit) {
-      Alert.alert("Error", "No quotation data to submit");
       return;
     }
 
@@ -104,15 +102,15 @@ const QuotationScreen = () => {
 
       const res = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations",
-        {...formDataToSubmit,CompanyEmail:user?.Email}
+        { ...formDataToSubmit, CompanyEmail: user?.user?.Email }
       );
 
       console.log("✅ Quotation created:", res.data);
 
       const updateData = {
-        TripId: leadData?.TripId||followUpData?.TripId,
-        CreatedAt: leadData?.CreatedAt||followUpData?.CreatedAt,
-        company: leadData?.company||followUpData?.company,
+        TripId: leadData?.TripId || followUpData?.TripId,
+        CreatedAt: leadData?.CreatedAt || followUpData?.CreatedAt,
+        company: leadData?.company || followUpData?.company,
         quotations: Array.isArray(leadData?.quotations) || Array.isArray(followUpData?.quotations)
           ? [...(leadData?.quotations || followUpData?.quotations || []), res.data.QuoteId]
           : [res.data.QuoteId],
@@ -131,10 +129,7 @@ const QuotationScreen = () => {
       navigate("/")
     } catch (error) {
       console.error("❌ Error submitting:", error);
-      Alert.alert(
-        "Error",
-        "Failed to submit quotation: " + (error?.message || error)
-      );
+
     }
   };
 
@@ -147,6 +142,7 @@ const QuotationScreen = () => {
         followUpData={followUpData}
       />
       <PdfPreviewModal
+        data={formDataToSubmit}
         key={refreshKey}
         visible={showPdfModal}
         pdfUri={pdfUri}
@@ -159,7 +155,5 @@ const QuotationScreen = () => {
 };
 
 /* ================= STYLES ================= */
-
-
 
 export default QuotationScreen;

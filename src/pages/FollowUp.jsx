@@ -4,11 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import FollowUpCards from "../components/cards/FollowUpCards";
 import FilterBar from "../components/FilterBar";
-import { useUserProfile } from "../hooks/useUserProfile";
 import { useAuth } from "../hooks/useAuth";
+import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 
 export default function FollowUp() {
-    const {user,loading } = useAuth();
+  const { user, loading } = useAuth();
   const [filters, setFilters] = useState({});
 
   const {
@@ -17,10 +17,10 @@ export default function FollowUp() {
     refetch,
   } = useQuery({
     enabled: !!user,
-    queryKey: ["followup", user?.FullName],
+    queryKey: ["followup", user?.user?.FullName],
     queryFn: async () => {
       const res = await axios.get(
-        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.Email}&latestStatus=Cold&case=maxcase`,
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user?.user?.Email}&latestStatus=Cold&case=maxcase`,
       );
       return res.data;
     },
@@ -29,6 +29,8 @@ export default function FollowUp() {
     refetchOnWindowFocus: true,
   });
 
+  const datass = getCurrentUser();
+  console.log(datass)
   // Apply frontend filters
   const filteredData = useMemo(() => {
     if (!data.length) return data;
@@ -43,7 +45,7 @@ export default function FollowUp() {
           lead.clientEmail || '',
           lead.clientContact || ''
         ].join(' ').toLowerCase();
-        
+
         if (!searchableText.includes(searchTerm)) {
           return false;
         }
@@ -102,8 +104,8 @@ export default function FollowUp() {
     <div className="min-h-screen bg-gray-50 w-full">
       {/* Filter Bar - Sticky */}
       {!loading && !isLoading && data.length > 0 && (
-        <FilterBar 
-          data={data} 
+        <FilterBar
+          data={data}
           onFilterChange={setFilters}
         />
       )}
@@ -122,7 +124,7 @@ export default function FollowUp() {
               </span>
             )}
           </div>
-          
+
           <button
             onClick={refetch}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition"

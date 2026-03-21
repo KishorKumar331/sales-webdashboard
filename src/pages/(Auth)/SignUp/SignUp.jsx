@@ -138,7 +138,7 @@ export default function SignUp() {
 
   const methods = useForm({
     defaultValues: {
-      companyid: "",
+      company: "",
       email: "",
       phone: "",
       password: "",
@@ -203,7 +203,6 @@ export default function SignUp() {
   const showToast = (message) => {
     alert(message);
   };
-
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -263,7 +262,7 @@ export default function SignUp() {
         fieldsToValidate = ['fullname', 'email', 'phone', 'password', 'confirmPassword'];
         break;
       case 2:
-        fieldsToValidate = ['companyid', 'companyname', 'address'];
+        fieldsToValidate = ['company', 'companyname', 'address'];
         break;
       case 3:
         fieldsToValidate = ['bankname', 'branchname', 'accountnumber', 'ifsccode'];
@@ -286,6 +285,7 @@ export default function SignUp() {
   };
 
   const onSubmit = async (data) => {
+    console.log(data)
     if (currentStep !== 3) return;
 
     const isValid = await validateStep(3);

@@ -413,7 +413,6 @@ const styles = {
     cursor: "pointer",
     textAlign: "left",
   },
-
   gridContainer: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",

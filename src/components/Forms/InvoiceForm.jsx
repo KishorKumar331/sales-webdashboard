@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import axios from "axios";
@@ -148,10 +148,10 @@ export default function InvoiceForm({
     ],
     notes: "",
     meta: {
-      lastUpdatedBy: userProfile?.Email,
+      lastUpdatedBy: userProfile?.user?.Email,
       source: "website",
-      companyProfileId: userProfile?.CompanyId,
-      companyName: userProfile?.CompanyName,
+      companyProfileId: userProfile?.user?.company,
+      companyName: userProfile?.organization?.details?.companyname,
       bankDetails: {},
     },
   });
@@ -171,7 +171,7 @@ export default function InvoiceForm({
       setFormData((prev) => ({
         ...prev,
         invoiceId: initialData?.invoiceId || prev.invoiceId,
-        companyEmail: userProfile?.email,
+        companyEmail: userProfile?.user?.Email,
         invoiceNumber: initialData?.invoiceNumber || prev.invoiceNumber,
         tripId: initialData?.tripId || prev.tripId,
         finalPackageQuotationId:
@@ -350,7 +350,7 @@ export default function InvoiceForm({
   const fetchTrips = async () => {
     try {
       const response = await fetch(
-        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?company=${userProfile?.CompanyName}&tripId=${tripId}`
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?company=${userProfile?.user?.company}&tripId=${tripId}`
       );
 
       if (!response.ok) throw new Error("Failed to fetch quotations");
@@ -513,7 +513,7 @@ export default function InvoiceForm({
   };
 
   const generateInvoiceNumberValue = () => {
-    const companyName = userProfile?.companyName || "JR";
+    const companyName = userProfile?.organization?.details?.companyname || "JR";
     const initials =
       companyName
         .split(/\s+/)
@@ -541,7 +541,7 @@ export default function InvoiceForm({
     try {
       const dataWithUser = {
         ...formData,
-        user: userProfile,
+        company: userProfile?.user?.company,
       };
 
       console.log("Invoice data with user:", dataWithUser);
@@ -553,11 +553,9 @@ export default function InvoiceForm({
           type: "invoice",
           // renderOnly: true,
           data: dataWithUser,
-          templateName: "invoiceip.hbs",
+          // templateName: "invoiceip.hbs",
           mode: "html",
-          fileName: `$test.pdf`,
           tripId: formData?.tripId,
-          quoteId: formData?.finalPackageQuotationId,
         }
       );
 
@@ -567,8 +565,8 @@ export default function InvoiceForm({
         setPdfUri(null);
         setFormDataToSubmit({
           ...dataWithUser,
-          CompanyId: userProfile?.companyId,
-          CompanyEmail: userProfile?.email,
+          CompanyId: userProfile?.user?.company,
+          CompanyEmail: userProfile?.user?.Email,
         });
         setShowPdfModal(true);
         setRefreshKey((prev) => prev + 1);
@@ -686,7 +684,7 @@ export default function InvoiceForm({
       const auditEntry = {
         action: "Created",
         timestamp: today,
-        performedBy: userProfile?.Email || "system",
+        performedBy: userProfile?.user?.Email || "system",
         changes: {
           status: "FullFilled",
           invoiceNumber,
@@ -711,10 +709,10 @@ export default function InvoiceForm({
         notes: formData.notes,
         invoiceDate: today.split("T")[0],
         meta: {
-          createdBy: userProfile?.Email || "",
-          companyProfileId: userProfile?.CompanyId || "",
-          companyName: userProfile?.CompanyName || "",
-          bankDetails: userProfile?.bankDetails || {},
+          createdBy: userProfile?.user?.Email || "",
+          companyProfileId: userProfile?.user?.company || "",
+          companyName: userProfile?.organization?.details?.companyname || "",
+          bankDetails: userProfile?.organization?.financials || {},
           source: "Website",
         },
         auditTrail: [auditEntry],

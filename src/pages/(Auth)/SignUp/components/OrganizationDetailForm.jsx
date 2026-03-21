@@ -17,12 +17,17 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                 isActive={true}
             >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Organization ID (Company ID)" required icon={<Hash className="w-4 h-4" />} error={errors.companyid}>
+                    <Field label="Organization ID (Company ID)" required icon={<Hash className="w-4 h-4" />} error={errors.company}>
                         <Input
-                            {...register("companyid", { required: "Company ID is required" })}
+                            {...register("company", { 
+                                required: "Company is required",
+                                onChange: (e) => {
+                                    e.target.value = e.target.value.replace(/\s+/g, "_");
+                                }
+                            })}
                             placeholder="e.g., lux-travels-99"
                             icon={<Hash className="w-5 h-5" />}
-                            hasError={!!errors.companyid}
+                            hasError={!!errors.company}
                         />
                     </Field>
 
@@ -62,7 +67,7 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                         hasError={!!errors.address}
                     />
                 </Field>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Company Website" icon={<Globe className="w-4 h-4" />}>
                         <Input
@@ -72,7 +77,7 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                             icon={<Globe className="w-5 h-5" />}
                         />
                     </Field>
-                    
+
                     <Field label="Office Phone" icon={<Phone className="w-4 h-4" />}>
                         <Input
                             {...register("officephone")}
@@ -92,7 +97,7 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                             icon={<Mail className="w-5 h-5" />}
                         />
                     </Field>
-                    
+
                     <Field label="Billing Email" icon={<Mail className="w-4 h-4" />}>
                         <Input
                             {...register("billingemail")}
@@ -140,7 +145,7 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                         />
                     </Field>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Registration Number">
                         <Input
