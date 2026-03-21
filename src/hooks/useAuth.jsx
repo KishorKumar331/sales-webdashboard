@@ -16,6 +16,7 @@ export const useAuth = () => {
     userData,
     isAuthenticated,
     setUserEmail,
+    setUserData,
     setIsAuthenticated,
     clearAuth
   } = useAuthStore();
@@ -35,15 +36,14 @@ export const useAuth = () => {
         setIsAuthenticated(true);
 
         // Get current user from Cognito
-        const user = await getCurrentUser();
-        const userEmail = user.signInDetails?.loginId || emailToRevalidate;
+        const email = user.signInDetails?.loginId || emailToRevalidate;
         
-        if (userEmail) {
-          setUserEmail(userEmail);
+        if (email) {
+          setUserEmail(email);
           
           // Make API call to profile API with user email
           try {
-            const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
+            const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(email)}`;
             console.log('🔥 Calling profile API:', profileUrl);
             
             const response = await fetch(profileUrl, {
@@ -58,10 +58,10 @@ export const useAuth = () => {
               console.log('🔥 Profile API response:', profileData);
               
               // Set user data in store
-              const userData = Array.isArray(profileData) ? profileData[0] : profileData;
-              if (userData) {
-                useAuthStore.getState().setUserData(userData);
-                console.log('🔥 User data set in store:', userData);
+              const data = Array.isArray(profileData) ? profileData[0] : profileData;
+              if (data) {
+                setUserData(data);
+                console.log('🔥 User data set in store:', data);
               }
             } else {
               console.log('🔥 Profile API failed:', response.status);
@@ -79,7 +79,7 @@ export const useAuth = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [setUserEmail, setIsAuthenticated]);
+  }, [setUserEmail, setUserData, setIsAuthenticated]);
 
   /**
    * Run on app mount
@@ -111,7 +111,7 @@ export const useAuth = () => {
       
       // Set user data in store if available from login
       if (fullUserData) {
-        useAuthStore.getState().setUserData(fullUserData);
+        setUserData(fullUserData);
         console.log('🔥 User data set from login:', fullUserData);
       }
     }
