@@ -1,8 +1,8 @@
 import axios from 'axios';
-import React from 'react'
 
-export const FileToDataUrl = (file) => {
+export const fileToDataUrl = (file) => {
     console.log('FileToDataUrl called with file:', file);
+
     console.log('File details:', {
         name: file.name,
         size: file.size,
@@ -53,10 +53,11 @@ export const uploadFileToProfileAPI = async (file, filePath) => {
     });
 
     // Convert file to base64
-    const base64Data = await FileToDataUrl(file);
-    
+    const base64Data = await fileToDataUrl(file);
+
     // Extract the base64 content (remove data:image/...;base64, prefix)
     const base64Content = base64Data.split(',')[1];
+
     
     console.log('Base64 content length:', base64Content.length);
     console.log('Base64 content (first 100 chars):', base64Content.substring(0, 100) + '...');
