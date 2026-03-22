@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchAuthSession, getCurrentUser, signOut } from "aws-amplify/auth";
+import { fetchAuthSession, getCurrentUser, signOut, resetPassword, confirmResetPassword } from "aws-amplify/auth";
 import { useAuthStore } from "../store/authStore";
 
 const SESSION_API =
@@ -141,5 +141,7 @@ export const useAuth = () => {
     login,
     logout,
     checkSession,
+    resetPassword,
+    confirmResetPassword,
   };
 };
