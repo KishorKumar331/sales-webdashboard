@@ -15,9 +15,11 @@ export const useAuth = () => {
     userEmail,
     userData,
     isAuthenticated,
+    hasProfile,
     setUserEmail,
     setUserData,
     setIsAuthenticated,
+    setHasProfile,
     clearAuth
   } = useAuthStore();
 
@@ -61,7 +63,10 @@ export const useAuth = () => {
               const data = Array.isArray(profileData) ? profileData[0] : profileData;
               if (data) {
                 setUserData(data);
+                setHasProfile(true);
                 console.log('🔥 User data set in store:', data);
+              } else {
+                setHasProfile(false);
               }
             } else {
               console.log('🔥 Profile API failed:', response.status);
@@ -112,7 +117,10 @@ export const useAuth = () => {
       // Set user data in store if available from login
       if (fullUserData) {
         setUserData(fullUserData);
+        setHasProfile(true);
         console.log('🔥 User data set from login:', fullUserData);
+      } else {
+        setHasProfile(false);
       }
     }
 

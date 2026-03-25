@@ -1,7 +1,7 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
 import { User, Mail, Phone, Lock } from "lucide-react";
-import { Card, Field, Input } from "../SignUp";
+import { Card, Field, Input } from "./FormLayoutComponents";
 
 export const BasicDetailForm = () => {
     const { register, formState: { errors }, watch } = useFormContext();

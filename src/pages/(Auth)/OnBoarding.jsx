@@ -24,6 +24,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useAuth } from '../../hooks/useAuth';
 import './Auth.css';
 import { fetchAuthSession, getCurrentUser, signOut } from "aws-amplify/auth";
+import { CompanySetupForm } from './SignUp/components/CompanySetupForm';
 
 
 const OnBoardingPage = () => {
@@ -35,7 +36,7 @@ const OnBoardingPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmationCode, setConfirmationCode] = useState('');
-  const [authState, setAuthState] = useState('login'); // 'login', 'signup', 'forgot_password', 'confirm_reset'
+  const [authState, setAuthState] = useState('login'); // 'login', 'signup', 'forgot_password', 'confirm_reset', 'setup_company'
   const navigate = useNavigate();
   
   // Get Zustand store actions
@@ -46,7 +47,7 @@ const OnBoardingPage = () => {
   const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
 
   useEffect(() => {
-    if (isAuthenticated && userEmail) {
+    if (isAuthenticated && userEmail && authState !== 'setup_company') {
       const fetchProfileData = async () => {
         try {
           const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
@@ -67,7 +68,11 @@ const OnBoardingPage = () => {
             if (userData) {
               setUserData(userData);
               console.log('🔥 OnBoarding: User data set in store:', userData);
+            } else {
+              setAuthState('setup_company');
             }
+          } else if (response.status === 404) {
+             setAuthState('setup_company');
           } else {
             console.log('🔥 OnBoarding: Profile API failed:', response.status);
           }
@@ -78,7 +83,7 @@ const OnBoardingPage = () => {
 
       fetchProfileData();
     }
-  }, [isAuthenticated, userEmail, setUserData]);
+  }, [isAuthenticated, userEmail, setUserData, authState]);
   
   // Enhanced carousel data with better content
   const carouselData = [
@@ -233,47 +238,42 @@ const OnBoardingPage = () => {
       if (isSignedIn) {
         showToast('Login successful!');
         
-        // Get username from signIn response and make profile API call
-        const username = loginInput; // Use the login input as username
-        console.log('🔥 Login successful, username:', username);
+        const username = loginInput;
+        setUserEmail(username);
         
-        // Make profile API call with username
+        // Check profile
         try {
           const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(username)}`;
-          console.log('🔥 Login: Calling profile API with username:', profileUrl);
-          
           const response = await fetch(profileUrl, {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include', // Include cookies for session
+            headers: { 'Content-Type': 'application/json' },
           });
           
           if (response.ok) {
             const profileData = await response.json();
-            console.log('🔥 Login: Profile API response:', profileData);
-            
-            // Set user data in store
             const userData = Array.isArray(profileData) ? profileData[0] : profileData;
+            
             if (userData) {
-              setUserEmail(userData.Email || username);
               setUserData(userData);
-              console.log('🔥 Login: User data set in store:', userData);
+              setIsAuthenticated(true);
+              setShowLoginModal(false);
+              navigate('/');
+            } else {
+              setAuthState('setup_company');
+              setIsAuthenticated(true);
+              setShowLoginModal(false);
             }
           } else {
-            console.log('🔥 Login: Profile API failed:', response.status);
+            setAuthState('setup_company');
+            setIsAuthenticated(true);
+            setShowLoginModal(false);
           }
         } catch (apiError) {
-          console.error('🔥 Login: Profile API error:', apiError);
+           setAuthState('setup_company');
+           setIsAuthenticated(true);
+           setShowLoginModal(false);
         }
-        
-        setShowLoginModal(false);
-        setTimeout(() => {
-          navigate('/');
-        }, 100);
       } else {
-         // Handle other steps like MFA if necessary
          showToast(`Login step required: ${nextStep.signInStep}`, 'info');
       }
 
@@ -323,6 +323,28 @@ const OnBoardingPage = () => {
       goToSlide(currentIndex - 1);
     }
   };
+
+  if (authState === 'setup_company') {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-purple-50 to-indigo-50">
+        <div className="bg-linear-to-r from-purple-600 via-purple-700 to-indigo-800 px-5 py-6 shadow-xl mb-6">
+           <h1 className="text-2xl font-bold text-white text-center flex items-center justify-center gap-2">
+             <Sparkles className="w-6 h-6 text-yellow-300" />
+             Setup Your Business Profile
+           </h1>
+        </div>
+        <div className="p-6">
+          <CompanySetupForm 
+            initialData={{ email: userEmail }} 
+            onComplete={(data) => {
+              setUserData(data);
+              navigate('/');
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">

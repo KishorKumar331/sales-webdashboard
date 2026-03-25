@@ -8,16 +8,19 @@ export const useAuthStore = create(
       userEmail: null,
       userData: null,
       isAuthenticated: null,
+      hasProfile: false,
       
       // Actions
       setUserEmail: (email) => set({ userEmail: email }),
       setUserData: (user) => set({ userData: user }),
       setIsAuthenticated: (status) => set({ isAuthenticated: status }),
+      setHasProfile: (status) => set({ hasProfile: status }),
       
       clearAuth: () => set({ 
         userEmail: null, 
         userData: null, 
-        isAuthenticated: false 
+        isAuthenticated: false,
+        hasProfile: false
       }),
     }),
     {

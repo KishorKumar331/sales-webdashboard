@@ -21,7 +21,7 @@ import InvoiceTrackingDashboard from './components/Accounting/InvoiceTrackingDas
 import SignUp from './pages/(Auth)/SignUp/SignUp';
 
 // Protected Route Component - redirects to /auth if not authenticated
-const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) => {
+const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/auth' }) => {
   // Don't redirect while loading - wait for auth check to complete
   if (isLoading || isAuthenticated === null) {
     return null;
@@ -30,24 +30,30 @@ const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) 
   if (!isAuthenticated) {
     return <Navigate to={redirectPath} replace />;
   }
+
+  // If authenticated but no profile, redirect to auth (to show setup form)
+  if (!hasProfile) {
+    return <Navigate to={redirectPath} replace />;
+  }
+
   return <Outlet />;
 };
 
 // Public Route Component - redirects to / if already authenticated
-const PublicRoute = ({ isAuthenticated, isLoading, redirectPath = '/' }) => {
+const PublicRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/' }) => {
   // Don't redirect while loading
   if (isLoading || isAuthenticated === null) {
     return null;
   }
 
-  // If user is authenticated, redirect to home
-  if (isAuthenticated) {
+  // If user is authenticated AND has a profile, redirect to home
+  if (isAuthenticated && hasProfile) {
     return <Navigate to={redirectPath} replace />;
   }
   return <Outlet />;
 };
 const App = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, hasProfile, isLoading } = useAuth();
   const renderWithLayout = (Component, title) => (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 overflow-hidden">
@@ -80,6 +86,7 @@ const App = () => {
             element={
               <PublicRoute
                 isAuthenticated={isAuthenticated}
+                hasProfile={hasProfile}
                 isLoading={isLoading}
               />
             }
@@ -93,6 +100,7 @@ const App = () => {
             element={
               <ProtectedRoute
                 isAuthenticated={isAuthenticated}
+                hasProfile={hasProfile}
                 isLoading={isLoading}
               />
             }
@@ -160,7 +168,7 @@ const App = () => {
           <Route
             path="*"
             element={
-              <Navigate to={isAuthenticated ? "/" : "/auth"} replace />
+              <Navigate to={isAuthenticated && hasProfile ? "/" : "/auth"} replace />
             }
           />
         </Routes>

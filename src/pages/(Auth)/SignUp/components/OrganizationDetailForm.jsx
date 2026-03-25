@@ -1,7 +1,7 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Building2, Briefcase, MapPin, Globe, CloudUpload, CreditCard as CardIcon, FileText, Phone, Mail, Hash } from "lucide-react";
-import { Card, Field, Input, TextArea, UploadBox } from "../SignUp";
+import { Card, Field, Input, TextArea, UploadBox } from "./FormLayoutComponents";
 
 export const OrganizationDetailForm = ({ handleLogoUpload }) => {
     const { register, watch, formState: { errors } } = useFormContext();
