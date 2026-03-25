@@ -133,32 +133,6 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                         />
                     </Field>
 
-                    <Field label="PAN Number">
-                        <Input
-                            {...register("pan", {
-                                onChange: (e) => {
-                                    e.target.value = e.target.value.toUpperCase();
-                                }
-                            })}
-                            placeholder="Enter PAN number"
-                            icon={<CardIcon className="w-5 h-5" />}
-                        />
-                    </Field>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Registration Number">
-                        <Input
-                            {...register("registrationnumber", {
-                                onChange: (e) => {
-                                    e.target.value = e.target.value.toUpperCase();
-                                }
-                            })}
-                            placeholder="e.g., U12345DL..."
-                            icon={<CardIcon className="w-5 h-5" />}
-                        />
-                    </Field>
-
                     <Field label="Tax Region">
                         <Input
                             {...register("taxregion")}

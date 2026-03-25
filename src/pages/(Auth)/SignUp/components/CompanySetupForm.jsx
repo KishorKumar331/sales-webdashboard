@@ -12,10 +12,9 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { uploadCompanyLogo, uploadPaymentQR } from "../../../../utils/fileToDataUrl";
-import { BasicDetailForm } from "./BasicDetailForm";
 import { OrganizationDetailForm } from "./OrganizationDetailForm";
 import { PaymentDetailForm } from "./PaymentDetailForm";
-import { Card, ProgressBar, StepTitle } from "./FormLayoutComponents"; // We'll create these
+import { Card, ProgressBar, StepTitle } from "./FormLayoutComponents";
 
 const LS_FORM_KEY = "createAccountFormData";
 
@@ -36,12 +35,12 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
       logourl: initialData.logourl || "",
       website: initialData.website || "",
       companygstnumber: initialData.companygstnumber || "",
-      pan: initialData.pan || "",
-      registrationnumber: initialData.registrationnumber || "",
+      pan: "",
+      registrationnumber: "",
       taxregion: initialData.taxregion || "",
-      supportemail: initialData.supportemail || "",
-      billingemail: initialData.billingemail || "",
-      officephone: initialData.officephone || "",
+      supportemail: initialData.email || "",
+      billingemail: initialData.email || "",
+      officephone: initialData.phone || "",
       address: initialData.address || "",
       bankname: initialData.bankname || "",
       accountnumber: initialData.accountnumber || "",
@@ -93,9 +92,8 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
   const validateStep = async (step) => {
     let fieldsToValidate = [];
     switch (step) {
-      case 1: fieldsToValidate = ['fullname', 'email', 'phone']; break;
-      case 2: fieldsToValidate = ['company', 'companyname', 'address']; break;
-      case 3: fieldsToValidate = ['bankname', 'branchname', 'accountnumber', 'ifsccode']; break;
+      case 1: fieldsToValidate = ['company', 'companyname', 'address']; break;
+      case 2: fieldsToValidate = ['bankname', 'branchname', 'accountnumber', 'ifsccode']; break;
       default: return false;
     }
     return await trigger(fieldsToValidate);
@@ -103,7 +101,7 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
 
   const nextStep = async () => {
     const isValid = await validateStep(currentStep);
-    if (isValid && currentStep < 3) setCurrentStep((s) => s + 1);
+    if (isValid && currentStep < 2) setCurrentStep((s) => s + 1);
   };
 
   const onSubmit = async (data) => {
@@ -137,9 +135,8 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
   };
 
   const stepMeta = {
-    1: { title: "Personal Info", subtitle: "Tell us about yourself", icon: User },
-    2: { title: "Organization Info", subtitle: "Your company details", icon: Building2 },
-    3: { title: "Payment Info", subtitle: "Banking & payment setup", icon: CreditCard },
+    1: { title: "Organization Info", subtitle: "Your company details", icon: Building2 },
+    2: { title: "Payment Info", subtitle: "Banking & payment setup", icon: CreditCard },
   };
 
   if (isLoading) {
@@ -154,7 +151,7 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
   return (
     <FormProvider {...methods}>
       <div className="max-w-4xl mx-auto">
-        <ProgressBar currentStep={currentStep} totalSteps={3} />
+        <ProgressBar currentStep={currentStep} totalSteps={2} />
         <form onSubmit={handleSubmit(onSubmit)}>
           <StepTitle 
             title={stepMeta[currentStep].title} 
@@ -163,16 +160,19 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
           />
 
           <div className="pb-6">
-            <div style={{ display: currentStep === 1 ? 'block' : 'none' }}><BasicDetailForm /></div>
-            <div style={{ display: currentStep === 2 ? 'block' : 'none' }}><OrganizationDetailForm handleLogoUpload={handleLogoUpload} /></div>
-            <div style={{ display: currentStep === 3 ? 'block' : 'none' }}><PaymentDetailForm handleQRUpload={handleQRUpload} /></div>
+            <div style={{ display: currentStep === 1 ? 'block' : 'none' }}>
+              <OrganizationDetailForm handleLogoUpload={handleLogoUpload} />
+            </div>
+            <div style={{ display: currentStep === 2 ? 'block' : 'none' }}>
+              <PaymentDetailForm handleQRUpload={handleQRUpload} />
+            </div>
           </div>
 
           <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 p-6 flex gap-4">
              {currentStep > 1 && (
                <button type="button" onClick={() => setCurrentStep(s => s - 1)} className="flex-1 bg-gray-100 py-4 font-semibold rounded-xl">Previous</button>
              )}
-             {currentStep === 3 ? (
+             {currentStep === 2 ? (
                <button type="submit" className="flex-1 bg-purple-600 text-white py-4 font-semibold rounded-xl">Complete Setup</button>
              ) : (
                <button type="button" onClick={nextStep} className="flex-1 bg-purple-600 text-white py-4 font-semibold rounded-xl">Continue</button>

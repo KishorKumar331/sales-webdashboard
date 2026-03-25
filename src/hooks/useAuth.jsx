@@ -20,6 +20,7 @@ export const useAuth = () => {
     setUserData,
     setIsAuthenticated,
     setHasProfile,
+    setUserPhone,
     clearAuth
   } = useAuthStore();
 
@@ -64,6 +65,7 @@ export const useAuth = () => {
               if (data) {
                 setUserData(data);
                 setHasProfile(true);
+                if (data.phone) setUserPhone(data.phone);
                 console.log('🔥 User data set in store:', data);
               } else {
                 setHasProfile(false);
@@ -118,6 +120,7 @@ export const useAuth = () => {
       if (fullUserData) {
         setUserData(fullUserData);
         setHasProfile(true);
+        if (fullUserData.phone) setUserPhone(fullUserData.phone);
         console.log('🔥 User data set from login:', fullUserData);
       } else {
         setHasProfile(false);

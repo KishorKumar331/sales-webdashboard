@@ -23,7 +23,7 @@ export default function SignUp() {
   });
   const [otp, setOtp] = useState("");
   const navigate = useNavigate();
-  const { setUserEmail, setUserData, setIsAuthenticated, setHasProfile } = useAuthStore();
+  const { setUserEmail, setUserPhone, setUserData, setIsAuthenticated, setHasProfile } = useAuthStore();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -76,6 +76,7 @@ export default function SignUp() {
             password: formData.password
         });
         setUserEmail(formData.email);
+        setUserPhone(formData.phone);
         setIsAuthenticated(true);
         setAuthState("setup");
       }
@@ -99,7 +100,8 @@ export default function SignUp() {
         <CompanySetupForm 
           initialData={{ 
             email: formData.email, 
-            fullname: formData.fullname 
+            fullname: formData.fullname,
+            phone: formData.phone
           }} 
           onComplete={(data) => {
             setUserData(data);
