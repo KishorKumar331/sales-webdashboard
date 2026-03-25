@@ -5,6 +5,7 @@ import {
   User, 
   Lock, 
   Mail, 
+  Phone,
   Loader2 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +18,7 @@ export default function SignUp() {
   const [formData, setFormData] = useState({
     fullname: "",
     email: "",
+    phone: "",
     password: "",
   });
   const [otp, setOtp] = useState("");
@@ -41,6 +43,7 @@ export default function SignUp() {
           userAttributes: {
             email: formData.email,
             name: formData.fullname,
+            phone_number: formData.phone,
           }
         }
       });
@@ -152,6 +155,20 @@ export default function SignUp() {
                     placeholder="john@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20"
+                    placeholder="+919999999999"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   />
                 </div>
               </div>
