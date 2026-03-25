@@ -227,12 +227,29 @@ const OnBoardingPage = () => {
     
     try {
       // Import here to avoid top-level import issues if not needed globally
-      const { signIn } = await import('aws-amplify/auth');
+      const { signIn, signOut } = await import('aws-amplify/auth');
       
-      const { isSignedIn, nextStep } = await signIn({
-        username: loginInput,
-        password,
-      });
+      let signInResult;
+      try {
+        signInResult = await signIn({
+          username: loginInput,
+          password,
+        });
+      } catch (signInError) {
+        // If already signed in, force logout and retry
+        if (signInError.name === 'UserAlreadyAuthenticatedException' || 
+            signInError.message?.includes('already signed in')) {
+          await signOut();
+          signInResult = await signIn({
+            username: loginInput,
+            password,
+          });
+        } else {
+          throw signInError;
+        }
+      }
+
+      const { isSignedIn, nextStep } = signInResult;
       console.log(isSignedIn)
 
       if (isSignedIn) {
