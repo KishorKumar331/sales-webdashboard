@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanySetupForm } from "./components/CompanySetupForm";
+import { useAuthStore } from "../../../store/authStore";
 
 export default function SignUp() {
   const [authState, setAuthState] = useState("register"); // 'register', 'otp', 'setup'
@@ -20,6 +21,7 @@ export default function SignUp() {
   });
   const [otp, setOtp] = useState("");
   const navigate = useNavigate();
+  const { setUserEmail, setUserData, setIsAuthenticated, setHasProfile } = useAuthStore();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -32,8 +34,6 @@ export default function SignUp() {
     try {
       const { signUp } = await import('aws-amplify/auth');
       
-      let formattedPhone = "+919999999999"; // Default phone for initial setup, can be updated later
-
       await signUp({
         username: formData.email,
         password: formData.password,
@@ -60,13 +60,20 @@ export default function SignUp() {
 
     setIsLoading(true);
     try {
-      const { confirmSignUp } = await import('aws-amplify/auth');
+      const { confirmSignUp, signIn } = await import('aws-amplify/auth');
       const result = await confirmSignUp({
         username: formData.email,
         confirmationCode: otp
       });
 
-      if (result.isSignUpComplete || result.nextStep.signUpStep === 'DONE') {
+      if (result.isSignUpComplete || result.nextStep?.signUpStep === 'DONE') {
+        // Sign in automatically after verification
+        await signIn({
+            username: formData.email,
+            password: formData.password
+        });
+        setUserEmail(formData.email);
+        setIsAuthenticated(true);
         setAuthState("setup");
       }
     } catch (error) {
@@ -91,7 +98,11 @@ export default function SignUp() {
             email: formData.email, 
             fullname: formData.fullname 
           }} 
-          onComplete={() => navigate("/")}
+          onComplete={(data) => {
+            setUserData(data);
+            setHasProfile(true);
+            navigate("/");
+          }}
         />
       </div>
     );

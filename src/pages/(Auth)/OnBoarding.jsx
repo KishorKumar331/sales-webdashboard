@@ -40,7 +40,7 @@ const OnBoardingPage = () => {
   const navigate = useNavigate();
   
   // Get Zustand store actions
-  const { setUserEmail, setUserData, setIsAuthenticated, userEmail, isAuthenticated } = useAuthStore();
+  const { setUserEmail, setUserData, setIsAuthenticated, setHasProfile, userEmail, isAuthenticated } = useAuthStore();
   const { checkSession, resetPassword, confirmResetPassword } = useAuth();
 
   // PROFILE_API constant
@@ -338,6 +338,7 @@ const OnBoardingPage = () => {
             initialData={{ email: userEmail }} 
             onComplete={(data) => {
               setUserData(data);
+              setHasProfile(true);
               navigate('/');
             }}
           />
