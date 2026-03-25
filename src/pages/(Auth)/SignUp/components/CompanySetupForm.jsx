@@ -92,7 +92,7 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
   const validateStep = async (step) => {
     let fieldsToValidate = [];
     switch (step) {
-      case 1: fieldsToValidate = ['company', 'companyname', 'address']; break;
+      case 1: fieldsToValidate = ['fullname', 'phone', 'company', 'companyname', 'address']; break;
       case 2: fieldsToValidate = ['bankname', 'branchname', 'accountnumber', 'ifsccode']; break;
       default: return false;
     }

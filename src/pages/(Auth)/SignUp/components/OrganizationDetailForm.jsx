@@ -16,6 +16,26 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                 stepNumber={2}
                 isActive={true}
             >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-100">
+                    <Field label="Admin Full Name" required icon={<User className="w-4 h-4" />} error={errors.fullname}>
+                        <Input
+                            {...register("fullname", { required: "Full Name is required" })}
+                            placeholder="Confirm your name"
+                            icon={<User className="w-5 h-5" />}
+                            hasError={!!errors.fullname}
+                        />
+                    </Field>
+
+                    <Field label="Admin Contact Phone" required icon={<Phone className="w-4 h-4" />} error={errors.phone}>
+                        <Input
+                            {...register("phone", { required: "Phone is required" })}
+                            placeholder="Confirm your phone"
+                            icon={<Phone className="w-5 h-5" />}
+                            hasError={!!errors.phone}
+                        />
+                    </Field>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Organization ID (Company ID)" required icon={<Hash className="w-4 h-4" />} error={errors.company}>
                         <Input

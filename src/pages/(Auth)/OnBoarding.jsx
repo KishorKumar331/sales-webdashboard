@@ -40,7 +40,7 @@ const OnBoardingPage = () => {
   const navigate = useNavigate();
   
   // Get Zustand store actions
-  const { setUserEmail, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, userEmail, userPhone, isAuthenticated } = useAuthStore();
+  const { setUserEmail, setUserName, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, setLoginTimestamp, userEmail, userName, userPhone, isAuthenticated, loginTimestamp } = useAuthStore();
   const { checkSession, resetPassword, confirmResetPassword } = useAuth();
 
   // PROFILE_API constant
@@ -227,7 +227,7 @@ const OnBoardingPage = () => {
     
     try {
       // Import here to avoid top-level import issues if not needed globally
-      const { signIn, signOut } = await import('aws-amplify/auth');
+      const { signIn, signOut, fetchUserAttributes } = await import('aws-amplify/auth');
       
       let signInResult;
       try {
@@ -250,17 +250,23 @@ const OnBoardingPage = () => {
       }
 
       const { isSignedIn, nextStep } = signInResult;
-      console.log(isSignedIn)
 
       if (isSignedIn) {
         showToast('Login successful!');
         
-        const username = loginInput;
-        setUserEmail(username);
+        // Fetch Cognito attributes to get name and phone
+        const attributes = await fetchUserAttributes();
+        const cognitoName = attributes.name || "";
+        const cognitoPhone = attributes.phone_number || "";
+
+        setUserEmail(loginInput);
+        setUserName(cognitoName);
+        setUserPhone(cognitoPhone);
+        setLoginTimestamp(Date.now());
         
         // Check profile
         try {
-          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(username)}`;
+          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(loginInput)}`;
           const response = await fetch(profileUrl, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
@@ -273,11 +279,14 @@ const OnBoardingPage = () => {
             if (userData) {
               setUserData(userData);
               setIsAuthenticated(true);
+              if (userData.phone) setUserPhone(userData.phone);
               setShowLoginModal(false);
               navigate('/');
             } else {
               setAuthState('setup_company');
               setIsAuthenticated(true);
+              // Store fullname temporarily if we want to pass to setup form
+              // Since we don't have a setFullname, we'll rely on passing it via props to CompanySetupForm
               setShowLoginModal(false);
             }
           } else {
@@ -352,7 +361,7 @@ const OnBoardingPage = () => {
         </div>
         <div className="p-6">
           <CompanySetupForm 
-            initialData={{ email: userEmail, phone: userPhone }} 
+            initialData={{ email: userEmail, phone: userPhone, fullname: userName }} 
             onComplete={(fullUserData) => {
               if (fullUserData) {
                 setUserData(fullUserData);

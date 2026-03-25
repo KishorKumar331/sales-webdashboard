@@ -21,6 +21,9 @@ export const useAuth = () => {
     setIsAuthenticated,
     setHasProfile,
     setUserPhone,
+    setUserName,
+    loginTimestamp,
+    setLoginTimestamp,
     clearAuth
   } = useAuthStore();
 
@@ -34,6 +37,15 @@ export const useAuth = () => {
     setIsLoading(true);
 
     try {
+      // Enforce 12-hour session limit
+      const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+      if (loginTimestamp && (Date.now() - loginTimestamp > TWELVE_HOURS_MS)) {
+        console.log('⏰ Session expired (12h limit). Force logout.');
+        await signOut();
+        clearAuth();
+        return;
+      }
+
       const session = await fetchAuthSession();
       if (session.tokens) {
         setIsAuthenticated(true);
@@ -66,6 +78,7 @@ export const useAuth = () => {
                 setUserData(data);
                 setHasProfile(true);
                 if (data.phone) setUserPhone(data.phone);
+                if (data.fullname) setUserName(data.fullname);
                 console.log('🔥 User data set in store:', data);
               } else {
                 setHasProfile(false);
@@ -121,6 +134,8 @@ export const useAuth = () => {
         setUserData(fullUserData);
         setHasProfile(true);
         if (fullUserData.phone) setUserPhone(fullUserData.phone);
+        if (fullUserData.fullname) setUserName(fullUserData.fullname);
+        setLoginTimestamp(Date.now());
         console.log('🔥 User data set from login:', fullUserData);
       } else {
         setHasProfile(false);

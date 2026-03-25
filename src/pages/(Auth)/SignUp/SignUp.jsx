@@ -23,7 +23,8 @@ export default function SignUp() {
   });
   const [otp, setOtp] = useState("");
   const navigate = useNavigate();
-  const { setUserEmail, setUserPhone, setUserData, setIsAuthenticated, setHasProfile } = useAuthStore();
+  const { setUserEmail, setUserName, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, setLoginTimestamp } = useAuthStore();
+  const { checkSession } = useAuth();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -76,7 +77,9 @@ export default function SignUp() {
             password: formData.password
         });
         setUserEmail(formData.email);
+        setUserName(formData.fullname);
         setUserPhone(formData.phone);
+        setLoginTimestamp(Date.now());
         setIsAuthenticated(true);
         setAuthState("setup");
       }
