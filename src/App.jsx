@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -19,21 +20,38 @@ import InvoicePage from './pages/InvoicePage';
 import { useAuth } from './hooks/useAuth';
 import InvoiceTrackingDashboard from './components/Accounting/InvoiceTrackingDashboard';
 import SignUp from './pages/(Auth)/SignUp/SignUp';
+import CreateProfile from './pages/(Auth)/CreateProfile';
 
 // Protected Route Component - redirects to /auth if not authenticated
-const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/auth' }) => {
-  // Don't redirect while loading - wait for auth check to complete
-  if (isLoading || isAuthenticated === null) {
-    return null;
+const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading }) => {
+  if (isLoading || isAuthenticated === null || hasProfile === null) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Checking profile...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={redirectPath} replace />;
+    return <Navigate to="/auth" replace />;
   }
 
-  // If authenticated but no profile, redirect to auth (to show setup form)
-  if (!hasProfile) {
-    return <Navigate to={redirectPath} replace />;
+  // If authenticated but no profile, and NOT already going to /create-profile
+  // We handle the specific sub-route check inside the Routes if needed, 
+  // but simpler is to let the component decide if it needs a profile.
+  // HOWEVER, the spec says "Do NOT route user to /home unless profile exists"
+  // If authenticated but no profile, wait for profile check to finish (null)
+  // Only redirect if hasProfile is explicitly false (confirmed no profile)
+  if (hasProfile === false) {
+    return <Navigate to="/create-profile" replace />;
+  }
+
+  // Still checking profile
+  if (hasProfile === null) {
+    return null;
   }
 
   return <Outlet />;
@@ -43,17 +61,35 @@ const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath =
 const PublicRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/' }) => {
   // Don't redirect while loading
   if (isLoading || isAuthenticated === null) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Verifying session...</p>
+        </div>
+      </div>
+    );
   }
 
-  // If user is authenticated AND has a profile, redirect to home
-  if (isAuthenticated && hasProfile) {
-    return <Navigate to={redirectPath} replace />;
+  // If user is authenticated, handle redirection based on profile status
+  if (isAuthenticated) {
+    if (hasProfile === true) {
+      return <Navigate to={redirectPath} replace />;
+    } else if (hasProfile === false) {
+      return <Navigate to="/create-profile" replace />;
+    }
+    // If hasProfile is null, we stay on the current public route but don't redirect yet
+    // This avoids the flicker
+    return null; 
   }
   return <Outlet />;
 };
 const App = () => {
-  const { isAuthenticated, hasProfile, isLoading } = useAuth();
+  const { isAuthenticated, hasProfile, isLoading, checkSession } = useAuth();
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
   const renderWithLayout = (Component, title) => (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 overflow-hidden">
@@ -66,7 +102,7 @@ const App = () => {
     </div>
   );
 
-  if (isLoading) {
+  if (isLoading || isAuthenticated === null) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
@@ -163,6 +199,11 @@ const App = () => {
               element={renderWithLayout(<PaymentPage />, "Payment")}
             />
           </Route>
+
+          {/* Special Route: Authenticated but No Profile */}
+          <Route path="/create-profile" element={
+            isAuthenticated && !hasProfile ? <CreateProfile /> : <Navigate to={isAuthenticated ? "/" : "/auth"} replace />
+          } />
 
           {/* Fallback */}
           <Route

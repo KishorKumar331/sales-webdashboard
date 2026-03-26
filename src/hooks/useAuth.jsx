@@ -8,7 +8,6 @@ const SESSION_API =
 const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
 
 export const useAuth = () => {
-  const [isLoading, setIsLoading] = useState(true);
 
   // Get state from zustand store
   const {
@@ -20,8 +19,11 @@ export const useAuth = () => {
     setUserData,
     setIsAuthenticated,
     setHasProfile,
+    setIsLoading,
     setUserPhone,
     setUserName,
+    setUserId,
+    isLoading,
     loginTimestamp,
     setLoginTimestamp,
     clearAuth
@@ -33,7 +35,7 @@ export const useAuth = () => {
   /**
    * Check session using Amplify
    */
-  const checkSession = useCallback(async (emailToRevalidate) => {
+  const checkSession = useCallback(async () => {
     setIsLoading(true);
 
     try {
@@ -49,49 +51,44 @@ export const useAuth = () => {
       const session = await fetchAuthSession();
       if (session.tokens) {
         setIsAuthenticated(true);
+        const userId = session.userSub;
+        setUserId(userId);
 
-        // Get current user from Cognito
-        const email = user.signInDetails?.loginId || emailToRevalidate;
-        
-        if (email) {
-          setUserEmail(email);
+        // Fetch user attributes for pre-filling/sync
+        const { fetchUserAttributes } = await import('aws-amplify/auth');
+        const attributes = await fetchUserAttributes();
+        setUserEmail(attributes.email || "");
+        setUserName(attributes.name || "");
+        setUserPhone(attributes.phone_number || "");
+
+        // Check profile using Email: GET /profile/Auth?Email=<email>
+        try {
+          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(attributes.email || "")}`;
+          const response = await fetch(profileUrl);
           
-          // Make API call to profile API with user email
-          try {
-            const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(email)}`;
-            console.log('🔥 Calling profile API:', profileUrl);
+          if (response.ok) {
+            const profileData = await response.json();
+            const data = Array.isArray(profileData) ? profileData[0] : profileData;
             
-            const response = await fetch(profileUrl, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-            
-            if (response.ok) {
-              const profileData = await response.json();
-              console.log('🔥 Profile API response:', profileData);
-              
-              // Set user data in store
-              const data = Array.isArray(profileData) ? profileData[0] : profileData;
-              if (data) {
-                setUserData(data);
-                setHasProfile(true);
-                if (data.phone) setUserPhone(data.phone);
-                if (data.fullname) setUserName(data.fullname);
-                console.log('🔥 User data set in store:', data);
-              } else {
-                setHasProfile(false);
-              }
+            if (data && Object.keys(data).length > 0) {
+              setUserData(data);
+              setHasProfile(true);
+              if (data.phone) setUserPhone(data.phone);
+              if (data.fullname) setUserName(data.fullname);
             } else {
-              console.log('🔥 Profile API failed:', response.status);
+              setHasProfile(false);
+              setUserData(null);
             }
-          } catch (apiError) {
-            console.error('🔥 Profile API error:', apiError);
+          } else {
+            setHasProfile(false);
           }
+        } catch (apiError) {
+          console.error('🔥 Profile API error:', apiError);
+          setHasProfile(false);
         }
       } else {
         setIsAuthenticated(false);
+        setHasProfile(false);
       }
     } catch (error) {
       console.error("Session check error:", error);
@@ -104,46 +101,64 @@ export const useAuth = () => {
   /**
    * Run on app mount
    */
-  useEffect(() => {
-    checkSession();
-  }, [checkSession]);
 
   /**
    * Login → set user data and revalidate session from backend (cookie-based)
    */
-  const login = async (userData) => {
-    let email = null;
-    let fullUserData = null;
-
-    if (userData) {
-      // Extract email and full user data
-      const userObj = Array.isArray(userData) ? userData[0] : userData;
-      email = userObj?.Email || userObj?.email;
-      fullUserData = userObj;
-
-      // Store email and full user data in zustand store
-      if (email) {
-        setUserEmail(email);
-      }
-
-      // Store complete user data from login API
-      setIsAuthenticated(true);
+  const login = async (profileFromCaller = null) => {
+    setIsLoading(true);
+    try {
+      const { fetchAuthSession, fetchUserAttributes } = await import('aws-amplify/auth');
+      const session = await fetchAuthSession();
       
-      // Set user data in store if available from login
-      if (fullUserData) {
-        setUserData(fullUserData);
-        setHasProfile(true);
-        if (fullUserData.phone) setUserPhone(fullUserData.phone);
-        if (fullUserData.fullname) setUserName(fullUserData.fullname);
-        setLoginTimestamp(Date.now());
-        console.log('🔥 User data set from login:', fullUserData);
-      } else {
-        setHasProfile(false);
-      }
-    }
+      if (session.tokens) {
+        setIsAuthenticated(true);
+        const userId = session.userSub;
+        setUserId(userId);
 
-    // Revalidate with backend session, passing email from login response
-    await checkSession(email);
+        const attributes = await fetchUserAttributes();
+        setUserEmail(attributes.email || "");
+        setUserName(attributes.name || "");
+        setUserPhone(attributes.phone_number || "");
+
+        // If caller provided profile data, use it; otherwise fetch from API
+        if (profileFromCaller && Object.keys(profileFromCaller).length > 0) {
+          setUserData(profileFromCaller);
+          setHasProfile(true);
+          if (profileFromCaller.phone) setUserPhone(profileFromCaller.phone);
+          if (profileFromCaller.fullname) setUserName(profileFromCaller.fullname);
+        } else {
+          // Check profile using Email spec: GET /profile/Auth?Email=<email>
+          try {
+            const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(attributes.email || "")}`;
+            const response = await fetch(profileUrl);
+            const profileData = response.ok ? await response.json() : null;
+            const data = Array.isArray(profileData) ? profileData[0] : profileData;
+            
+            if (data && Object.keys(data).length > 0) {
+              setUserData(data);
+              setHasProfile(true);
+              if (data.phone) setUserPhone(data.phone);
+              if (data.fullname) setUserName(data.fullname);
+            } else {
+              setHasProfile(false);
+              setUserData(null);
+            }
+          } catch (e) {
+            setHasProfile(false);
+          }
+        }
+        
+        setLoginTimestamp(Date.now());
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.error("Login process error:", error);
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /**
@@ -162,6 +177,7 @@ export const useAuth = () => {
 
   return {
     isAuthenticated,
+    hasProfile,
     isLoading,
     user,
     login,

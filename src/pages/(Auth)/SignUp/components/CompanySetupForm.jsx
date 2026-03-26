@@ -25,6 +25,7 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
 
   const methods = useForm({
     defaultValues: {
+      userId: initialData.userId || "",
       company: initialData.company || "",
       email: initialData.email || "",
       phone: initialData.phone || "",

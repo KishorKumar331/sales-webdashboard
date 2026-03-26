@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { CompanySetupForm } from "./components/CompanySetupForm";
 import { useAuthStore } from "../../../store/authStore";
+import { useAuth } from "../../../hooks/useAuth";
 
 export default function SignUp() {
   const [authState, setAuthState] = useState("register"); // 'register', 'otp', 'setup'
@@ -24,7 +25,7 @@ export default function SignUp() {
   const [otp, setOtp] = useState("");
   const navigate = useNavigate();
   const { setUserEmail, setUserName, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, setLoginTimestamp } = useAuthStore();
-  const { checkSession } = useAuth();
+  const { login } = useAuth();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -76,12 +77,13 @@ export default function SignUp() {
             username: formData.email,
             password: formData.password
         });
-        setUserEmail(formData.email);
-        setUserName(formData.fullname);
-        setUserPhone(formData.phone);
-        setLoginTimestamp(Date.now());
-        setIsAuthenticated(true);
-        setAuthState("setup");
+        
+        // login() handles store sync and profile check
+        const loginResult = await login();
+        if (loginResult.success) {
+          // App.jsx will redirect to /create-profile because hasProfile is false
+          // No need for setAuthState("setup")
+        }
       }
     } catch (error) {
       console.error("OTP error:", error);
@@ -91,30 +93,6 @@ export default function SignUp() {
     }
   };
 
-  if (authState === "setup") {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-purple-50 to-indigo-50">
-        <div className="bg-linear-to-r from-purple-600 via-purple-700 to-indigo-800 px-5 py-6 shadow-xl mb-6">
-           <h1 className="text-2xl font-bold text-white text-center flex items-center justify-center gap-2">
-             <Sparkles className="w-6 h-6 text-yellow-300" />
-             Setup Your Company
-           </h1>
-        </div>
-        <CompanySetupForm 
-          initialData={{ 
-            email: formData.email, 
-            fullname: formData.fullname,
-            phone: formData.phone
-          }} 
-          onComplete={(data) => {
-            setUserData(data);
-            setHasProfile(true);
-            navigate("/");
-          }}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-purple-50 to-indigo-50 flex flex-col">

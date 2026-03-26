@@ -6,7 +6,7 @@ import axios from "axios";
 
 export const PersonalInfo = () => {
   const { user } = useAuth();
-  const { setUserData } = useAuthStore();
+  const { setUserData, userId } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   
   const [profileData, setProfileData] = useState({
@@ -87,6 +87,7 @@ export const PersonalInfo = () => {
 
     try {
       const payload = {
+        userId: userId,
         CompanyId: profileData.companyId,
         Email: profileData.email,
         FullName: profileData.fullName,

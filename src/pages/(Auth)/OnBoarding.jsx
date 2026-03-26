@@ -40,50 +40,14 @@ const OnBoardingPage = () => {
   const navigate = useNavigate();
   
   // Get Zustand store actions
-  const { setUserEmail, setUserName, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, setLoginTimestamp, userEmail, userName, userPhone, isAuthenticated, loginTimestamp } = useAuthStore();
-  const { checkSession, resetPassword, confirmResetPassword } = useAuth();
+  const { setUserEmail, setUserName, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, setLoginTimestamp, userEmail, userName, userPhone, isAuthenticated, hasProfile, loginTimestamp } = useAuthStore();
+  const { checkSession, resetPassword, confirmResetPassword, login } = useAuth();
 
+  // No longer need auto-switch here, App.jsx handles it via ProtectedRoute
+  
   // PROFILE_API constant
   const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
 
-  useEffect(() => {
-    if (isAuthenticated && userEmail && authState !== 'setup_company') {
-      const fetchProfileData = async () => {
-        try {
-          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
-          
-          const response = await fetch(profileUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (response.ok) {
-            const profileData = await response.json();
-            console.log('🔥 OnBoarding: Profile API response:', profileData);
-            
-            // Set user data in store
-            const userData = Array.isArray(profileData) ? profileData[0] : profileData;
-            if (userData) {
-              setUserData(userData);
-              console.log('🔥 OnBoarding: User data set in store:', userData);
-            } else {
-              setAuthState('setup_company');
-            }
-          } else if (response.status === 404) {
-             setAuthState('setup_company');
-          } else {
-            console.log('🔥 OnBoarding: Profile API failed:', response.status);
-          }
-        } catch (apiError) {
-          console.error('🔥 OnBoarding: Profile API error:', apiError);
-        }
-      };
-
-      fetchProfileData();
-    }
-  }, [isAuthenticated, userEmail, setUserData, authState]);
   
   // Enhanced carousel data with better content
   const carouselData = [
@@ -226,83 +190,36 @@ const OnBoardingPage = () => {
     setIsLoading(true);
     
     try {
-      // Import here to avoid top-level import issues if not needed globally
-      const { signIn, signOut, fetchUserAttributes } = await import('aws-amplify/auth');
+      const { signIn, signOut } = await import('aws-amplify/auth');
       
       let signInResult;
       try {
         signInResult = await signIn({
           username: loginInput,
-          password,
+          password: password,
         });
       } catch (signInError) {
-        // If already signed in, force logout and retry
-        if (signInError.name === 'UserAlreadyAuthenticatedException' || 
-            signInError.message?.includes('already signed in')) {
+        if (signInError.name === 'UserAlreadyAuthenticatedException') {
           await signOut();
           signInResult = await signIn({
             username: loginInput,
-            password,
+            password: password,
           });
         } else {
           throw signInError;
         }
       }
 
-      const { isSignedIn, nextStep } = signInResult;
-
-      if (isSignedIn) {
-        showToast('Login successful!');
-        
-        // Fetch Cognito attributes to get name and phone
-        const attributes = await fetchUserAttributes();
-        const cognitoName = attributes.name || "";
-        const cognitoPhone = attributes.phone_number || "";
-
-        setUserEmail(loginInput);
-        setUserName(cognitoName);
-        setUserPhone(cognitoPhone);
-        setLoginTimestamp(Date.now());
-        
-        // Check profile
-        try {
-          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(loginInput)}`;
-          const response = await fetch(profileUrl, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          
-          if (response.ok) {
-            const profileData = await response.json();
-            const userData = Array.isArray(profileData) ? profileData[0] : profileData;
-            
-            if (userData) {
-              setUserData(userData);
-              setIsAuthenticated(true);
-              if (userData.phone) setUserPhone(userData.phone);
-              setShowLoginModal(false);
-              navigate('/');
-            } else {
-              setAuthState('setup_company');
-              setIsAuthenticated(true);
-              // Store fullname temporarily if we want to pass to setup form
-              // Since we don't have a setFullname, we'll rely on passing it via props to CompanySetupForm
-              setShowLoginModal(false);
-            }
-          } else {
-            setAuthState('setup_company');
-            setIsAuthenticated(true);
-            setShowLoginModal(false);
-          }
-        } catch (apiError) {
-           setAuthState('setup_company');
-           setIsAuthenticated(true);
-           setShowLoginModal(false);
+      if (signInResult.isSignedIn) {
+        const result = await login();
+        if (result.success) {
+          showToast('Login successful!');
+          setShowLoginModal(false);
+          // App.jsx router handles redirect based on hasProfile
         }
       } else {
-         showToast(`Login step required: ${nextStep.signInStep}`, 'info');
+        showToast(`Login step required: ${signInResult.nextStep.signInStep}`, 'info');
       }
-
     } catch (error) {
       showToast(error.message || 'Login failed. Please check your credentials.', 'error');
       console.error('Login error:', error);
@@ -350,30 +267,8 @@ const OnBoardingPage = () => {
     }
   };
 
-  if (authState === 'setup_company') {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-purple-50 to-indigo-50">
-        <div className="bg-linear-to-r from-purple-600 via-purple-700 to-indigo-800 px-5 py-6 shadow-xl mb-6">
-           <h1 className="text-2xl font-bold text-white text-center flex items-center justify-center gap-2">
-             <Sparkles className="w-6 h-6 text-yellow-300" />
-             Setup Your Business Profile
-           </h1>
-        </div>
-        <div className="p-6">
-          <CompanySetupForm 
-            initialData={{ email: userEmail, phone: userPhone, fullname: userName }} 
-            onComplete={(fullUserData) => {
-              if (fullUserData) {
-                setUserData(fullUserData);
-                setHasProfile(true);
-                if (fullUserData.phone) setUserPhone(fullUserData.phone);
-                navigate('/');
-              }
-            }}
-          />
-        </div>
-      </div>
-    );
+  if (authState === 'confirm_reset') {
+    // Keep confirm_reset logic if needed, but usually it's also a part of login/setup
   }
 
   return (
