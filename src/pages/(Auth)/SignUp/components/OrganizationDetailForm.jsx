@@ -1,7 +1,7 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { Building2, Briefcase, MapPin, Globe, CloudUpload, CreditCard as CardIcon, FileText, Phone, Mail, Hash } from "lucide-react";
-import { Card, Field, Input, TextArea, UploadBox } from "../SignUp";
+import { Building2, Briefcase, MapPin, Globe, CloudUpload, CreditCard as CardIcon, FileText, Phone, Mail, Hash, User } from "lucide-react";
+import { Card, Field, Input, TextArea, UploadBox } from "./FormLayoutComponents";
 
 export const OrganizationDetailForm = ({ handleLogoUpload }) => {
     const { register, watch, formState: { errors } } = useFormContext();
@@ -16,6 +16,26 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                 stepNumber={2}
                 isActive={true}
             >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-100">
+                    <Field label="Admin Full Name" required icon={<User className="w-4 h-4" />} error={errors.fullname}>
+                        <Input
+                            {...register("fullname", { required: "Full Name is required" })}
+                            placeholder="Confirm your name"
+                            icon={<User className="w-5 h-5" />}
+                            hasError={!!errors.fullname}
+                        />
+                    </Field>
+
+                    <Field label="Admin Contact Phone" required icon={<Phone className="w-4 h-4" />} error={errors.phone}>
+                        <Input
+                            {...register("phone", { required: "Phone is required" })}
+                            placeholder="Confirm your phone"
+                            icon={<Phone className="w-5 h-5" />}
+                            hasError={!!errors.phone}
+                        />
+                    </Field>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Organization ID (Company ID)" required icon={<Hash className="w-4 h-4" />} error={errors.company}>
                         <Input
@@ -129,32 +149,6 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                                 }
                             })}
                             placeholder="Enter GST number"
-                            icon={<CardIcon className="w-5 h-5" />}
-                        />
-                    </Field>
-
-                    <Field label="PAN Number">
-                        <Input
-                            {...register("pan", {
-                                onChange: (e) => {
-                                    e.target.value = e.target.value.toUpperCase();
-                                }
-                            })}
-                            placeholder="Enter PAN number"
-                            icon={<CardIcon className="w-5 h-5" />}
-                        />
-                    </Field>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Registration Number">
-                        <Input
-                            {...register("registrationnumber", {
-                                onChange: (e) => {
-                                    e.target.value = e.target.value.toUpperCase();
-                                }
-                            })}
-                            placeholder="e.g., U12345DL..."
                             icon={<CardIcon className="w-5 h-5" />}
                         />
                     </Field>

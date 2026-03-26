@@ -24,6 +24,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useAuth } from '../../hooks/useAuth';
 import './Auth.css';
 import { fetchAuthSession, getCurrentUser, signOut } from "aws-amplify/auth";
+import { CompanySetupForm } from './SignUp/components/CompanySetupForm';
 
 
 const OnBoardingPage = () => {
@@ -34,50 +35,19 @@ const OnBoardingPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
+  const [confirmationCode, setConfirmationCode] = useState('');
+  const [authState, setAuthState] = useState('login'); // 'login', 'signup', 'forgot_password', 'confirm_reset', 'setup_company'
   const navigate = useNavigate();
   
   // Get Zustand store actions
-  const { setUserEmail, setUserData, setIsAuthenticated, userEmail, isAuthenticated } = useAuthStore();
-  const { checkSession } = useAuth();
+  const { setUserEmail, setUserName, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, setLoginTimestamp, userEmail, userName, userPhone, isAuthenticated, hasProfile, loginTimestamp } = useAuthStore();
+  const { checkSession, resetPassword, confirmResetPassword, login } = useAuth();
 
+  // No longer need auto-switch here, App.jsx handles it via ProtectedRoute
+  
   // PROFILE_API constant
   const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
 
-  useEffect(() => {
-    if (isAuthenticated && userEmail) {
-      const fetchProfileData = async () => {
-        try {
-          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
-          
-          const response = await fetch(profileUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (response.ok) {
-            const profileData = await response.json();
-            console.log('🔥 OnBoarding: Profile API response:', profileData);
-            
-            // Set user data in store
-            const userData = Array.isArray(profileData) ? profileData[0] : profileData;
-            if (userData) {
-              setUserData(userData);
-              console.log('🔥 OnBoarding: User data set in store:', userData);
-            }
-          } else {
-            console.log('🔥 OnBoarding: Profile API failed:', response.status);
-          }
-        } catch (apiError) {
-          console.error('🔥 OnBoarding: Profile API error:', apiError);
-        }
-      };
-
-      fetchProfileData();
-    }
-  }, [isAuthenticated, userEmail, setUserData]);
   
   // Enhanced carousel data with better content
   const carouselData = [
@@ -155,10 +125,59 @@ const OnBoardingPage = () => {
 
 
   const handleAuth = async () => {
-    if (isLogin) {
+    if (authState === 'login') {
       await handleLogin();
+    } else if (authState === 'forgot_password') {
+      await handleForgotPasswordRequest();
+    } else if (authState === 'confirm_reset') {
+      await handleConfirmReset();
     } else {
       await handleSignup();
+    }
+  };
+
+  const handleForgotPasswordRequest = async () => {
+    if (!loginInput.trim()) {
+      showToast('Please enter your email or phone number', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const output = await resetPassword({ username: loginInput });
+      console.log('🔥 Reset password output:', output);
+      showToast('Confirmation code sent to your email');
+      setAuthState('confirm_reset');
+    } catch (error) {
+      showToast(error.message || 'Failed to send reset code', 'error');
+      console.error('Reset password error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmReset = async () => {
+    if (!confirmationCode.trim() || !password.trim()) {
+      showToast('Please enter the confirmation code and new password', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await confirmResetPassword({
+        username: loginInput,
+        confirmationCode,
+        newPassword: password
+      });
+      showToast('Password reset successful! You can now login.');
+      setAuthState('login');
+      setPassword('');
+      setConfirmationCode('');
+    } catch (error) {
+      showToast(error.message || 'Failed to reset password', 'error');
+      console.error('Confirm reset error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -171,62 +190,36 @@ const OnBoardingPage = () => {
     setIsLoading(true);
     
     try {
-      // Import here to avoid top-level import issues if not needed globally
-      const { signIn } = await import('aws-amplify/auth');
+      const { signIn, signOut } = await import('aws-amplify/auth');
       
-      const { isSignedIn, nextStep } = await signIn({
-        username: loginInput,
-        password,
-      });
-      console.log(isSignedIn)
-
-      if (isSignedIn) {
-        showToast('Login successful!');
-        
-        // Get username from signIn response and make profile API call
-        const username = loginInput; // Use the login input as username
-        console.log('🔥 Login successful, username:', username);
-        
-        // Make profile API call with username
-        try {
-          const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(username)}`;
-          console.log('🔥 Login: Calling profile API with username:', profileUrl);
-          
-          const response = await fetch(profileUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include', // Include cookies for session
+      let signInResult;
+      try {
+        signInResult = await signIn({
+          username: loginInput,
+          password: password,
+        });
+      } catch (signInError) {
+        if (signInError.name === 'UserAlreadyAuthenticatedException') {
+          await signOut();
+          signInResult = await signIn({
+            username: loginInput,
+            password: password,
           });
-          
-          if (response.ok) {
-            const profileData = await response.json();
-            console.log('🔥 Login: Profile API response:', profileData);
-            
-            // Set user data in store
-            const userData = Array.isArray(profileData) ? profileData[0] : profileData;
-            if (userData) {
-              setUserEmail(userData.Email || username);
-              setUserData(userData);
-              console.log('🔥 Login: User data set in store:', userData);
-            }
-          } else {
-            console.log('🔥 Login: Profile API failed:', response.status);
-          }
-        } catch (apiError) {
-          console.error('🔥 Login: Profile API error:', apiError);
+        } else {
+          throw signInError;
         }
-        
-        setShowLoginModal(false);
-        setTimeout(() => {
-          navigate('/');
-        }, 100);
-      } else {
-         // Handle other steps like MFA if necessary
-         showToast(`Login step required: ${nextStep.signInStep}`, 'info');
       }
 
+      if (signInResult.isSignedIn) {
+        const result = await login();
+        if (result.success) {
+          showToast('Login successful!');
+          setShowLoginModal(false);
+          // App.jsx router handles redirect based on hasProfile
+        }
+      } else {
+        showToast(`Login step required: ${signInResult.nextStep.signInStep}`, 'info');
+      }
     } catch (error) {
       showToast(error.message || 'Login failed. Please check your credentials.', 'error');
       console.error('Login error:', error);
@@ -274,6 +267,10 @@ const OnBoardingPage = () => {
     }
   };
 
+  if (authState === 'confirm_reset') {
+    // Keep confirm_reset logic if needed, but usually it's also a part of login/setup
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Enhanced Header */}
@@ -289,7 +286,7 @@ const OnBoardingPage = () => {
             <button 
               onClick={() => {
                 setShowLoginModal(true);
-                setIsLogin(true);
+                setAuthState('login');
               }} 
               className="px-6 py-2.5 rounded-xl bg-white/20 text-white font-medium hover:bg-white/30 transition-all duration-200 backdrop-blur-sm flex items-center gap-2"
             >
@@ -299,7 +296,7 @@ const OnBoardingPage = () => {
             <button 
               onClick={() => {
                 setShowLoginModal(true);
-                setIsLogin(false);
+                setAuthState('signup');
               }} 
               className="px-6 py-2.5 rounded-xl bg-white text-purple-700 font-medium hover:bg-gray-100 transition-all duration-200 flex items-center gap-2 shadow-lg"
             >
@@ -363,7 +360,7 @@ const OnBoardingPage = () => {
                   <button
                     onClick={() => {
                       setShowLoginModal(true);
-                      setIsLogin(false);
+                      setAuthState('signup');
                     }}
                     className="px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-800 text-white font-semibold rounded-xl hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
                   >
@@ -434,10 +431,14 @@ const OnBoardingPage = () => {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {isLogin ? 'Welcome Back' : 'Create Account'}
+                  {authState === 'login' ? 'Welcome Back' : 
+                   authState === 'signup' ? 'Create Account' : 
+                   authState === 'forgot_password' ? 'Reset Password' : 'Confirm Reset'}
                 </h2>
                 <p className="text-gray-600 mt-1">
-                  {isLogin ? 'Sign in to continue to Quick Quotes' : 'Start your free trial today'}
+                  {authState === 'login' ? 'Sign in to continue to Quick Quotes' : 
+                   authState === 'signup' ? 'Start your free trial today' : 
+                   authState === 'forgot_password' ? 'Enter your email to receive a code' : 'Enter the code sent to your email'}
                 </p>
               </div>
               <button 
@@ -449,28 +450,30 @@ const OnBoardingPage = () => {
             </div>
 
             {/* Tab Toggle */}
-            <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-              <button
-                onClick={() => setIsLogin(true)}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
-                  isLogin 
-                    ? 'bg-white text-purple-700 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Login
-              </button>
-              <button
-                onClick={() => setIsLogin(false)}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
-                  !isLogin 
-                    ? 'bg-white text-purple-700 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Sign Up
-              </button>
-            </div>
+            {(authState === 'login' || authState === 'signup') && (
+              <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+                <button
+                  onClick={() => setAuthState('login')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
+                    authState === 'login' 
+                      ? 'bg-white text-purple-700 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => setAuthState('signup')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
+                    authState === 'signup' 
+                      ? 'bg-white text-purple-700 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>
@@ -480,9 +483,9 @@ const OnBoardingPage = () => {
                     type="text"
                     value={loginInput}
                     onChange={(e) => setLoginInput(e.target.value)}
-                    placeholder={isLogin ? "Enter your email or phone" : "Enter your email or phone"}
+                    placeholder="Enter your email or phone"
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white transition-colors"
-                    disabled={isLoading}
+                    disabled={isLoading || authState === 'confirm_reset'}
                   />
                   <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
                     {isValidEmail(loginInput) ? (
@@ -494,15 +497,34 @@ const OnBoardingPage = () => {
                 </div>
               </div>
 
-              {isLogin && (
+              {authState === 'confirm_reset' && (
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">Password</label>
+                  <label className="block text-gray-700 font-medium mb-2">Confirmation Code</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={confirmationCode}
+                      onChange={(e) => setConfirmationCode(e.target.value)}
+                      placeholder="Enter verification code"
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white transition-colors"
+                      disabled={isLoading}
+                    />
+                    <Sparkles className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  </div>
+                </div>
+              )}
+
+              {(authState === 'login' || authState === 'confirm_reset') && (
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    {authState === 'confirm_reset' ? 'New Password' : 'Password'}
+                  </label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
+                      placeholder={authState === 'confirm_reset' ? "Enter new password" : "Enter your password"}
                       className="w-full pl-12 pr-12 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white transition-colors"
                       disabled={isLoading}
                     />
@@ -526,22 +548,47 @@ const OnBoardingPage = () => {
                 className="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white font-semibold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading && <Loader2 className="animate-spin" size={20} />}
-                {isLoading ? (isLogin ? 'Signing in...' : 'Creating account...') : (isLogin ? 'Sign In' : 'Create Account')}
+                {isLoading ? 'Processing...' : 
+                 authState === 'login' ? 'Sign In' : 
+                 authState === 'signup' ? 'Create Account' :
+                 authState === 'forgot_password' ? 'Send Reset Code' : 'Reset Password'}
               </button>
 
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="w-full bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-200 transition-colors"
-                disabled={isLoading}
-              >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-              </button>
+              {authState !== 'confirm_reset' && (
+                <button
+                  onClick={() => {
+                    if (authState === 'forgot_password') {
+                      setAuthState('login');
+                    } else {
+                      setAuthState(authState === 'login' ? 'signup' : 'login');
+                    }
+                  }}
+                  className="w-full bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-200 transition-colors"
+                  disabled={isLoading}
+                >
+                  {authState === 'login' ? "Don't have an account? Sign up" : 
+                   authState === 'signup' ? "Already have an account? Sign in" : "Back to Login"}
+                </button>
+              )}
+
+              {authState === 'confirm_reset' && (
+                <button
+                  onClick={() => setAuthState('forgot_password')}
+                  className="w-full bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-200 transition-colors"
+                  disabled={isLoading}
+                >
+                  Resend Code
+                </button>
+              )}
             </div>
 
             {/* Additional Options */}
-            {isLogin && (
+            {authState === 'login' && (
               <div className="mt-4 text-center">
-                <button className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                <button 
+                  onClick={() => setAuthState('forgot_password')}
+                  className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+                >
                   Forgot password?
                 </button>
               </div>

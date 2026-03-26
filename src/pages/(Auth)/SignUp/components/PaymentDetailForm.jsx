@@ -1,7 +1,7 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
 import { CreditCard, Building2, MapPin, QrCode } from "lucide-react";
-import { Card, Field, Input, UploadBox } from "../SignUp";
+import { Card, Field, Input, UploadBox } from "./FormLayoutComponents";
 
 export const PaymentDetailForm = ({ handleQRUpload }) => {
     const { register, watch, formState: { errors } } = useFormContext();
