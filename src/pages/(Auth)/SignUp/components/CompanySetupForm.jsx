@@ -11,10 +11,11 @@ import {
   Hourglass
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { uploadCompanyLogo, uploadPaymentQR } from "../../../../utils/fileToDataUrl";
+
 import { OrganizationDetailForm } from "./OrganizationDetailForm";
 import { PaymentDetailForm } from "./PaymentDetailForm";
 import { Card, ProgressBar, StepTitle } from "./FormLayoutComponents";
+import { uploadCompanyLogo, uploadPaymentQR } from "../../../../utils/fileToDataUrl";
 
 const LS_FORM_KEY = "createAccountFormData";
 
