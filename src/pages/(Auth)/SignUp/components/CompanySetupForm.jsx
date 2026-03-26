@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { OrganizationDetailForm } from "./OrganizationDetailForm";
 import { PaymentDetailForm } from "./PaymentDetailForm";
 import { Card, ProgressBar, StepTitle } from "./FormLayoutComponents";
-import { uploadCompanyLogo, uploadPaymentQR } from "../../../../utils/fileToDataUrl";
+import { uploadCompanyLogo, uploadPaymentQR } from "../../../../utils/FileUploadUrl";
 
 const LS_FORM_KEY = "createAccountFormData";
 
