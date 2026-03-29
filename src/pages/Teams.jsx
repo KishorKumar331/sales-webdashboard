@@ -1,485 +1,545 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, Phone, Calendar, CreditCard, Search, Filter, MoreVertical } from 'lucide-react';
+import { Users, Plus, Mail, Phone, Calendar, CreditCard, Search, Filter, MoreVertical, Lock, Eye, EyeOff, Loader2, CheckCircle2, ShieldCheck, X, User, Sparkles } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { toast } from 'react-toastify';
+import { signUp, confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Teams = () => {
+  const { realUser, setInspectedUser, clearInspectedUser, isInspecting, user: effectiveUser } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('manage');
   const [teamMembers, setTeamMembers] = useState([]);
+  console.log(teamMembers)
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddMember, setShowAddMember] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const [newMember, setNewMember] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    password: ''
   });
+
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
+
+  const loadTeamMembers = React.useCallback(async () => {
+    // Check both nested and flat structure to be safe
+    const email = realUser?.user?.Email || realUser?.Email;
+    if (!email) {
+      console.log('Skipping team load - no user email found');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const company = realUser?.user?.company || realUser?.company || 'journey_routers';
+      const profileUrl = `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?company=${encodeURIComponent(company)}&action=billing_status`;
+      console.log('Fetching team members from:', profileUrl);
+
+      const response = await axios.get(profileUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log('Team data received:', response.data);
+      if (response.data) {
+        const users = Array.isArray(response.data.users) ? response.data.users : (Array.isArray(response.data) ? response.data : []);
+        setTeamMembers(users);
+      }
+    } catch (error) {
+      console.error('Error loading team members:', error);
+      const members = localStorage.getItem('teamMembers');
+      if (members) setTeamMembers(JSON.parse(members));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [realUser]);
 
   useEffect(() => {
     loadTeamMembers();
-  }, []);
-
-  const loadTeamMembers = () => {
-    const members = localStorage.getItem('teamMembers');
-    if (members) {
-      setTeamMembers(JSON.parse(members));
-    }
-  };
-
-  const saveTeamMembers = (members) => {
-    localStorage.setItem('teamMembers', JSON.stringify(members));
-    setTeamMembers(members);
-  };
+  }, [loadTeamMembers]);
 
   const handleSendOtp = async () => {
-    if (!newMember.email || !newMember.name) {
-      alert('Please fill in all required fields');
+    if (!newMember.email || !newMember.name || !newMember.password) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
-    // Simulate OTP sending
-    setOtpSent(true);
-    alert(`OTP sent to ${newMember.email}`);
-  };
-
-  const handleVerifyOtp = () => {
-    if (otp === '123456') { // Simulated OTP
-      setOtpVerified(true);
-      alert('Email verified successfully!');
-    } else {
-      alert('Invalid OTP. Please try again.');
-    }
-  };
-
-  const handleAddMember = () => {
-    if (!otpVerified) {
-      alert('Please verify email first');
-      return;
-    }
-
-    const member = {
-      id: Date.now(),
-      ...newMember,
-      status: 'pending',
-      joinDate: new Date().toISOString(),
-      paymentStatus: 'pending'
-    };
-
-    const updatedMembers = [...teamMembers, member];
-    saveTeamMembers(updatedMembers);
-
-    // Reset form
-    setNewMember({ name: '', email: '', phone: '' });
-    setOtp('');
-    setOtpSent(false);
-    setOtpVerified(false);
-    setShowAddMember(false);
-    setShowPaymentModal(true);
-    setSelectedMember(member);
-  };
-
-  const handlePaymentSuccess = (memberId, paymentDetails) => {
-    const updatedMembers = teamMembers.map(member => 
-      member.id === memberId 
-        ? { 
-            ...member, 
-            status: 'active',
-            paymentStatus: 'paid',
-            paymentDetails: {
-              ...paymentDetails,
-              timestamp: new Date().toISOString()
-            }
+    setIsLoading(true);
+    try {
+      await signUp({
+        username: newMember.email,
+        password: newMember.password,
+        options: {
+          userAttributes: {
+            email: newMember.email,
+            name: newMember.name,
+            phone_number: newMember.phone.startsWith('+') ? newMember.phone : `+91${newMember.phone}`,
           }
-        : member
-    );
-    saveTeamMembers(updatedMembers);
+        }
+      });
+      setOtpSent(true);
+      toast.success(`Verification code sent to ${newMember.email}`);
+    } catch (error) {
+      console.error("Sign up error:", error);
+      toast.error(error.message || "Failed to initiate registration");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      toast.error('Please enter the verification code');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await confirmSignUp({
+        username: newMember.email,
+        confirmationCode: otp
+      });
+
+      if (result.isSignUpComplete || result.nextStep?.signUpStep === 'DONE') {
+        toast.success('Identity verified successfully! ✨');
+        // Automatically proceed to finalize
+        await handleFinalizeRegistration();
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      toast.error(error.message || "Invalid or expired code");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      setIsLoading(true);
+      await resendSignUpCode({ username: newMember.email });
+      toast.info('New verification code sent');
+    } catch (error) {
+      toast.error(error.message || 'Failed to resend code');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFinalizeRegistration = async () => {
+    setIsLoading(true);
+    try {
+      const profileData = {
+        FullName: newMember.name,
+        Email: newMember.email,
+        Phone: newMember.phone,
+        company: realUser?.company,
+        Role: 'TeamMember',
+        Status: 'Active',
+        CreatedAt: new Date().toISOString()
+      };
+
+      const response = await fetch('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData)
+      });
+
+      if (response.ok) {
+        // Now trigger payment flow as per original logic
+        const tempMember = { ...profileData, id: Date.now() };
+        setSelectedMember(tempMember);
+        setShowPaymentModal(true);
+        setActiveTab('manage');
+
+        // Reset states
+        setNewMember({ name: '', email: '', phone: '', password: '' });
+        setOtp('');
+        setOtpSent(false);
+      } else {
+        throw new Error('Failed to register in database');
+      }
+    } catch (error) {
+      console.error("Finalization error:", error);
+      toast.error(error.message || "Cloud profile creation failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    // Add logic here to update the member's status in your DB
+    toast.success('Team member activated! 🚀');
     setShowPaymentModal(false);
-    setSelectedMember(null);
-    alert('Team member added successfully!');
+    loadTeamMembers(); // Refresh the list from API
   };
 
   const filteredMembers = teamMembers.filter(member =>
-    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (member.fullname || member.FullName || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (member.Email || '')?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleInspect = (member) => {
+    if (isInspecting && effectiveUser?.user?.Email === member.Email) {
+      clearInspectedUser();
+      toast.info('Returned to your own profile');
+    } else {
+      // Wrap member in a user object to match the dashboard's expected structure
+      setInspectedUser({ user: member });
+      toast.success(`Now inspecting as ${member.fullname || member.Email}`);
+      // Redirect to dashboard
+      navigate('/');
+    }
+  };
+
   return (
-    <div className="space-y-6 p-8">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Teams</h1>
-          <p className="text-gray-600 mt-1">Manage your team members and their access</p>
-        </div>
-        <button
-          onClick={() => setShowAddMember(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add Team Member
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('manage')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'manage'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Manage Team
-          </button>
-          <button
-            onClick={() => setActiveTab('add')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'add'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Add Member
-          </button>
-        </nav>
-      </div>
-
-      {/* Manage Team Tab */}
-      {activeTab === 'manage' && (
-        <div className="bg-white rounded-lg shadow">
-          {/* Search and Filter */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search team members..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filter
-              </button>
+    <div className="min-h-screen bg-[#F8FAFC] pb-12">
+      {/* Header Container */}
+      <div className="bg-white border-b border-slate-200 px-8 py-10 shadow-sm">
+        <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-linear-to-br from-purple-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-200">
+              <Users size={32} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-slate-900 font-black text-3xl tracking-tight leading-none mb-1">Squad Matrix</h1>
+              <p className="text-slate-500 text-sm font-medium">Coordinate your team, manage permissions & billing</p>
             </div>
           </div>
 
-          {/* Team Members List */}
-          <div className="divide-y divide-gray-200">
-            {filteredMembers.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>No team members found</p>
+          <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 self-start">
+            <button
+              onClick={() => setActiveTab('manage')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'manage' ? 'bg-white text-purple-600 shadow-md' : 'text-slate-500 hover:text-slate-700'
+                }`}
+            >
+              <LayoutGrid size={14} />
+              Fleet View
+            </button>
+            <button
+              onClick={() => setActiveTab('add')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'add' ? 'bg-white text-purple-600 shadow-md' : 'text-slate-500 hover:text-slate-700'
+                }`}
+            >
+              <Plus size={14} strokeWidth={3} />
+              Recruit
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-[1400px] mx-auto px-8 mt-10">
+        {/* Manage Fleet View */}
+        {activeTab === 'manage' && (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-1 relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-600 transition-colors" size={20} />
+                <input
+                  type="text"
+                  placeholder="Seach by identity, email or role..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-purple-200 focus:outline-none shadow-sm transition-all text-sm font-medium"
+                />
+              </div>
+              <button
+                onClick={loadTeamMembers}
+                className="px-6 py-4 bg-purple-50 border-2 border-purple-100 rounded-2xl text-purple-600 font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:bg-purple-100 transition-all shadow-sm"
+              >
+                Force Refresh
+              </button>
+              <button className="px-6 py-4 bg-white border-2 border-slate-100 rounded-2xl text-slate-500 font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:border-purple-100 hover:text-purple-600 transition-all shadow-sm">
+                <Filter size={18} />
+                Sort Operations
+              </button>
+            </div>
+
+            {isLoading && teamMembers.length === 0 ? (
+              <div className="py-40 flex flex-col items-center">
+                <div className="w-16 h-16 border-4 border-purple-100 border-t-purple-600 rounded-full animate-spin mb-6"></div>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Synchronizing Core...</p>
+              </div>
+            ) : filteredMembers.length === 0 ? (
+              <div className="py-32 bg-white rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center text-center px-6 transition-all hover:border-purple-200 group">
+                <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Users size={40} className="text-slate-200" />
+                </div>
+                <h3 className="text-slate-900 font-black text-2xl mb-2">The Fleet is Empty</h3>
+                <p className="text-slate-500 max-w-sm font-medium mb-10">Deploy your first team member to start scaling your operations across the grid.</p>
                 <button
-                  onClick={() => setShowAddMember(true)}
-                  className="mt-4 text-purple-600 hover:text-purple-700 font-medium"
+                  onClick={() => setActiveTab('add')}
+                  className="px-10 py-4 bg-linear-to-r from-purple-600 to-indigo-700 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest shadow-xl shadow-purple-200 hover:shadow-2xl transition-all active:scale-95 flex items-center gap-3"
                 >
-                  Add your first team member
+                  <Plus size={20} strokeWidth={3} />
+                  Initiate Recruitment
                 </button>
               </div>
             ) : (
-              filteredMembers.map((member) => (
-                <div key={member.id} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-purple-600 font-semibold">
-                          {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{member.name}</h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Mail className="w-4 h-4" />
-                            {member.email}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {teamMembers?.map((member, index) => (
+                  <div key={member.Email}>
+                    <div className="bg-white rounded-[2.5rem] p-8 border-2 border-slate-100 hover:border-purple-100 shadow-sm hover:shadow-xl transition-all group">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="w-20 h-20 bg-linear-to-br from-purple-500 to-indigo-600 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-lg ring-4 ring-purple-50 group-hover:rotate-3 transition-transform">
+                            {member.fullname}
+                          </div>
+                          {/* <div>
+                            <h3 className="text-slate-900 font-black text-xl tracking-tight mb-2 group-hover:text-purple-600 transition-colors uppercase">{member.fullname || member.FullName || 'Standard Agent'}</h3>
+                            <div className="space-y-1.5 font-bold text-xs">
+                              <div className="flex items-center gap-2 text-slate-500">
+                                <Mail size={14} className="text-purple-400" />
+                                <span className="truncate max-w-[200px] lowercase">{member.Email}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-slate-500">
+                                <Phone size={14} className="text-purple-400" />
+                                <span>{member.Phone || member.Contact || 'Not Set'}</span>
+                              </div>
+                            </div>
+                          </div> */}
+                        </div>
+                        <div className="flex flex-col items-end gap-3 text-right">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm ring-1 ring-inset ${member.subscription_status === 'active' || member.status === 'active' || member.Status === 'Active'
+                            ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+                            : 'bg-amber-50 text-amber-700 ring-amber-100'
+                            }`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${member.subscription_status === 'active' || member.status === 'active' || member.Status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`}></div>
+                            {member.subscription_status || member.Status || member.status || 'Pending'}
                           </span>
-                          {member.phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-4 h-4" />
-                              {member.phone}
-                            </span>
+                          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Access End</p>
+                          <p className="text-slate-900 font-black text-sm tracking-tighter">
+                            {member.subscription_end_date ? new Date(member.subscription_end_date).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-8 pt-8 border-t-2 border-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleInspect(member)}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${isInspecting && effectiveUser?.user?.Email === member.Email
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                              : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+                              }`}
+                          >
+                            <Eye size={14} />
+                            {isInspecting && effectiveUser?.user?.Email === member.Email ? 'Exit Inspect' : 'Inspect'}
+                          </button>
+                          {(member.subscription_status !== 'active') && (
+                            <button
+                              onClick={() => {
+                                setSelectedMember(member);
+                                setShowPaymentModal(true);
+                              }}
+                              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2"
+                            >
+                              <CreditCard size={14} />
+                              Pay
+                            </button>
                           )}
+                          <button className="w-10 h-10 rounded-full hover:bg-slate-100 transition-colors flex items-center justify-center text-slate-400 hover:text-slate-900">
+                            <MoreVertical size={20} />
+                          </button>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          member.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {member.status}
-                        </span>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Joined {new Date(member.joinDate).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <MoreVertical className="w-5 h-5 text-gray-400" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Add Member Tab */}
+        {activeTab === 'add' && (
+          <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
+            <div className="bg-white rounded-[3rem] shadow-2xl shadow-indigo-100 border-2 border-white overflow-hidden">
+              <div className="bg-linear-to-r from-purple-600 to-indigo-700 p-10 text-white relative">
+                <div className="absolute top-0 right-0 p-10 opacity-10">
+                  <Users size={120} />
+                </div>
+                <h2 className="text-3xl font-black tracking-tight mb-2">New Recruitment</h2>
+                <p className="opacity-80 font-medium">Provisioning a new identity within the <span className="font-bold underline cursor-help" title={realUser?.company}>{realUser?.company || 'Journey Routers'}</span> network.</p>
+              </div>
+
+              <div className="p-10 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-slate-400 text-[10px] font-black uppercase tracking-widest pl-4">Full Identity</label>
+                    <div className="relative">
+                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                      <input
+                        type="text"
+                        value={newMember.name}
+                        onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-purple-200 focus:outline-none transition-all font-bold text-sm"
+                        placeholder="Full Name"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-slate-400 text-[10px] font-black uppercase tracking-widest pl-4">Digital Mail</label>
+                    <div className="relative">
+                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                      <input
+                        type="email"
+                        value={newMember.email}
+                        onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-purple-200 focus:outline-none transition-all font-bold text-sm"
+                        placeholder="email@company.com"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-slate-400 text-[10px] font-black uppercase tracking-widest pl-4">Coms Link</label>
+                    <div className="relative">
+                      <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                      <input
+                        type="tel"
+                        value={newMember.phone}
+                        onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-purple-200 focus:outline-none transition-all font-bold text-sm"
+                        placeholder="+91 Phone Number"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-slate-400 text-[10px] font-black uppercase tracking-widest pl-4">Access Key</label>
+                    <div className="relative">
+                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={newMember.password}
+                        onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
+                        className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-purple-200 focus:outline-none transition-all font-bold text-sm"
+                        placeholder="Secure Password"
+                      />
+                      <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-600 transition-colors">
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
                   </div>
-                  {member.paymentDetails && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <CreditCard className="w-4 h-4" />
-                          Payment: {member.paymentDetails.paymentId?.slice(-8) || 'Completed'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {new Date(member.paymentDetails.timestamp).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* Add Member Tab */}
-      {activeTab === 'add' && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Add New Team Member</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input
-                type="text"
-                value={newMember.name}
-                onChange={(e) => setNewMember({...newMember, name: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Enter full name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <input
-                type="email"
-                value={newMember.email}
-                onChange={(e) => setNewMember({...newMember, email: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Enter email address"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-              <input
-                type="tel"
-                value={newMember.phone}
-                onChange={(e) => setNewMember({...newMember, phone: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Enter phone number"
-              />
-            </div>
-
-            {!otpSent ? (
-              <button
-                onClick={handleSendOtp}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition-colors"
-              >
-                Send OTP
-              </button>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Enter OTP</label>
-                  <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter 6-digit OTP"
-                    maxLength={6}
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <button
-                    onClick={handleVerifyOtp}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors"
-                  >
-                    Verify OTP
-                  </button>
+                {!otpSent ? (
                   <button
                     onClick={handleSendOtp}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors"
+                    disabled={isLoading}
+                    className="w-full py-5 bg-linear-to-r from-purple-600 to-indigo-700 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-purple-200 hover:shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
                   >
-                    Resend OTP
+                    {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                    Initiate Auth Protocol
                   </button>
-                </div>
-              </div>
-            )}
-
-            {otpVerified && (
-              <button
-                onClick={handleAddMember}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition-colors"
-              >
-                Add Team Member
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Add Member Modal */}
-      {showAddMember && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-4">Add Team Member</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={newMember.name}
-                  onChange={(e) => setNewMember({...newMember, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter full name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  value={newMember.email}
-                  onChange={(e) => setNewMember({...newMember, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter email address"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                  type="tel"
-                  value={newMember.phone}
-                  onChange={(e) => setNewMember({...newMember, phone: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter phone number"
-                />
-              </div>
-
-              {!otpSent ? (
-                <button
-                  onClick={handleSendOtp}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition-colors"
-                >
-                  Send OTP
-                </button>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Enter OTP</label>
-                    <input
-                      type="text"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Enter 6-digit OTP"
-                      maxLength={6}
-                    />
+                ) : (
+                  <div className="space-y-8 animate-in zoom-in-95 duration-300">
+                    <div className="space-y-2">
+                      <label className="text-center block text-slate-400 text-[10px] font-black uppercase tracking-widest">Confirmation Pulse</label>
+                      <input
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        className="w-full px-6 py-6 bg-slate-50 border-2 border-purple-100 rounded-[2rem] text-center text-4xl font-black tracking-[0.5em] text-slate-900 focus:outline-none focus:bg-white transition-all shadow-inner"
+                        placeholder="000000"
+                        maxLength={6}
+                      />
+                      <p className="text-center text-[10px] font-bold text-slate-400 mt-3 flex items-center justify-center gap-2">
+                        Code transmitted to <span className="text-purple-600 underline">{newMember.email}</span>
+                      </p>
+                    </div>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={handleVerifyOtp}
+                        disabled={isLoading}
+                        className="flex-1 py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                      >
+                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                        Verify Code
+                      </button>
+                      <button
+                        onClick={handleResendOtp}
+                        disabled={isLoading}
+                        className="px-8 py-5 bg-slate-100 text-slate-500 rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
+                      >
+                        Resend
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-4">
-                    <button
-                      onClick={handleVerifyOtp}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors"
-                    >
-                      Verify OTP
-                    </button>
-                    <button
-                      onClick={handleSendOtp}
-                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors"
-                    >
-                      Resend OTP
-                    </button>
+                )}
+
+                <div className="pt-6 flex items-center justify-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></div>
+                    <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Encrypted Pipeline</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+                    <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Cognito Verified</span>
                   </div>
                 </div>
-              )}
-
-              {otpVerified && (
-                <button
-                  onClick={handleAddMember}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition-colors"
-                >
-                  Add Team Member
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  setShowAddMember(false);
-                  setNewMember({ name: '', email: '', phone: '' });
-                  setOtp('');
-                  setOtpSent(false);
-                  setOtpVerified(false);
-                }}
-                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Payment Modal */}
-      {showPaymentModal && selectedMember && (
-        <PaymentModal
-          member={selectedMember}
-          onSuccess={(paymentDetails) => handlePaymentSuccess(selectedMember.id, paymentDetails)}
-          onClose={() => {
-            setShowPaymentModal(false);
-            setSelectedMember(null);
-          }}
-        />
-      )}
+        {/* Payment Modal */}
+        {showPaymentModal && selectedMember && (
+          <PaymentModal
+            member={selectedMember}
+            onSuccess={() => handlePaymentSuccess()}
+            onClose={() => {
+              setShowPaymentModal(false);
+              setSelectedMember(null);
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };
 
-// Payment Modal Component
+/* --- SUPPORTING COMPONENTS --- */
+
+const LayoutGrid = ({ size, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="3" y="3" width="7" height="7"></rect>
+    <rect x="14" y="3" width="7" height="7"></rect>
+    <rect x="14" y="14" width="7" height="7"></rect>
+    <rect x="3" y="14" width="7" height="7"></rect>
+  </svg>
+);
+
 const PaymentModal = ({ member, onSuccess, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePayment = () => {
     setIsLoading(true);
-
     const options = {
-      description: `Team Member - ${member.name}`,
+      description: `Team Member Access - ${member.FullName}`,
       image: 'https://i.imgur.com/3g7nmJC.png',
       currency: 'INR',
       key: 'rzp_test_S5OVwU720vAaEY',
-      amount: '99900', // ₹999 in paise
+      amount: '99900',
       name: 'Journey Routers',
-      order_id: '',
       prefill: {
-        email: member.email,
-        contact: member.phone || '',
-        name: member.name,
+        email: member.Email,
+        contact: member.Contact || '',
+        name: member.FullName,
       },
       theme: { color: '#7c3aed' },
     };
 
-    // Load Razorpay script if not already loaded
     if (!window.Razorpay) {
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
-      script.onload = () => {
-        initializeRazorpay(options);
-      };
+      script.onload = () => initializeRazorpay(options);
       document.body.appendChild(script);
     } else {
       initializeRazorpay(options);
@@ -488,76 +548,55 @@ const PaymentModal = ({ member, onSuccess, onClose }) => {
 
   const initializeRazorpay = (options) => {
     const razorpay = new window.Razorpay(options);
-    
     razorpay.open();
-    
     razorpay.on('payment.success', async (response) => {
-      console.log('Payment Success:', response);
-      onSuccess({
+      onSuccess(member.id, {
         paymentId: response.razorpay_payment_id,
-        orderId: response.razorpay_order_id,
-        signature: response.razorpay_signature,
-        amount: '₹999'
+        timestamp: new Date().toISOString()
       });
       setIsLoading(false);
     });
-    
-    razorpay.on('payment.error', (response) => {
-      console.log('Payment Error:', response);
-      alert('Payment failed. Please try again.');
+    razorpay.on('payment.error', () => {
+      toast.error('Payment synchronization failed');
       setIsLoading(false);
     });
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Complete Team Member Setup</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="bg-white rounded-[3rem] max-w-lg w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-500">
+        <div className="bg-linear-to-r from-purple-600 to-indigo-700 p-8 text-white relative">
+          <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all">
+            <X size={20} />
           </button>
+          <h3 className="text-2xl font-black tracking-tight mb-2">Final Activation</h3>
+          <p className="opacity-80 text-sm font-medium">Clear the ledger for identity <span className="font-bold underline">#{member.Email}</span></p>
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-          <h4 className="font-medium text-gray-900 mb-2">Team Member Details</h4>
-          <div className="space-y-1 text-sm text-gray-600">
-            <p><strong>Name:</strong> {member.name}</p>
-            <p><strong>Email:</strong> {member.email}</p>
-            {member.phone && <p><strong>Phone:</strong> {member.phone}</p>}
-          </div>
-        </div>
-
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-purple-900 font-medium">Team Member License</span>
-            <span className="text-purple-900 font-bold">₹999</span>
-          </div>
-          <p className="text-purple-700 text-sm">One-time payment for team member access</p>
-        </div>
-
-        <button
-          onClick={handlePayment}
-          disabled={isLoading}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Processing...
+        <div className="p-8 space-y-6">
+          <div className="bg-slate-50 rounded-3xl p-6 border-2 border-slate-100">
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Subscription License</span>
+              <span className="text-slate-900 font-black text-xl">₹999</span>
             </div>
-          ) : (
-            'Pay ₹999 & Add Team Member'
-          )}
-        </button>
+            <p className="text-slate-500 text-xs font-semibold leading-relaxed mb-4">One-time provisioning fee for enterprise-grade team member access, unlimited quotation capacity, and real-time CRM synchronization.</p>
+            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 text-emerald-600 rounded-lg self-start">
+              <ShieldCheck size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Lifetime Access Secured</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handlePayment}
+            disabled={isLoading}
+            className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-3"
+          >
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : <CreditCard size={18} strokeWidth={3} />}
+            Authorize Payment
+          </button>
+
+          <p className="text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">Encrypted via Razorpay Protocol</p>
+        </div>
       </div>
     </div>
   );

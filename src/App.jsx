@@ -19,6 +19,7 @@ import InvoicePage from './pages/InvoicePage';
 import { useAuth } from './hooks/useAuth';
 import InvoiceTrackingDashboard from './components/Accounting/InvoiceTrackingDashboard';
 import SignUp from './pages/(Auth)/SignUp/SignUp';
+import InspectBanner from './components/InspectBanner';
 
 // Protected Route Component - redirects to /auth if not authenticated
 const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) => {
@@ -74,6 +75,7 @@ const App = () => {
   return (
     <Router>
       <div className="min-h-screen bg-gray-100">
+        <InspectBanner />
         <Routes>
           {/* Public Routes - redirect to / if already authenticated */}
           <Route
@@ -173,15 +175,3 @@ const App = () => {
 
 
 export default App;
-
-
-// import React from 'react'
-// import Carousel from './components/Carousel'
-
-// const App = () => {
-//   return (
-//     <div><Carousel/></div>
-//   )
-// }
-
-// export default App

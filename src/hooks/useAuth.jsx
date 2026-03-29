@@ -15,14 +15,21 @@ export const useAuth = () => {
     userEmail,
     userData,
     isAuthenticated,
+    inspectedUser,
     setUserEmail,
     setIsAuthenticated,
+    setInspectedUser,
+    clearInspectedUser,
     clearAuth
   } = useAuthStore();
 
-  // Derive user from store data
-  const user = userData;
-  console.log(user)
+  // Derive user from store data - prioritize inspected user
+  const user = inspectedUser || userData;
+  const realUser = userData;
+  const isInspecting = !!inspectedUser;
+
+  console.log('Effective User:', user);
+  if (isInspecting) console.log('INSPECT MODE ACTIVE: Viewing as', user.Email);
   /**
    * Check session using Amplify
    */
@@ -138,6 +145,10 @@ export const useAuth = () => {
     isAuthenticated,
     isLoading,
     user,
+    realUser,
+    isInspecting,
+    setInspectedUser,
+    clearInspectedUser,
     login,
     logout,
     checkSession,
