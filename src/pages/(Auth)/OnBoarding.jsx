@@ -1,15 +1,15 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { 
-  X, 
-  Loader2, 
-  ArrowRight, 
-  Sparkles, 
-  Zap, 
-  Shield, 
-  TrendingUp, 
-  Users, 
+import {
+  X,
+  Loader2,
+  ArrowRight,
+  Sparkles,
+  Zap,
+  Shield,
+  TrendingUp,
+  Users,
   Globe,
   Star,
   ChevronRight,
@@ -20,12 +20,8 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';
 import { useAuth } from '../../hooks/useAuth';
 import './Auth.css';
-import { fetchAuthSession, getCurrentUser, signOut } from "aws-amplify/auth";
-import { CompanySetupForm } from './SignUp/components/CompanySetupForm';
-
 
 const OnBoardingPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -38,58 +34,58 @@ const OnBoardingPage = () => {
   const [confirmationCode, setConfirmationCode] = useState('');
   const [authState, setAuthState] = useState('login'); // 'login', 'signup', 'forgot_password', 'confirm_reset', 'setup_company'
   const navigate = useNavigate();
-  
+
   // Get Zustand store actions
-  const { setUserEmail, setUserName, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, setLoginTimestamp, userEmail, userName, userPhone, isAuthenticated, hasProfile, loginTimestamp } = useAuthStore();
-  const { checkSession, resetPassword, confirmResetPassword, login } = useAuth();
+  const { login } = useAuth();
+  const { resetPassword, confirmResetPassword } = useAuth();
 
   // No longer need auto-switch here, App.jsx handles it via ProtectedRoute
-  
+
   // PROFILE_API constant
   const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
 
-  
+
   // Enhanced carousel data with better content
   const carouselData = [
-    { 
-      id: 1, 
-      title: "Welcome to Quick Quotes", 
+    {
+      id: 1,
+      title: "Welcome to Quick Quotes",
       subtitle: "Your Complete Sales Management Solution",
       description: "Streamline your sales process with our powerful tools",
       bgColor: "from-purple-500 to-purple-700",
       icon: <TrendingUp className="w-12 h-12" />,
       features: ["Track leads", "Manage quotes", "Analytics dashboard"]
     },
-    { 
-      id: 2, 
-      title: "Smart Lead Management", 
+    {
+      id: 2,
+      title: "Smart Lead Management",
       subtitle: "Never miss a potential customer",
       description: "Organize and track all your leads in one place",
       bgColor: "from-blue-500 to-blue-700",
       icon: <Users className="w-12 h-12" />,
       features: ["Lead scoring", "Follow-up reminders", "Contact management"]
     },
-    { 
-      id: 3, 
-      title: "Powerful Analytics", 
+    {
+      id: 3,
+      title: "Powerful Analytics",
       subtitle: "Data-driven insights for growth",
       description: "Make informed decisions with real-time analytics",
       bgColor: "from-green-500 to-green-700",
       icon: <Globe className="w-12 h-12" />,
       features: ["Sales reports", "Performance metrics", "Revenue tracking"]
     },
-    { 
-      id: 4, 
-      title: "Secure & Reliable", 
+    {
+      id: 4,
+      title: "Secure & Reliable",
       subtitle: "Enterprise-grade security",
       description: "Your data is safe with our advanced security features",
       bgColor: "from-indigo-500 to-indigo-700",
       icon: <Shield className="w-12 h-12" />,
       features: ["Data encryption", "Secure backups", "Role-based access"]
     },
-    { 
-      id: 5, 
-      title: "Start Your Journey", 
+    {
+      id: 5,
+      title: "Start Your Journey",
       subtitle: "Join thousands of successful businesses",
       description: "Transform your sales process today",
       bgColor: "from-pink-500 to-pink-700",
@@ -188,10 +184,10 @@ const OnBoardingPage = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       const { signIn, signOut } = await import('aws-amplify/auth');
-      
+
       let signInResult;
       try {
         signInResult = await signIn({
@@ -212,10 +208,18 @@ const OnBoardingPage = () => {
 
       if (signInResult.isSignedIn) {
         const result = await login();
+        debugger;
         if (result.success) {
-          showToast('Login successful!');
+          console.log(result.hasProfile)
+          debugger;
+          if (!result.hasProfile) {
+            showToast('Almost there! Please complete your business profile.', 'info');
+          } else {
+            showToast('Login successful!');
+            navigate("/");
+          }
           setShowLoginModal(false);
-          // App.jsx router handles redirect based on hasProfile
+          // App.jsx ProtectedRoute will handle the redirect to /create-profile if hasProfile is false
         }
       } else {
         showToast(`Login step required: ${signInResult.nextStep.signInStep}`, 'info');
@@ -235,12 +239,13 @@ const OnBoardingPage = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       // Navigate to signup page with pre-filled data
       setShowLoginModal(false);
       navigate('/signup');
-    } catch (error) {
+    } catch (err) {
+      console.log(err)
       showToast('Error redirecting to signup. Please try again.', 'error');
       setIsLoading(false);
     }
@@ -283,21 +288,21 @@ const OnBoardingPage = () => {
             <h1 className="text-2xl font-bold text-white">Quick Quotes</h1>
           </div>
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={() => {
                 setShowLoginModal(true);
                 setAuthState('login');
-              }} 
+              }}
               className="px-6 py-2.5 rounded-xl bg-white/20 text-white font-medium hover:bg-white/30 transition-all duration-200 backdrop-blur-sm flex items-center gap-2"
             >
               <Lock className="w-4 h-4" />
               Login
             </button>
-            <button 
+            <button
               onClick={() => {
                 setShowLoginModal(true);
                 setAuthState('signup');
-              }} 
+              }}
               className="px-6 py-2.5 rounded-xl bg-white text-purple-700 font-medium hover:bg-gray-100 transition-all duration-200 flex items-center gap-2 shadow-lg"
             >
               <User className="w-4 h-4" />
@@ -308,24 +313,23 @@ const OnBoardingPage = () => {
       </div>
 
       {/* Enhanced Carousel */}
-      <div style={{overflow:'hidden'}} className="relative h-[calc(100vh-120px)] ">
+      <div style={{ overflow: 'hidden' }} className="relative h-[calc(100vh-120px)] ">
         <div
-        style={{overflow:'hidden'}}
+          style={{ overflow: 'hidden' }}
           ref={scrollViewRef}
           className="flex h-full overflow-x-auto  snap-x snap-mandatory scroll-smooth"
           onScroll={handleScroll}
         >
           {carouselData.map((item, index) => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               className="w-full flex-shrink-0 snap-start px-5 flex items-center justify-center"
               style={{ width: '100%' }}
             >
               <div className="max-w-4xl mx-auto text-center">
                 {/* Icon with animation */}
-                <div className={`mb-8 inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br ${item.bgColor} shadow-2xl transform transition-all duration-500 ${
-                  index === currentIndex ? 'scale-110 rotate-3' : 'scale-100 rotate-0'
-                }`}>
+                <div className={`mb-8 inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br ${item.bgColor} shadow-2xl transform transition-all duration-500 ${index === currentIndex ? 'scale-110 rotate-3' : 'scale-100 rotate-0'
+                  }`}>
                   <div className="text-white">
                     {item.icon}
                   </div>
@@ -345,7 +349,7 @@ const OnBoardingPage = () => {
                 {/* Features */}
                 <div className="flex flex-wrap justify-center gap-4 mb-8">
                   {item.features.map((feature, featureIndex) => (
-                    <div 
+                    <div
                       key={featureIndex}
                       className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md border border-gray-100"
                     >
@@ -385,11 +389,10 @@ const OnBoardingPage = () => {
           <button
             onClick={prevSlide}
             disabled={currentIndex === 0}
-            className={`p-3 rounded-xl transition-all duration-200 ${
-              currentIndex === 0 
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                : 'bg-white text-purple-600 hover:bg-purple-50 shadow-lg hover:shadow-xl'
-            }`}
+            className={`p-3 rounded-xl transition-all duration-200 ${currentIndex === 0
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-white text-purple-600 hover:bg-purple-50 shadow-lg hover:shadow-xl'
+              }`}
           >
             <ArrowRight className="w-6 h-6 rotate-180" />
           </button>
@@ -400,11 +403,10 @@ const OnBoardingPage = () => {
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`transition-all duration-300 ${
-                  index === currentIndex 
-                    ? 'w-10 h-3 bg-purple-600 rounded-full shadow-lg' 
-                    : 'w-3 h-3 bg-gray-300 rounded-full hover:bg-gray-400'
-                }`}
+                className={`transition-all duration-300 ${index === currentIndex
+                  ? 'w-10 h-3 bg-purple-600 rounded-full shadow-lg'
+                  : 'w-3 h-3 bg-gray-300 rounded-full hover:bg-gray-400'
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
@@ -413,11 +415,10 @@ const OnBoardingPage = () => {
           <button
             onClick={nextSlide}
             disabled={currentIndex === carouselData.length - 1}
-            className={`p-3 rounded-xl transition-all duration-200 ${
-              currentIndex === carouselData.length - 1 
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                : 'bg-white text-purple-600 hover:bg-purple-50 shadow-lg hover:shadow-xl'
-            }`}
+            className={`p-3 rounded-xl transition-all duration-200 ${currentIndex === carouselData.length - 1
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-white text-purple-600 hover:bg-purple-50 shadow-lg hover:shadow-xl'
+              }`}
           >
             <ArrowRight className="w-6 h-6" />
           </button>
@@ -431,17 +432,17 @@ const OnBoardingPage = () => {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {authState === 'login' ? 'Welcome Back' : 
-                   authState === 'signup' ? 'Create Account' : 
-                   authState === 'forgot_password' ? 'Reset Password' : 'Confirm Reset'}
+                  {authState === 'login' ? 'Welcome Back' :
+                    authState === 'signup' ? 'Create Account' :
+                      authState === 'forgot_password' ? 'Reset Password' : 'Confirm Reset'}
                 </h2>
                 <p className="text-gray-600 mt-1">
-                  {authState === 'login' ? 'Sign in to continue to Quick Quotes' : 
-                   authState === 'signup' ? 'Start your free trial today' : 
-                   authState === 'forgot_password' ? 'Enter your email to receive a code' : 'Enter the code sent to your email'}
+                  {authState === 'login' ? 'Sign in to continue to Quick Quotes' :
+                    authState === 'signup' ? 'Start your free trial today' :
+                      authState === 'forgot_password' ? 'Enter your email to receive a code' : 'Enter the code sent to your email'}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={() => setShowLoginModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
               >
@@ -454,21 +455,19 @@ const OnBoardingPage = () => {
               <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
                 <button
                   onClick={() => setAuthState('login')}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
-                    authState === 'login' 
-                      ? 'bg-white text-purple-700 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${authState === 'login'
+                    ? 'bg-white text-purple-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
                   Login
                 </button>
                 <button
                   onClick={() => setAuthState('signup')}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
-                    authState === 'signup' 
-                      ? 'bg-white text-purple-700 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${authState === 'signup'
+                    ? 'bg-white text-purple-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
                   Sign Up
                 </button>
@@ -548,10 +547,10 @@ const OnBoardingPage = () => {
                 className="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white font-semibold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading && <Loader2 className="animate-spin" size={20} />}
-                {isLoading ? 'Processing...' : 
-                 authState === 'login' ? 'Sign In' : 
-                 authState === 'signup' ? 'Create Account' :
-                 authState === 'forgot_password' ? 'Send Reset Code' : 'Reset Password'}
+                {isLoading ? 'Processing...' :
+                  authState === 'login' ? 'Sign In' :
+                    authState === 'signup' ? 'Create Account' :
+                      authState === 'forgot_password' ? 'Send Reset Code' : 'Reset Password'}
               </button>
 
               {authState !== 'confirm_reset' && (
@@ -566,8 +565,8 @@ const OnBoardingPage = () => {
                   className="w-full bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-200 transition-colors"
                   disabled={isLoading}
                 >
-                  {authState === 'login' ? "Don't have an account? Sign up" : 
-                   authState === 'signup' ? "Already have an account? Sign in" : "Back to Login"}
+                  {authState === 'login' ? "Don't have an account? Sign up" :
+                    authState === 'signup' ? "Already have an account? Sign in" : "Back to Login"}
                 </button>
               )}
 
@@ -585,7 +584,7 @@ const OnBoardingPage = () => {
             {/* Additional Options */}
             {authState === 'login' && (
               <div className="mt-4 text-center">
-                <button 
+                <button
                   onClick={() => setAuthState('forgot_password')}
                   className="text-purple-600 hover:text-purple-700 text-sm font-medium"
                 >

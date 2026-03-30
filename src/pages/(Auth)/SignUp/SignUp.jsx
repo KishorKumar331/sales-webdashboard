@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { 
-  ArrowLeft, 
-  Sparkles, 
-  User, 
-  Lock, 
-  Mail, 
+import {
+  ArrowLeft,
+  Sparkles,
+  User,
+  Lock,
+  Mail,
   Phone,
-  Loader2 
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanySetupForm } from "./components/CompanySetupForm";
@@ -24,7 +24,7 @@ export default function SignUp() {
   });
   const [otp, setOtp] = useState("");
   const navigate = useNavigate();
-  const { setUserEmail, setUserName, setUserPhone, setUserData, setIsAuthenticated, setHasProfile, setLoginTimestamp } = useAuthStore();
+  const { setUserData } = useAuthStore();
   const { login } = useAuth();
 
   const handleRegister = async (e) => {
@@ -37,7 +37,7 @@ export default function SignUp() {
     setIsLoading(true);
     try {
       const { signUp } = await import('aws-amplify/auth');
-      
+
       await signUp({
         username: formData.email,
         password: formData.password,
@@ -65,34 +65,62 @@ export default function SignUp() {
 
     setIsLoading(true);
     try {
-      const { confirmSignUp, signIn } = await import('aws-amplify/auth');
+      const { confirmSignUp, signIn, signOut } = await import('aws-amplify/auth');
       const result = await confirmSignUp({
         username: formData.email,
         confirmationCode: otp
       });
-
+      console.log('✅ OTP Result:', result);
       if (result.isSignUpComplete || result.nextStep?.signUpStep === 'DONE') {
         // Sign in automatically after verification
-        await signIn({
+        try {
+          await signIn({
             username: formData.email,
             password: formData.password
-        });
-        
-        // login() handles store sync and profile check
-        const loginResult = await login();
-        if (loginResult.success) {
-          // App.jsx will redirect to /create-profile because hasProfile is false
-          // No need for setAuthState("setup")
+          });
+        } catch (signInError) {
+          if (signInError.name === 'UserAlreadyAuthenticatedException') {
+            await signOut();
+            await signIn({
+              username: formData.email,
+              password: formData.password
+            });
+          } else {
+            throw signInError;
+          }
         }
+
+        // Pass available user data to the login hook to pre-populate store
+        const loginResult = await login({
+          email: formData.email,
+          fullname: formData.fullname,
+          phone: formData.phone
+        });
+
+        console.log('🚀 Final Login Result:', loginResult);
+
+        if (loginResult && loginResult.success) {
+          debugger;
+          if (loginResult.hasProfile === true) {
+            console.log('this condition reuns')
+            debugger;
+            navigate("/"); // In case they somehow already have a profile
+          } else {
+            debugger;
+            console.log('good conditon rumns')
+            setAuthState("setup"); // Open the CompanySetupForm
+          }
+        }
+      } else {
+        alert(`Next step required: ${result.nextStep?.signUpStep || 'Unknown'}`);
       }
     } catch (error) {
       console.error("OTP error:", error);
-      alert(error.message || "Invalid code");
+      alert(error.message || "Confirmation failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-linear-to-br from-purple-50 to-indigo-50 flex flex-col">
@@ -106,7 +134,7 @@ export default function SignUp() {
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
+        <div className={`bg-white rounded-3xl p-8 w-full ${authState === "setup" ? "max-w-4xl" : "max-w-md"} shadow-2xl transition-all duration-500`}>
           {authState === "register" ? (
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="text-center mb-6">
@@ -123,7 +151,7 @@ export default function SignUp() {
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20"
                     placeholder="John Doe"
                     value={formData.fullname}
-                    onChange={(e) => setFormData({...formData, fullname: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
                   />
                 </div>
               </div>
@@ -137,7 +165,7 @@ export default function SignUp() {
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20"
                     placeholder="john@example.com"
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
               </div>
@@ -151,7 +179,7 @@ export default function SignUp() {
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20"
                     placeholder="+919999999999"
                     value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
               </div>
@@ -165,7 +193,7 @@ export default function SignUp() {
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20"
                     placeholder="••••••••"
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
                 </div>
               </div>
@@ -178,7 +206,7 @@ export default function SignUp() {
                 {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : "Sign Up"}
               </button>
             </form>
-          ) : (
+          ) : authState === "otp" ? (
             <form onSubmit={handleVerifyOTP} className="space-y-4">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Verify Email</h2>
@@ -204,6 +232,15 @@ export default function SignUp() {
                 {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : "Verify Code"}
               </button>
             </form>
+          ) : (
+            <CompanySetupForm
+              initialData={{
+                email: formData.email,
+                phone: formData.phone,
+                fullname: formData.fullname
+              }}
+
+            />
           )}
         </div>
       </div>

@@ -19,10 +19,12 @@ import InvoicePage from './pages/InvoicePage';
 import { useAuth } from './hooks/useAuth';
 import InvoiceTrackingDashboard from './components/Accounting/InvoiceTrackingDashboard';
 import SignUp from './pages/(Auth)/SignUp/SignUp';
+import CreateProfile from './pages/(Auth)/CreateProfile';
 import InspectBanner from './components/InspectBanner';
+import { useAuthStore } from './store/authStore';
 
 // Protected Route Component - redirects to /auth if not authenticated
-const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) => {
+const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/auth' }) => {
   // Don't redirect while loading - wait for auth check to complete
   if (isLoading || isAuthenticated === null) {
     return null;
@@ -31,6 +33,18 @@ const ProtectedRoute = ({ isAuthenticated, isLoading, redirectPath = '/auth' }) 
   if (!isAuthenticated) {
     return <Navigate to={redirectPath} replace />;
   }
+  console.log(hasProfile)
+
+  // If authenticated but no profile, and not already on the create-profile page
+  if (!hasProfile?.user?.company && window.location.pathname !== '/create-profile') {
+    return <Navigate to="/create-profile" replace />;
+  }
+
+  // If authenticated and has profile, but trying to access create-profile page
+  if (hasProfile?.user?.company && window.location.pathname === '/create-profile') {
+    return <Navigate to="/" />;
+  }
+
   return <Outlet />;
 };
 
@@ -49,6 +63,8 @@ const PublicRoute = ({ isAuthenticated, isLoading, redirectPath = '/' }) => {
 };
 const App = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const { hasProfile, userData } = useAuthStore();
+  console.log(hasProfile)
   const renderWithLayout = (Component, title) => (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 overflow-hidden">
@@ -95,10 +111,12 @@ const App = () => {
             element={
               <ProtectedRoute
                 isAuthenticated={isAuthenticated}
+                hasProfile={userData}
                 isLoading={isLoading}
               />
             }
           >
+            <Route path="/create-profile" element={<CreateProfile />} />
             <Route
               path="/"
               element={renderWithLayout(<CreateQuote />, "Create Quote")}
@@ -172,6 +190,5 @@ const App = () => {
     </Router>
   );
 };
-
 
 export default App;

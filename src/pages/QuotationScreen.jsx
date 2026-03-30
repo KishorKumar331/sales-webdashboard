@@ -14,7 +14,7 @@ const QuotationScreen = () => {
   // Get lead data from navigation state
   const leadData = location.state?.leadData || null;
   const followUpData = location.state?.followUpData || null;
-  const { user } = useAuth();
+  const { realUser: user } = useAuth();
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);

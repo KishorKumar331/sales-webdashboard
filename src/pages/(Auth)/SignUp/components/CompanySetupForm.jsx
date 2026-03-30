@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { 
-  Building2, 
-  CreditCard, 
-  User, 
-  ArrowLeft, 
-  ArrowRight, 
-  Zap, 
+import {
+  Building2,
+  CreditCard,
+  User,
+  ArrowLeft,
+  ArrowRight,
+  Zap,
   Sparkles,
   Hourglass
 } from "lucide-react";
@@ -16,13 +16,16 @@ import { OrganizationDetailForm } from "./OrganizationDetailForm";
 import { PaymentDetailForm } from "./PaymentDetailForm";
 import { Card, ProgressBar, StepTitle } from "./FormLayoutComponents";
 import { uploadCompanyLogo, uploadPaymentQR } from "../../../../utils/FileUploadUrl";
+import { useAuthStore } from "../../../../store/authStore";
 
 const LS_FORM_KEY = "createAccountFormData";
 
-export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
+export const CompanySetupForm = ({ initialData = {} }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUserData, setHasProfile
+  } = useAuthStore();
 
   const methods = useForm({
     defaultValues: {
@@ -83,11 +86,11 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-       const companyName = getValues("companyname") || 'unknown-company';
-       const qrUrl = await uploadPaymentQR(file, companyName);
-       setValue("qrurl", qrUrl.cdn_url, { shouldValidate: true });
+      const companyName = getValues("companyname") || 'unknown-company';
+      const qrUrl = await uploadPaymentQR(file, companyName);
+      setValue("qrurl", qrUrl.cdn_url, { shouldValidate: true });
     } catch (err) {
-       console.error("QR upload error:", err);
+      console.error("QR upload error:", err);
     }
   };
 
@@ -118,13 +121,13 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
         }
       );
 
-      if (response.ok) {
+      if (response.status === 201) {
         localStorage.removeItem(LS_FORM_KEY);
-        if (onComplete) {
-          onComplete(data);
-        } else {
-          navigate("/(auth)/PaymentGateway/payment");
-        }
+        setUserData(data)
+        setHasProfile(true)
+        // navigate("/(auth)/PaymentGateway/payment");
+        navigate("/");
+
       } else {
         const res = await response.json();
         alert(res?.message || "Failed to save details");
@@ -155,10 +158,10 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
       <div className="max-w-4xl mx-auto">
         <ProgressBar currentStep={currentStep} totalSteps={2} />
         <form onSubmit={handleSubmit(onSubmit)}>
-          <StepTitle 
-            title={stepMeta[currentStep].title} 
-            subtitle={stepMeta[currentStep].subtitle} 
-            Icon={stepMeta[currentStep].icon} 
+          <StepTitle
+            title={stepMeta[currentStep].title}
+            subtitle={stepMeta[currentStep].subtitle}
+            Icon={stepMeta[currentStep].icon}
           />
 
           <div className="pb-6">
@@ -171,14 +174,14 @@ export const CompanySetupForm = ({ initialData = {}, onComplete }) => {
           </div>
 
           <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 p-6 flex gap-4">
-             {currentStep > 1 && (
-               <button type="button" onClick={() => setCurrentStep(s => s - 1)} className="flex-1 bg-gray-100 py-4 font-semibold rounded-xl">Previous</button>
-             )}
-             {currentStep === 2 ? (
-               <button type="submit" className="flex-1 bg-purple-600 text-white py-4 font-semibold rounded-xl">Complete Setup</button>
-             ) : (
-               <button type="button" onClick={nextStep} className="flex-1 bg-purple-600 text-white py-4 font-semibold rounded-xl">Continue</button>
-             )}
+            {currentStep > 1 && (
+              <button type="button" onClick={() => setCurrentStep(s => s - 1)} className="flex-1 bg-gray-100 py-4 font-semibold rounded-xl">Previous</button>
+            )}
+            {currentStep === 2 ? (
+              <button type="submit" className="flex-1 bg-purple-600 text-white py-4 font-semibold rounded-xl">Complete Setup</button>
+            ) : (
+              <button type="button" onClick={nextStep} className="flex-1 bg-purple-600 text-white py-4 font-semibold rounded-xl">Continue</button>
+            )}
           </div>
         </form>
       </div>

@@ -8,6 +8,7 @@ import axios from 'axios';
 
 const Teams = () => {
   const { realUser, setInspectedUser, clearInspectedUser, isInspecting, user: effectiveUser } = useAuth();
+  console.log(realUser)
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('manage');
   const [teamMembers, setTeamMembers] = useState([]);
@@ -38,7 +39,7 @@ const Teams = () => {
 
     try {
       setIsLoading(true);
-      const company = realUser?.user?.company || realUser?.company || 'journey_routers';
+      const company = realUser?.user?.company;
       const profileUrl = `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?company=${encodeURIComponent(company)}&action=billing_status`;
       console.log('Fetching team members from:', profileUrl);
 
@@ -96,6 +97,7 @@ const Teams = () => {
   };
 
   const handleVerifyOtp = async () => {
+    console.log('worng test')
     if (!otp) {
       toast.error('Please enter the verification code');
       return;
@@ -140,7 +142,7 @@ const Teams = () => {
         FullName: newMember.name,
         Email: newMember.email,
         Phone: newMember.phone,
-        company: realUser?.company,
+        company: realUser?.user?.company,
         Role: 'TeamMember',
         Status: 'Active',
         CreatedAt: new Date().toISOString()

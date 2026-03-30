@@ -12,7 +12,6 @@ export const useAuth = () => {
 
   // Get state from zustand store
   const {
-    userEmail,
     userData,
     isAuthenticated,
     inspectedUser,
@@ -66,9 +65,11 @@ export const useAuth = () => {
               
               // Set user data in store
               const userData = Array.isArray(profileData) ? profileData[0] : profileData;
-              if (userData) {
+              if (userData && Object.keys(userData).length > 0) {
                 useAuthStore.getState().setUserData(userData);
                 console.log('🔥 User data set in store:', userData);
+                setIsAuthenticated(true);
+                return userData;
               }
             } else {
               console.log('🔥 Profile API failed:', response.status);
@@ -79,10 +80,12 @@ export const useAuth = () => {
         }
       } else {
         setIsAuthenticated(false);
+        useAuthStore.getState().setHasProfile(false);
       }
     } catch (error) {
       console.error("Session check error:", error);
       setIsAuthenticated(false);
+      useAuthStore.getState().setHasProfile(false);
     } finally {
       setIsLoading(false);
     }
@@ -124,7 +127,9 @@ export const useAuth = () => {
     }
 
     // Revalidate with backend session, passing email from login response
-    await checkSession(email);
+    const profile = await checkSession(email);
+    console.log('🔥 login hook profile result:', profile);
+    return { success: true, hasProfile: !!profile };
   };
 
   /**
