@@ -552,7 +552,7 @@ export default function InvoiceForm({
         {
           type: "invoice",
           data: dataWithUser,
-          templateName: userProfile?.user?.Preference?.invoicepdf || userProfile?.user?.invoicepdf,
+          templateName: userProfile?.user?.preferences?.invoicepdf || userProfile?.user?.Preference?.invoicepdf || userProfile?.user?.invoicepdf,
           mode: "html",
           tripId: formData?.tripId,
         }

@@ -56,8 +56,8 @@ const Profile = () => {
   const [marketTemplates, setMarketTemplates] = useState([]);
   const [templateType, setTemplateType] = useState('quotation'); // 'invoice' or 'quotation'
   const [activeTemplates, setActiveTemplates] = useState({
-    invoice: user?.Preference?.invoicepdf || user?.invoicepdf || null,
-    quotation: user?.Preference?.quotationpdf || user?.quotationpdf || null
+    invoice: user?.preferences?.invoicepdf || user?.invoicepdf || user?.Preference?.invoicepdf || null,
+    quotation: user?.preferences?.quotationpdf || user?.quotationpdf || user?.Preference?.quotationpdf || null
   });
   const [fetchingTemplates, setFetchingTemplates] = useState(false);
   const [showMarketplacePreview, setShowMarketplacePreview] = useState(false);
@@ -66,8 +66,8 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       setActiveTemplates({
-        invoice: user?.Preference?.invoicepdf || user?.invoicepdf || null,
-        quotation: user?.Preference?.quotationpdf || user?.quotationpdf || null
+        invoice: user?.preferences?.invoicepdf || user?.invoicepdf || user?.Preference?.invoicepdf || null,
+        quotation: user?.preferences?.quotationpdf || user?.quotationpdf || user?.Preference?.quotationpdf || null
       });
     }
   }, [user]);

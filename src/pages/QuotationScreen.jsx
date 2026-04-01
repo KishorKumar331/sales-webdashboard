@@ -62,7 +62,7 @@ const QuotationScreen = () => {
           mode: "html",
           type: "quotation",
           data: dataWithUser,
-          templateName: user?.Preference?.quotationpdf || user?.quotationpdf
+          templateName: user?.preferences?.quotationpdf || user?.Preference?.quotationpdf || user?.quotationpdf
         }
       );
 
