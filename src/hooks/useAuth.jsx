@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchAuthSession, getCurrentUser, signOut } from "aws-amplify/auth";
+import { fetchAuthSession, getCurrentUser, signOut, resetPassword, confirmResetPassword } from "aws-amplify/auth";
 import { useAuthStore } from "../store/authStore";
 
 const SESSION_API =
@@ -146,6 +146,36 @@ export const useAuth = () => {
     }
   };
 
+  /**
+   * Reset password flow: Step 1 - Send code
+   */
+  const handleResetPassword = async ({ username }) => {
+    try {
+      const output = await resetPassword({ username });
+      return output;
+    } catch (err) {
+      console.error("Reset password error:", err);
+      throw err;
+    }
+  };
+
+  /**
+   * Reset password flow: Step 2 - Confirm code and new password
+   */
+  const handleConfirmResetPassword = async ({ username, confirmationCode, newPassword }) => {
+    try {
+      await confirmResetPassword({
+        username,
+        confirmationCode,
+        newPassword
+      });
+      return { success: true };
+    } catch (err) {
+      console.error("Confirm reset error:", err);
+      throw err;
+    }
+  };
+
   return {
     isAuthenticated,
     isLoading,
@@ -156,6 +186,8 @@ export const useAuth = () => {
     clearInspectedUser,
     login,
     logout,
+    resetPassword: handleResetPassword,
+    confirmResetPassword: handleConfirmResetPassword,
     checkSession,
   };
 };
