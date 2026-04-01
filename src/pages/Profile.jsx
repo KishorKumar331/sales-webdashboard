@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthStore } from '../store/authStore';
 import { PersonalInfo } from "./(profile)/PersonalInfo";
-import { 
-  User, 
-  CreditCard, 
-  ShoppingCart, 
-  FileText, 
-  Settings, 
-  Bell, 
-  Shield, 
+import MarketplacePreviewModal from '../components/modals/MarketplacePreviewModal';
+import {
+  User,
+  CreditCard,
+  ShoppingCart,
+  FileText,
+  Settings,
+  Bell,
+  Shield,
   HelpCircle,
-  Mail,
-  Phone,
-  Calendar,
-  MapPin,
   Download,
   Upload,
   Search,
@@ -56,10 +55,21 @@ const Profile = () => {
   const [marketTemplates, setMarketTemplates] = useState([]);
   const [templateType, setTemplateType] = useState('quotation'); // 'invoice' or 'quotation'
   const [activeTemplates, setActiveTemplates] = useState({
-    invoice: null,
-    quotation: null
+    invoice: user?.Preference?.invoicepdf || user?.invoicepdf || null,
+    quotation: user?.Preference?.quotationpdf || user?.quotationpdf || null
   });
   const [fetchingTemplates, setFetchingTemplates] = useState(false);
+  const [showMarketplacePreview, setShowMarketplacePreview] = useState(false);
+  const [selectedTemplateForPreview, setSelectedTemplateForPreview] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      setActiveTemplates({
+        invoice: user?.Preference?.invoicepdf || user?.invoicepdf || null,
+        quotation: user?.Preference?.quotationpdf || user?.quotationpdf || null
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -126,9 +136,8 @@ const Profile = () => {
   const deletePaymentMethod = (id) => {
     setPaymentMethods(paymentMethods.filter(method => method.id !== id));
   };
-
   const markNotificationAsRead = (id) => {
-    setNotifications(notifications.map(notif => 
+    setNotifications(notifications.map(notif =>
       notif.id === id ? { ...notif, read: true } : notif
     ));
   };
@@ -152,7 +161,7 @@ const Profile = () => {
             Add Payment Method
           </button>
         </div>
-        
+
         <div className="space-y-4">
           {paymentMethods.map(method => (
             <div key={method.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
@@ -183,7 +192,7 @@ const Profile = () => {
           ))}
         </div>
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Billing History</h3>
         <div className="space-y-4">
@@ -213,7 +222,7 @@ const Profile = () => {
 
   // Marketplace Tab
   const renderMarketplace = () => {
-    const filteredTemplates = marketTemplates.filter(t => 
+    const filteredTemplates = marketTemplates.filter(t =>
       templateType === 'invoice' ? t.type === 'invoice' : t.type !== 'invoice'
     );
 
@@ -224,11 +233,56 @@ const Profile = () => {
       return acc;
     }, {});
 
-    const handleSetTemplate = (template) => {
-      setActiveTemplates(prev => ({
-        ...prev,
-        [templateType]: template.name
-      }));
+    const handleSetTemplate = async (template) => {
+      const userEmail = user?.Email || user?.email;
+      if (!userEmail) {
+        toast.error('User not authenticated. Please log in again.');
+        return;
+      }
+
+      setFetchingTemplates(true);
+      try {
+        const isInvoice = templateType === 'invoice';
+
+        // Define default hashes from user request if current ones are missing
+        const defaultInvoice = "c184084ad1f08c45d131ef4dc20508e9c36834a673e25129fe5d2475c207d602.hbs";
+        const defaultQuotation = "e05be6759d7f66bfc7fc273b3a6c8cf9464f81d1590677e402d7391b960940e3.hbs";
+
+        const updatedUser = {
+          ...user,
+          company: user?.company || '',
+          email: userEmail,
+          phone: user?.phone || '',
+          Preference: {
+            invoicepdf: isInvoice ? template.name : (activeTemplates.invoice || defaultInvoice),
+            quotationpdf: !isInvoice ? template.name : (activeTemplates.quotation || defaultQuotation)
+          }
+        };
+
+        console.log('🔥 Updating profile templates:', updatedUser);
+
+        const response = await axios.put('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth', updatedUser);
+
+        if (response.status === 200 || response.status === 204) {
+          setActiveTemplates(prev => ({
+            ...prev,
+            [templateType]: template.name
+          }));
+
+          // Update store and local storage
+          useAuthStore.getState().setUserData(updatedUser);
+          localStorage.setItem('userProfile', JSON.stringify(updatedUser));
+
+          toast.success(`Active ${templateType} template updated successfully!`);
+        } else {
+          throw new Error('Failed to update template');
+        }
+      } catch (error) {
+        console.error('Error setting template:', error);
+        toast.error('Failed to set template. Please try again.');
+      } finally {
+        setFetchingTemplates(false);
+      }
     };
 
     return (
@@ -239,25 +293,23 @@ const Profile = () => {
               <h3 className="text-xl font-bold text-gray-900">Design Builder</h3>
               <p className="text-sm text-gray-500 mt-1">Select and customize your document templates</p>
             </div>
-            
+
             <div className="flex p-1 bg-gray-100 rounded-xl w-full sm:w-auto">
               <button
                 onClick={() => setTemplateType('quotation')}
-                className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  templateType === 'quotation' 
-                    ? 'bg-white text-purple-600 shadow-sm' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
+                className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${templateType === 'quotation'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
               >
                 Quotation
               </button>
               <button
                 onClick={() => setTemplateType('invoice')}
-                className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  templateType === 'invoice' 
-                    ? 'bg-white text-purple-600 shadow-sm' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
+                className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${templateType === 'invoice'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
               >
                 Invoice
               </button>
@@ -278,18 +330,17 @@ const Profile = () => {
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2">{category}</span>
                     <div className="h-px flex-1 bg-gray-200"></div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {templates.map((template, idx) => {
                       const isActive = activeTemplates[templateType] === template.name;
                       return (
-                        <div 
+                        <div
                           key={idx}
-                          className={`group relative bg-white border-2 rounded-2xl p-5 transition-all duration-300 ${
-                            isActive 
-                              ? 'border-purple-600 shadow-lg ring-4 ring-purple-50' 
-                              : 'border-gray-100 hover:border-purple-200 hover:shadow-md'
-                          }`}
+                          className={`group relative bg-white border-2 rounded-2xl p-5 transition-all duration-300 ${isActive
+                            ? 'border-purple-600 shadow-lg ring-4 ring-purple-50'
+                            : 'border-gray-100 hover:border-purple-200 hover:shadow-md'
+                            }`}
                         >
                           <div className="flex justify-between items-start mb-4">
                             <div className={`p-3 rounded-xl ${isActive ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400'}`}>
@@ -313,23 +364,31 @@ const Profile = () => {
                           </div>
 
                           <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => handlePreviewTemplate(template)}
+                              className="flex-1 px-4 py-2.5 text-purple-600 border border-purple-600 rounded-xl hover:bg-purple-50 transition-all flex items-center justify-center gap-2 bg-white"
+                              title="Preview Template"
+                            >
+                              <Eye className="w-4 h-4" />
+                              <span className="text-sm font-bold">Preview</span>
+                            </button>
+
                             {!isActive ? (
                               <button
                                 onClick={() => handleSetTemplate(template)}
-                                className="flex-1 px-4 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors shadow-sm"
+                                disabled={fetchingTemplates}
+                                className="flex-1 px-4 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors shadow-sm disabled:opacity-50"
                               >
-                                Set Public
+                                {fetchingTemplates ? 'Setting...' : 'Set'}
                               </button>
                             ) : (
-                              <>
-                                <button className="flex-1 px-4 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-md flex items-center justify-center gap-2">
-                                  <CreditCard className="w-4 h-4" />
-                                  Pay Now
-                                </button>
-                                <button className="p-2.5 text-gray-400 border border-gray-200 rounded-xl hover:text-purple-600 hover:border-purple-200 transition-all">
-                                  <Eye className="w-5 h-5" />
-                                </button>
-                              </>
+                              <button
+                                className="flex-1 px-4 py-2.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors shadow-md flex items-center justify-center gap-2"
+                                disabled
+                              >
+                                <Check className="w-4 h-4" />
+                                Active
+                              </button>
                             )}
                           </div>
                         </div>
@@ -351,11 +410,11 @@ const Profile = () => {
             </div>
           )}
         </div>
-        
+
         <div className="bg-linear-to-br from-purple-600 to-purple-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-400/20 rounded-full -ml-16 -mb-16 blur-2xl"></div>
-          
+
           <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="max-w-md">
               <h3 className="text-2xl font-bold mb-3 italic">Custom Template Design?</h3>
@@ -370,6 +429,11 @@ const Profile = () => {
         </div>
       </div>
     );
+  };
+
+  const handlePreviewTemplate = (template) => {
+    setSelectedTemplateForPreview(template);
+    setShowMarketplacePreview(true);
   };
 
   // Documents Tab
@@ -390,7 +454,7 @@ const Profile = () => {
             />
           </label>
         </div>
-        
+
         {selectedFiles.length > 0 && (
           <div className="mb-6">
             <h4 className="text-sm font-medium text-gray-700 mb-3">Selected Files</h4>
@@ -415,7 +479,7 @@ const Profile = () => {
             </div>
           </div>
         )}
-        
+
         <div className="space-y-4">
           {[
             { name: 'Travel Brochure 2024.pdf', size: '2.4 MB', date: '2024-01-10', type: 'PDF' },
@@ -453,7 +517,7 @@ const Profile = () => {
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Security Settings</h3>
-        
+
         <div className="space-y-6">
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center gap-4">
@@ -467,7 +531,7 @@ const Profile = () => {
               Update
             </button>
           </div>
-          
+
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center gap-4">
               <Key className="w-8 h-8 text-purple-600" />
@@ -480,7 +544,7 @@ const Profile = () => {
               Enable
             </button>
           </div>
-          
+
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center gap-4">
               <Shield className="w-8 h-8 text-purple-600" />
@@ -496,7 +560,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Active Sessions</h3>
         <div className="space-y-4">
@@ -538,13 +602,13 @@ const Profile = () => {
             Mark all as read
           </button>
         </div>
-        
+
         <div className="space-y-4">
           {notifications.map(notif => (
             <div key={notif.id} className={`flex items-start gap-4 p-4 rounded-lg border ${notif.read ? 'border-gray-200 bg-gray-50' : 'border-purple-200 bg-purple-50'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${notif.type === 'payment' ? 'bg-green-100' : 'bg-blue-100'}`}>
-                {notif.type === 'payment' ? 
-                  <DollarSign className="w-4 h-4 text-green-600" /> : 
+                {notif.type === 'payment' ?
+                  <DollarSign className="w-4 h-4 text-green-600" /> :
                   <Bell className="w-4 h-4 text-blue-600" />
                 }
               </div>
@@ -572,7 +636,7 @@ const Profile = () => {
           ))}
         </div>
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Notification Preferences</h3>
         <div className="space-y-4">
@@ -613,7 +677,7 @@ const Profile = () => {
               <option>German</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
             <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
@@ -623,7 +687,7 @@ const Profile = () => {
               <option>Pacific Time (PT)</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
             <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
@@ -635,7 +699,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Privacy Settings</h3>
         <div className="space-y-4">
@@ -658,7 +722,7 @@ const Profile = () => {
           ))}
         </div>
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Danger Zone</h3>
         <div className="space-y-4">
@@ -698,7 +762,7 @@ const Profile = () => {
           ))}
         </div>
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Frequently Asked Questions</h3>
         <div className="space-y-4">
@@ -717,7 +781,7 @@ const Profile = () => {
           ))}
         </div>
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Contact Support</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -788,7 +852,7 @@ const Profile = () => {
             </p>
           </div>
           <div className="w-12 h-12 bg-linear-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-lg">
-            {loading ? '?' : ((user?.name || user?.username || 'Admin User').split(' ').map(n => n[0]).join(''))}
+            {loading ? '?' : ((user?.user?.fullname || user?.user?.fullname || 'Admin User').split(' ').map(n => n[0]).join(''))}
           </div>
           <button
             onClick={handleLogout}
@@ -808,11 +872,10 @@ const Profile = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 cursor-pointer py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              className={`flex items-center gap-2 px-4 cursor-pointer py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === tab.id
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
@@ -823,6 +886,14 @@ const Profile = () => {
 
       {/* Tab Content */}
       {renderTabContent()}
+
+      {/* Marketplace Preview Modal */}
+      <MarketplacePreviewModal 
+        visible={showMarketplacePreview} 
+        onClose={() => setShowMarketplacePreview(false)} 
+        templateName={selectedTemplateForPreview?.name}
+        type={templateType}
+      />
     </div>
   );
 };

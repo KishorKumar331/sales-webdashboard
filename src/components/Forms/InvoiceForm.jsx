@@ -551,9 +551,8 @@ export default function InvoiceForm({
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
           type: "invoice",
-          // renderOnly: true,
           data: dataWithUser,
-          // templateName: "invoiceip.hbs",
+          templateName: userProfile?.user?.Preference?.invoicepdf || userProfile?.user?.invoicepdf,
           mode: "html",
           tripId: formData?.tripId,
         }

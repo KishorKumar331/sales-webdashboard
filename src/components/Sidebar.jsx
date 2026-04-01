@@ -143,7 +143,7 @@ const Sidebar = () => {
               </div>
               <div className="flex-1">
                 <p className="text-white text-sm font-semibold truncate max-w-[130px]" title={user?.FullName || user?.user?.FullName}>
-                  {user?.FullName || user?.user?.FullName}
+                  {user?.user?.fullname}
                 </p>
                 <div className="flex items-center gap-2">
                   <p className="text-white/60 text-xs">{isAdmin ? 'Admin' : 'Pro'}</p>

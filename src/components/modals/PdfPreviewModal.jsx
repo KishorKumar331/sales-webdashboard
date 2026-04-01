@@ -14,7 +14,7 @@ const PdfPreviewModal = ({
   onShare,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, _] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const handleDownload = async () => {
@@ -41,7 +41,7 @@ const PdfPreviewModal = ({
       const fileResponse = await axios.get(fileUrl, { responseType: "blob" });
       const blob = new Blob([fileResponse.data], { type: "application/pdf" });
       const blobUrl = window.URL.createObjectURL(blob);
-      
+
       const link = document.createElement("a");
       link.href = blobUrl;
       link.setAttribute("download", `${clientName}.pdf`);
@@ -65,11 +65,11 @@ const PdfPreviewModal = ({
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md flex flex-col animate-in fade-in duration-300 select-none overflow-hidden">
-      
+
       {/* Header Bar */}
       <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-xl border-b border-slate-200 px-6 py-4 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <button 
+          <button
             onClick={onClose}
             className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all active:scale-95 group"
           >
@@ -96,11 +96,10 @@ const PdfPreviewModal = ({
           <button
             onClick={handleDownload}
             disabled={isGenerating}
-            className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all shadow-lg active:scale-95 ${
-              isGenerating 
-                ? 'bg-slate-100 text-slate-400' 
+            className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all shadow-lg active:scale-95 ${isGenerating
+                ? 'bg-slate-100 text-slate-400'
                 : 'bg-linear-to-r from-purple-600 to-indigo-700 text-white shadow-purple-200 hover:shadow-xl hover:-translate-y-0.5'
-            }`}
+              }`}
           >
             {isGenerating ? (
               <>
@@ -114,7 +113,7 @@ const PdfPreviewModal = ({
               </>
             )}
           </button>
-          
+
           <button
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-slate-800 transition-all shadow-lg active:scale-95"
@@ -126,24 +125,24 @@ const PdfPreviewModal = ({
 
       {/* Main Preview Container */}
       <main className="flex-1 overflow-hidden relative flex flex-col items-center bg-[#F1F5F9] px-4 py-8 custom-scrollbar">
-        
+
         {/* Floating Controls Overlay (Optional aesthetic touch) */}
         {!error && pdfHtml && (
           <div className="absolute top-10 right-10 z-20 flex flex-col gap-3">
-             <div className="bg-white/80 backdrop-blur-xl p-2 rounded-[2rem] shadow-2xl border border-white flex flex-col gap-2">
-                <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 hover:bg-purple-100 transition-colors cursor-pointer" title="High Quality">
-                  <Sparkles size={18} className="animate-pulse" />
-                </div>
-                <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer" title="Options">
-                  <MoreVertical size={18} />
-                </div>
-             </div>
+            <div className="bg-white/80 backdrop-blur-xl p-2 rounded-4xl shadow-2xl border border-white flex flex-col gap-2">
+              <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 hover:bg-purple-100 transition-colors cursor-pointer" title="High Quality">
+                <Sparkles size={18} className="animate-pulse" />
+              </div>
+              <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer" title="Options">
+                <MoreVertical size={18} />
+              </div>
+            </div>
           </div>
         )}
 
         {/* Content Wrapper */}
         <div className="w-full max-w-[1000px] h-full bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200 overflow-hidden relative border border-slate-100 animate-in zoom-in-95 duration-500">
-          
+
           {/* Internal Loading State */}
           {!isLoaded && !error && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white">
