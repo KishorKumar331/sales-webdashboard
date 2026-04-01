@@ -40,7 +40,8 @@ import {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, loading } = useUserProfile();
+  const { user, loading } = useAuth();
+  console.log(user)
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -234,7 +235,7 @@ const Profile = () => {
     }, {});
 
     const handleSetTemplate = async (template) => {
-      const userEmail = user?.Email || user?.email;
+      const userEmail = user?.user?.Email;
       if (!userEmail) {
         toast.error('User not authenticated. Please log in again.');
         return;
@@ -245,15 +246,12 @@ const Profile = () => {
         const isInvoice = templateType === 'invoice';
 
         // Define default hashes from user request if current ones are missing
-        const defaultInvoice = "c184084ad1f08c45d131ef4dc20508e9c36834a673e25129fe5d2475c207d602.hbs";
-        const defaultQuotation = "e05be6759d7f66bfc7fc273b3a6c8cf9464f81d1590677e402d7391b960940e3.hbs";
+        const defaultInvoice = user?.organization?.preferences?.invoicepdf;
+        const defaultQuotation = user?.organization?.preferences?.quotationpdf;
 
         const updatedUser = {
-          ...user,
-          company: user?.company || '',
-          email: userEmail,
-          phone: user?.phone || '',
-          Preference: {
+          company: user?.user?.company || '',
+          preferences: {
             invoicepdf: isInvoice ? template.name : (activeTemplates.invoice || defaultInvoice),
             quotationpdf: !isInvoice ? template.name : (activeTemplates.quotation || defaultQuotation)
           }
@@ -270,10 +268,11 @@ const Profile = () => {
           }));
 
           // Update store and local storage
-          useAuthStore.getState().setUserData(updatedUser);
-          localStorage.setItem('userProfile', JSON.stringify(updatedUser));
-
+          // useAuthStore.getState().setUserData(updatedUser);
           toast.success(`Active ${templateType} template updated successfully!`);
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
         } else {
           throw new Error('Failed to update template');
         }
@@ -888,9 +887,9 @@ const Profile = () => {
       {renderTabContent()}
 
       {/* Marketplace Preview Modal */}
-      <MarketplacePreviewModal 
-        visible={showMarketplacePreview} 
-        onClose={() => setShowMarketplacePreview(false)} 
+      <MarketplacePreviewModal
+        visible={showMarketplacePreview}
+        onClose={() => setShowMarketplacePreview(false)}
         templateName={selectedTemplateForPreview?.name}
         type={templateType}
       />
