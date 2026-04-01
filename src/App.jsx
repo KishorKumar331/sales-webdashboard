@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -25,6 +26,17 @@ import { useAuthStore } from './store/authStore';
 
 // Protected Route Component - redirects to /auth if not authenticated
 const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/auth' }) => {
+  const shouldRedirectToCreateProfile = isAuthenticated && !hasProfile?.user?.company && window.location.pathname !== '/create-profile';
+  const shouldRedirectToHome = isAuthenticated && hasProfile?.user?.company && window.location.pathname === '/create-profile';
+
+  useEffect(() => {
+    if (shouldRedirectToCreateProfile) {
+      window.location.href = "/create-profile";
+    } else if (shouldRedirectToHome) {
+      window.location.href = "/";
+    }
+  }, [shouldRedirectToCreateProfile, shouldRedirectToHome]);
+
   // Don't redirect while loading - wait for auth check to complete
   if (isLoading || isAuthenticated === null) {
     return null;
@@ -33,16 +45,9 @@ const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath =
   if (!isAuthenticated) {
     return <Navigate to={redirectPath} replace />;
   }
-  console.log(hasProfile)
 
-  // If authenticated but no profile, and not already on the create-profile page
-  if (!hasProfile?.user?.company && window.location.pathname !== '/create-profile') {
-    return <Navigate to="/create-profile" replace />;
-  }
-
-  // If authenticated and has profile, but trying to access create-profile page
-  if (hasProfile?.user?.company && window.location.pathname === '/create-profile') {
-    return <Navigate to="/" />;
+  if (shouldRedirectToCreateProfile || shouldRedirectToHome) {
+    return null;
   }
 
   return <Outlet />;

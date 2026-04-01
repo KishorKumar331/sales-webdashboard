@@ -250,10 +250,10 @@ const Profile = () => {
         const updatedUser = {
 
           company: user?.user?.company || '',
-          preferences: {
-            invoicepdf: isInvoice ? template.name : (activeTemplates.invoice || defaultInvoice),
-            quotationpdf: !isInvoice ? template.name : (activeTemplates.quotation || defaultQuotation)
-          }
+
+          invoicepdf: isInvoice ? template.name : (activeTemplates.invoice || defaultInvoice),
+          quotationpdf: !isInvoice ? template.name : (activeTemplates.quotation || defaultQuotation)
+
         };
 
         console.log('🔥 Updating profile templates:', updatedUser);

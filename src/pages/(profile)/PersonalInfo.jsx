@@ -3,37 +3,39 @@ import { useAuth } from "../../hooks/useAuth";
 import { useAuthStore } from "../../store/authStore";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { uploadCompanyLogo, uploadPaymentQR } from "../../utils/FileUploadUrl";
 
 export const PersonalInfo = () => {
   const { user } = useAuth();
   const { setUserData } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [profileData, setProfileData] = useState({
-    companyId: '',
+    userId: '',
+    company: '',
     email: '',
     phone: '',
-    fullName: '',
-    companyName: '',
-    brandName: '',
+    fullname: '',
+    companyname: '',
+    brandname: '',
     tagline: '',
-    logoUrl: null,
+    logourl: '',
     website: '',
-    companyGstNumber: '',
+    companygstnumber: '',
     pan: '',
-    registrationNumber: '',
-    taxRegion: '',
-    supportEmail: '',
-    billingEmail: '',
-    officePhone: '',
+    registrationnumber: '',
+    taxregion: '',
+    supportemail: '',
+    billingemail: '',
+    officephone: '',
     address: '',
-    bankName: '',
-    accountNumber: '',
-    ifscCode: '',
-    branchName: '',
+    bankname: '',
+    accountnumber: '',
+    ifsccode: '',
+    branchname: '',
     currency: 'INR',
-    upiId: '',
-    qrUrl: null,
+    upiid: '',
+    qrurl: '',
     timezone: 'Asia/Kolkata',
     language: 'en',
     plan: 'premium',
@@ -42,6 +44,7 @@ export const PersonalInfo = () => {
   // Initialize profileData when user data is available
   useEffect(() => {
     if (user) {
+      const userData = user.user || {};
       const org = user.organization || {};
       const settings = org.settings || {};
       const contact = org.contact || {};
@@ -50,30 +53,31 @@ export const PersonalInfo = () => {
       const compliance = org.compliance || {};
 
       setProfileData({
-        companyId: user.CompanyId || '',
-        email: user.Email || '',
-        phone: user.Phone || '',
-        fullName: user.FullName || '',
-        companyName: details.companyname || '',
-        brandName: details.brandname || '',
+        userId: userData.Email || '',
+        company: userData.company || '',
+        email: userData.Email || '',
+        phone: userData.Phone || '',
+        fullname: userData.fullname || '',
+        companyname: details.companyname || '',
+        brandname: details.brandname || '',
         tagline: details.tagline || '',
-        logoUrl: details.logourl || null,
+        logourl: details.logourl || '',
         website: details.website || '',
-        companyGstNumber: compliance.gstnumber || '',
+        companygstnumber: compliance.gstnumber || '',
         pan: compliance.pan || '',
-        registrationNumber: compliance.registrationnumber || '',
-        taxRegion: compliance.taxregion || '',
-        supportEmail: contact.supportemail || '',
-        billingEmail: contact.billingemail || '',
-        officePhone: contact.officephone || '',
+        registrationnumber: compliance.registrationnumber || '',
+        taxregion: compliance.taxregion || '',
+        supportemail: contact.supportemail || userData.Email || '',
+        billingemail: contact.billingemail || userData.Email || '',
+        officephone: contact.officephone || userData.Phone || '',
         address: contact.address || '',
-        bankName: financials.bankname || '',
-        accountNumber: financials.accountnumber || '',
-        ifscCode: financials.ifsc || '',
-        branchName: financials.branch || '',
+        bankname: financials.bankname || '',
+        accountnumber: financials.accountnumber || '',
+        ifsccode: financials.ifsc || '',
+        branchname: financials.branch || '',
         currency: financials.currency || 'INR',
-        upiId: financials.upiid || '',
-        qrUrl: financials.qrurl || null,
+        upiid: financials.upiid || '',
+        qrurl: financials.qrurl || '',
         timezone: settings.timezone || 'Asia/Kolkata',
         language: settings.language || 'en',
         plan: settings.plan || 'premium',
@@ -86,50 +90,85 @@ export const PersonalInfo = () => {
     setIsLoading(true);
 
     try {
+      const org = user?.organization || {};
       const payload = {
-        CompanyId: profileData.companyId,
-        Email: profileData.email,
-        FullName: profileData.fullName,
-        Phone: profileData.phone,
-        organization: {
-          settings: {
-            language: profileData.language,
-            timezone: profileData.timezone,
-            plan: profileData.plan,
-          },
-          contact: {
-            officephone: profileData.officePhone,
-            address: profileData.address,
-            billingemail: profileData.billingEmail,
-            supportemail: profileData.supportEmail,
-          },
-          financials: {
-            accountnumber: profileData.accountNumber,
-            qrurl: profileData.qrUrl,
-            currency: profileData.currency,
-            bankname: profileData.bankName,
-            ifsc: profileData.ifscCode,
-            upiid: profileData.upiId,
-            branch: profileData.branchName,
-          },
-          details: {
-            tagline: profileData.tagline,
-            website: profileData.website,
-            brandname: profileData.brandName,
-            companyname: profileData.companyName,
-            logourl: profileData.logoUrl,
-          },
-          compliance: {
-            gstnumber: profileData.companyGstNumber,
-            pan: profileData.pan,
-            registrationnumber: profileData.registrationNumber,
-            taxregion: profileData.taxRegion,
-          }
+        // Flat fields
+        userId: profileData.userId,
+        company: profileData.company,
+        email: profileData.email,
+        phone: profileData.phone,
+        fullname: profileData.fullname,
+        companyname: profileData.companyname,
+        brandname: profileData.brandname,
+        tagline: profileData.tagline,
+        logourl: profileData.logourl,
+        website: profileData.website,
+        companygstnumber: profileData.companygstnumber,
+        pan: "",
+        registrationnumber: "",
+        taxregion: profileData.taxregion,
+        supportemail: profileData.supportemail,
+        billingemail: profileData.billingemail,
+        officephone: profileData.officephone,
+        address: profileData.address,
+        bankname: profileData.bankname,
+        accountnumber: profileData.accountnumber,
+        ifsccode: profileData.ifsccode,
+        branchname: profileData.branchname,
+        currency: profileData.currency || "INR",
+        upiid: profileData.upiid,
+        qrurl: profileData.qrurl,
+        timezone: profileData.timezone || "Asia/Kolkata",
+        language: profileData.language || "en",
+        plan: profileData.plan || "premium",
+
+        // Metadata and nested structures
+        sk: org.sk || "METADATA",
+        createdate: org.createdate || new Date().toISOString(),
+        updatedate: new Date().toISOString(),
+
+        compliance: {
+          gstnumber: profileData.companygstnumber,
+          pan: "",
+          registrationnumber: "",
+          taxregion: profileData.taxregion,
+        },
+        contact: {
+          officephone: profileData.officephone,
+          address: profileData.address,
+          billingemail: profileData.billingemail,
+          supportemail: profileData.supportemail,
+        },
+        details: {
+          tagline: profileData.tagline,
+          website: profileData.website,
+          brandname: profileData.brandname,
+          companyname: profileData.companyname,
+          logourl: profileData.logourl,
+        },
+        financials: {
+          accountnumber: profileData.accountnumber,
+          qrurl: profileData.qrurl,
+          currency: profileData.currency || "INR",
+          bankname: profileData.bankname,
+          ifsc: profileData.ifsccode,
+          upiid: profileData.upiid,
+          branch: profileData.branchname,
+        },
+        preferences: org.preferences || user?.preferences || {
+          invoicepdf: "c184084ad1f08c45d131ef4dc20508e9c36834a673e25129fe5d2475c207d602.hbs",
+          quotationpdf: "e05be6759d7f66bfc7fc273b3a6c8cf9464f81d1590677e402d7391b960940e3.hbs"
+        },
+        settings: {
+          language: profileData.language || "en",
+          plan: profileData.plan || "premium",
+          timezone: (profileData.timezone || "Asia/Kolkata").toLowerCase(),
+          status: org.settings?.status || "active"
         }
       };
 
       await axios.put(
-        `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?Email=${encodeURIComponent(user.Email)}`,
+        `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth`,
         payload
       );
 
@@ -138,12 +177,12 @@ export const PersonalInfo = () => {
       // Fetch updated user data and update auth store
       try {
         const updatedUserResponse = await axios.get(
-          `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?Email=${encodeURIComponent(user.Email)}`
+          `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?Email=${encodeURIComponent(profileData.email)}`
         );
-        
+
         if (updatedUserResponse.data) {
-          const updatedUserData = Array.isArray(updatedUserResponse.data) 
-            ? updatedUserResponse.data[0] 
+          const updatedUserData = Array.isArray(updatedUserResponse.data)
+            ? updatedUserResponse.data[0]
             : updatedUserResponse.data;
           setUserData(updatedUserData);
         }
@@ -160,6 +199,40 @@ export const PersonalInfo = () => {
     }
   };
 
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsLoading(true);
+      const companyName = profileData.companyname || 'unknown-company';
+      const result = await uploadCompanyLogo(file, companyName);
+      setProfileData(prev => ({ ...prev, logourl: result.cdn_url }));
+      toast.success("Logo uploaded successfully");
+    } catch (err) {
+      console.error("Logo upload error:", err);
+      toast.error("Failed to upload logo");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleQRUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsLoading(true);
+      const companyName = profileData.companyname || 'unknown-company';
+      const result = await uploadPaymentQR(file, companyName);
+      setProfileData(prev => ({ ...prev, qrurl: result.cdn_url }));
+      toast.success("QR Code uploaded successfully");
+    } catch (err) {
+      console.error("QR upload error:", err);
+      toast.error("Failed to upload QR code");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-10">
       <form onSubmit={handleSubmit}>
@@ -171,14 +244,21 @@ export const PersonalInfo = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">Basic Information</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Logo</label>
-              <div className="relative group">
+              <div className="relative group cursor-pointer" onClick={() => document.getElementById('logo-upload').click()}>
+                <input
+                  type="file"
+                  id="logo-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                />
                 <div className="aspect-square bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-purple-300">
-                  {profileData.logoUrl ? (
-                    <img src={profileData.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                  {profileData.logourl ? (
+                    <img src={profileData.logourl} alt="Logo" className="w-full h-full object-contain" />
                   ) : (
                     <div className="text-center p-4">
                       <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-400">
@@ -188,16 +268,21 @@ export const PersonalInfo = () => {
                     </div>
                   )}
                 </div>
+                {profileData.logourl && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl">
+                    <span className="text-white text-xs font-bold uppercase tracking-wider">Change Logo</span>
+                  </div>
+                )}
               </div>
             </div>
-            
+
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Full Name</label>
                 <input
                   type="text"
-                  value={profileData.fullName}
-                  onChange={(e) => setProfileData({...profileData, fullName: e.target.value})}
+                  value={profileData.fullname}
+                  onChange={(e) => setProfileData({ ...profileData, fullname: e.target.value })}
                   className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-medium text-gray-900"
                   required
                 />
@@ -216,7 +301,7 @@ export const PersonalInfo = () => {
                 <input
                   type="tel"
                   value={profileData.phone}
-                  onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-medium text-gray-900"
                   required
                 />
@@ -225,7 +310,7 @@ export const PersonalInfo = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Company ID</label>
                 <input
                   type="text"
-                  value={profileData.companyId}
+                  value={profileData.company}
                   disabled
                   className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
                 />
@@ -242,32 +327,32 @@ export const PersonalInfo = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">Brand & Organization</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Company Name</label>
               <input
                 type="text"
-                value={profileData.companyName}
-                onChange={(e) => setProfileData({...profileData, companyName: e.target.value})}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
+                value={profileData.companyname}
+                disabled
+                className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
               />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Brand Name</label>
               <input
                 type="text"
-                value={profileData.brandName}
-                onChange={(e) => setProfileData({...profileData, brandName: e.target.value})}
+                value={profileData.brandname}
+                onChange={(e) => setProfileData({ ...profileData, brandname: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
             <div className="md:col-span-2 lg:col-span-1">
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Website</label>
               <input
-                type="url"
+                type="text"
                 value={profileData.website}
-                onChange={(e) => setProfileData({...profileData, website: e.target.value})}
+                onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -276,7 +361,7 @@ export const PersonalInfo = () => {
               <input
                 type="text"
                 value={profileData.tagline}
-                onChange={(e) => setProfileData({...profileData, tagline: e.target.value})}
+                onChange={(e) => setProfileData({ ...profileData, tagline: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -284,7 +369,7 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Office Address</label>
               <textarea
                 value={profileData.address}
-                onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
                 rows={3}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900 resize-none"
               />
@@ -300,14 +385,14 @@ export const PersonalInfo = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">Compliance & Tax</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">GST Number</label>
               <input
                 type="text"
-                value={profileData.companyGstNumber}
-                onChange={(e) => setProfileData({...profileData, companyGstNumber: e.target.value})}
+                value={profileData.companygstnumber}
+                onChange={(e) => setProfileData({ ...profileData, companygstnumber: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -316,7 +401,7 @@ export const PersonalInfo = () => {
               <input
                 type="text"
                 value={profileData.pan}
-                onChange={(e) => setProfileData({...profileData, pan: e.target.value})}
+                onChange={(e) => setProfileData({ ...profileData, pan: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -324,8 +409,8 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Registration #</label>
               <input
                 type="text"
-                value={profileData.registrationNumber}
-                onChange={(e) => setProfileData({...profileData, registrationNumber: e.target.value})}
+                value={profileData.registrationnumber}
+                onChange={(e) => setProfileData({ ...profileData, registrationnumber: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -333,8 +418,8 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Tax Region</label>
               <input
                 type="text"
-                value={profileData.taxRegion}
-                onChange={(e) => setProfileData({...profileData, taxRegion: e.target.value})}
+                value={profileData.taxregion}
+                onChange={(e) => setProfileData({ ...profileData, taxregion: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -349,14 +434,14 @@ export const PersonalInfo = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">Contact & Support</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Support Email</label>
               <input
                 type="email"
-                value={profileData.supportEmail}
-                onChange={(e) => setProfileData({...profileData, supportEmail: e.target.value})}
+                value={profileData.supportemail}
+                onChange={(e) => setProfileData({ ...profileData, supportemail: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -364,8 +449,8 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Billing Email</label>
               <input
                 type="email"
-                value={profileData.billingEmail}
-                onChange={(e) => setProfileData({...profileData, billingEmail: e.target.value})}
+                value={profileData.billingemail}
+                onChange={(e) => setProfileData({ ...profileData, billingemail: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -373,8 +458,8 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Office Phone</label>
               <input
                 type="tel"
-                value={profileData.officePhone}
-                onChange={(e) => setProfileData({...profileData, officePhone: e.target.value})}
+                value={profileData.officephone}
+                onChange={(e) => setProfileData({ ...profileData, officephone: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -389,14 +474,14 @@ export const PersonalInfo = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">Financial Details</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Bank Name</label>
               <input
                 type="text"
-                value={profileData.bankName}
-                onChange={(e) => setProfileData({...profileData, bankName: e.target.value})}
+                value={profileData.bankname}
+                onChange={(e) => setProfileData({ ...profileData, bankname: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -404,8 +489,8 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Account Number</label>
               <input
                 type="text"
-                value={profileData.accountNumber}
-                onChange={(e) => setProfileData({...profileData, accountNumber: e.target.value})}
+                value={profileData.accountnumber}
+                onChange={(e) => setProfileData({ ...profileData, accountnumber: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -413,8 +498,8 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">IFSC Code</label>
               <input
                 type="text"
-                value={profileData.ifscCode}
-                onChange={(e) => setProfileData({...profileData, ifscCode: e.target.value})}
+                value={profileData.ifsccode}
+                onChange={(e) => setProfileData({ ...profileData, ifsccode: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -422,8 +507,8 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Branch Name</label>
               <input
                 type="text"
-                value={profileData.branchName}
-                onChange={(e) => setProfileData({...profileData, branchName: e.target.value})}
+                value={profileData.branchname}
+                onChange={(e) => setProfileData({ ...profileData, branchname: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -431,8 +516,8 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">UPI ID</label>
               <input
                 type="text"
-                value={profileData.upiId}
-                onChange={(e) => setProfileData({...profileData, upiId: e.target.value})}
+                value={profileData.upiid}
+                onChange={(e) => setProfileData({ ...profileData, upiid: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
               />
             </div>
@@ -440,7 +525,7 @@ export const PersonalInfo = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Currency</label>
               <select
                 value={profileData.currency}
-                onChange={(e) => setProfileData({...profileData, currency: e.target.value})}
+                onChange={(e) => setProfileData({ ...profileData, currency: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900 cursor-pointer"
               >
                 <option value="INR">Indian Rupee (INR)</option>
@@ -451,14 +536,26 @@ export const PersonalInfo = () => {
             </div>
             <div className="md:col-span-2 lg:col-span-1">
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">QR Code URL</label>
-              <div className="relative group">
+              <div className="relative group cursor-pointer" onClick={() => document.getElementById('qr-upload').click()}>
+                <input
+                  type="file"
+                  id="qr-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleQRUpload}
+                />
                 <div className="aspect-square w-32 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-indigo-300">
-                  {profileData.qrUrl ? (
-                    <img src={profileData.qrUrl} alt="QR Code" className="w-full h-full object-contain" />
+                  {profileData.qrurl ? (
+                    <img src={profileData.qrurl} alt="QR Code" className="w-full h-full object-contain" />
                   ) : (
                     <span className="text-[10px] text-gray-400 font-bold uppercase text-center px-4">Add QR</span>
                   )}
                 </div>
+                {profileData.qrurl && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl w-32">
+                    <span className="text-white text-[10px] font-bold uppercase tracking-wider">Change QR</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -472,14 +569,14 @@ export const PersonalInfo = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">Preferences</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Timezone</label>
               <input
                 type="text"
                 value={profileData.timezone}
-                onChange={(e) => setProfileData({...profileData, timezone: e.target.value})}
+                onChange={(e) => setProfileData({ ...profileData, timezone: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
                 disabled
               />
@@ -489,7 +586,7 @@ export const PersonalInfo = () => {
               <input
                 type="text"
                 value={profileData.language}
-                onChange={(e) => setProfileData({...profileData, language: e.target.value})}
+                onChange={(e) => setProfileData({ ...profileData, language: e.target.value })}
                 className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
                 disabled
               />
@@ -506,14 +603,14 @@ export const PersonalInfo = () => {
 
         {/* Submit Actions */}
         <div className="mt-10 flex items-center justify-end gap-4 border-t border-gray-100 pt-8">
-          <button 
+          <button
             type="button"
             className="px-8 py-3.5 border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all active:scale-95"
           >
             Cancel
           </button>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isLoading}
             className="px-10 py-3.5 bg-linear-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-2xl shadow-xl shadow-purple-200 hover:shadow-2xl hover:shadow-purple-300 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >

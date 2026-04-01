@@ -129,7 +129,7 @@ const MarketplacePreviewModal = ({ visible, onClose, templateName, type }) => {
               </p>
               <button
                 onClick={generateSecurePreview}
-                className="px-10 py-4 bg-slate-900 text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.15em] shadow-xl hover:bg-slate-800 transition-all flex items-center gap-3"
+                className="px-10 py-4 bg-slate-900 text-white rounded-4xl font-black text-sm uppercase tracking-[0.15em] shadow-xl hover:bg-slate-800 transition-all flex items-center gap-3"
               >
                 Retry Initialization
               </button>
