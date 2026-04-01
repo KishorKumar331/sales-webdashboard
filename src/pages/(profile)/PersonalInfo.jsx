@@ -9,6 +9,7 @@ export const PersonalInfo = () => {
   const { user } = useAuth();
   const { setUserData } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+  const isTeamLeader = user?.user?.role === 'teamleader' || user?.user?.role === 'admin' || user?.user?.role === 'teamled';
 
   const [profileData, setProfileData] = useState({
     userId: '',
@@ -58,7 +59,7 @@ export const PersonalInfo = () => {
         email: userData.Email || '',
         phone: userData.Phone || '',
         fullname: userData.fullname || '',
-        companyname: details.companyname || '',
+        companyname: details.companyname || userData.company || '',
         brandname: details.brandname || '',
         tagline: details.tagline || '',
         logourl: details.logourl || '',
@@ -85,19 +86,50 @@ export const PersonalInfo = () => {
     }
   }, [user]);
 
-  const handleSubmit = async (e) => {
+  const fetchUpdatedUser = async () => {
+    try {
+      const response = await axios.get(
+        `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?Email=${encodeURIComponent(profileData.email)}`
+      );
+      if (response.data) {
+        const updatedUserData = Array.isArray(response.data) ? response.data[0] : response.data;
+        setUserData(updatedUserData);
+      }
+    } catch (err) {
+      console.error("Error fetching updated user:", err);
+    }
+  };
+
+  const handleBasicSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const org = user?.organization || {};
       const payload = {
-        // Flat fields
-        userId: profileData.userId,
-        company: profileData.company,
-        email: profileData.email,
-        phone: profileData.phone,
+        Email: profileData.email,
         fullname: profileData.fullname,
+        Phone: profileData.phone,
+      };
+
+      await axios.put(
+        `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth`,
+        payload
+      );
+      toast.success("Personal information updated successfully!");
+      await fetchUpdatedUser();
+    } catch (error) {
+      console.error("Error updating basic info:", error);
+      toast.error("Failed to update personal info.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCompanySubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const payload = {
+        company: profileData.company,
         companyname: profileData.companyname,
         brandname: profileData.brandname,
         tagline: profileData.tagline,
@@ -114,86 +146,24 @@ export const PersonalInfo = () => {
         bankname: profileData.bankname,
         accountnumber: profileData.accountnumber,
         ifsccode: profileData.ifsccode,
-        branchname: profileData.branchname,
+        branch: profileData.branchname,
         currency: profileData.currency || "INR",
         upiid: profileData.upiid,
         qrurl: profileData.qrurl,
         timezone: profileData.timezone || "Asia/Kolkata",
         language: profileData.language || "en",
         plan: profileData.plan || "premium",
-
-        // Metadata and nested structures
-        sk: org.sk || "METADATA",
-        createdate: org.createdate || new Date().toISOString(),
-        updatedate: new Date().toISOString(),
-
-        compliance: {
-          gstnumber: profileData.companygstnumber,
-          pan: "",
-          registrationnumber: "",
-          taxregion: profileData.taxregion,
-        },
-        contact: {
-          officephone: profileData.officephone,
-          address: profileData.address,
-          billingemail: profileData.billingemail,
-          supportemail: profileData.supportemail,
-        },
-        details: {
-          tagline: profileData.tagline,
-          website: profileData.website,
-          brandname: profileData.brandname,
-          companyname: profileData.companyname,
-          logourl: profileData.logourl,
-        },
-        financials: {
-          accountnumber: profileData.accountnumber,
-          qrurl: profileData.qrurl,
-          currency: profileData.currency || "INR",
-          bankname: profileData.bankname,
-          ifsc: profileData.ifsccode,
-          upiid: profileData.upiid,
-          branch: profileData.branchname,
-        },
-        preferences: org.preferences || user?.preferences || {
-          invoicepdf: "c184084ad1f08c45d131ef4dc20508e9c36834a673e25129fe5d2475c207d602.hbs",
-          quotationpdf: "e05be6759d7f66bfc7fc273b3a6c8cf9464f81d1590677e402d7391b960940e3.hbs"
-        },
-        settings: {
-          language: profileData.language || "en",
-          plan: profileData.plan || "premium",
-          timezone: (profileData.timezone || "Asia/Kolkata").toLowerCase(),
-          status: org.settings?.status || "active"
-        }
       };
 
       await axios.put(
         `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth`,
         payload
       );
-
-      toast.success("Profile updated successfully!");
-
-      // Fetch updated user data and update auth store
-      try {
-        const updatedUserResponse = await axios.get(
-          `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?Email=${encodeURIComponent(profileData.email)}`
-        );
-
-        if (updatedUserResponse.data) {
-          const updatedUserData = Array.isArray(updatedUserResponse.data)
-            ? updatedUserResponse.data[0]
-            : updatedUserResponse.data;
-          setUserData(updatedUserData);
-        }
-      } catch (fetchError) {
-        console.error("Error fetching updated user data:", fetchError);
-        // Still show success even if fetch fails, as profile was updated
-      }
-
+      toast.success("Company profile updated successfully!");
+      await fetchUpdatedUser();
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Failed to update profile. Please try again.");
+      console.error("Error updating company profile:", error);
+      toast.error("Failed to update company profile.");
     } finally {
       setIsLoading(false);
     }
@@ -235,7 +205,7 @@ export const PersonalInfo = () => {
 
   return (
     <div className="space-y-8 pb-10">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleBasicSubmit}>
         {/* Basic Information */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
           <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
@@ -245,379 +215,390 @@ export const PersonalInfo = () => {
             <h3 className="text-xl font-bold text-gray-900">Basic Information</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Logo</label>
-              <div className="relative group cursor-pointer" onClick={() => document.getElementById('logo-upload').click()}>
-                <input
-                  type="file"
-                  id="logo-upload"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                />
-                <div className="aspect-square bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-purple-300">
-                  {profileData.logourl ? (
-                    <img src={profileData.logourl} alt="Logo" className="w-full h-full object-contain" />
-                  ) : (
-                    <div className="text-center p-4">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-400">
-                        <span className="text-xl">+</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Full Name</label>
+              <input
+                type="text"
+                value={profileData.fullname}
+                onChange={(e) => setProfileData({ ...profileData, fullname: e.target.value })}
+                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-medium text-gray-900"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Email</label>
+              <input
+                type="email"
+                value={profileData.email}
+                disabled
+                className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Phone</label>
+              <input
+                type="tel"
+                value={profileData.phone}
+                disabled
+                className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Company ID</label>
+              <input
+                type="text"
+                value={profileData.company}
+                disabled
+                className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-8 py-3 bg-linear-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isLoading ? "Saving..." : "Update Personal Info"}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      {isTeamLeader && (
+        <form onSubmit={handleCompanySubmit}>
+          {/* Brand & Organization */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                <span className="font-bold text-lg">02</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Brand & Organization</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Company Logo</label>
+                <div className="relative group cursor-pointer" onClick={() => document.getElementById('logo-upload').click()}>
+                  <input
+                    type="file"
+                    id="logo-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                  />
+                  <div className="aspect-square bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-300">
+                    {profileData.logourl ? (
+                      <img src={profileData.logourl} alt="Logo" className="w-full h-full object-contain" />
+                    ) : (
+                      <div className="text-center p-4">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-400">
+                          <span className="text-xl">+</span>
+                        </div>
+                        <span className="text-xs text-gray-400 font-medium tracking-tight">Add Logo</span>
                       </div>
-                      <span className="text-xs text-gray-400 font-medium tracking-tight">Add Logo</span>
+                    )}
+                  </div>
+                  {profileData.logourl && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl">
+                      <span className="text-white text-xs font-bold uppercase tracking-wider">Change Logo</span>
                     </div>
                   )}
                 </div>
-                {profileData.logourl && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl">
-                    <span className="text-white text-xs font-bold uppercase tracking-wider">Change Logo</span>
-                  </div>
-                )}
               </div>
-            </div>
 
-            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Full Name</label>
+              <div className="md:col-span-1 lg:col-span-2 space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Company Name</label>
+                  <input
+                    type="text"
+                    value={profileData.companyname}
+                    disabled
+                    className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Brand Name</label>
+                  <input
+                    type="text"
+                    value={profileData.brandname}
+                    onChange={(e) => setProfileData({ ...profileData, brandname: e.target.value })}
+                    className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Website</label>
                 <input
                   type="text"
-                  value={profileData.fullname}
-                  onChange={(e) => setProfileData({ ...profileData, fullname: e.target.value })}
-                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-medium text-gray-900"
-                  required
+                  value={profileData.website}
+                  onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+              <div className="md:col-span-2 lg:col-span-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Tagline</label>
+                <input
+                  type="text"
+                  value={profileData.tagline}
+                  onChange={(e) => setProfileData({ ...profileData, tagline: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+              <div className="md:col-span-2 lg:col-span-3">
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Office Address</label>
+                <textarea
+                  value={profileData.address}
+                  onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
+                  rows={3}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900 resize-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Compliance & Tax */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <div className="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center">
+                <span className="font-bold text-lg">03</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Compliance & Tax</h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">GST Number</label>
+                <input
+                  type="text"
+                  value={profileData.companygstnumber}
+                  onChange={(e) => setProfileData({ ...profileData, companygstnumber: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Email</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">PAN</label>
+                <input
+                  type="text"
+                  value={profileData.pan}
+                  onChange={(e) => setProfileData({ ...profileData, pan: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Registration #</label>
+                <input
+                  type="text"
+                  value={profileData.registrationnumber}
+                  onChange={(e) => setProfileData({ ...profileData, registrationnumber: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Tax Region</label>
+                <input
+                  type="text"
+                  value={profileData.taxregion}
+                  onChange={(e) => setProfileData({ ...profileData, taxregion: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact & Support */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center">
+                <span className="font-bold text-lg">04</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Contact & Support</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Support Email</label>
                 <input
                   type="email"
-                  value={profileData.email}
-                  disabled
-                  className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
+                  value={profileData.supportemail}
+                  onChange={(e) => setProfileData({ ...profileData, supportemail: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Phone</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Billing Email</label>
+                <input
+                  type="email"
+                  value={profileData.billingemail}
+                  onChange={(e) => setProfileData({ ...profileData, billingemail: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Office Phone</label>
                 <input
                   type="tel"
-                  value={profileData.phone}
-                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all font-medium text-gray-900"
-                  required
+                  value={profileData.officephone}
+                  onChange={(e) => setProfileData({ ...profileData, officephone: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Financial Details */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                <span className="font-bold text-lg">05</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Financial Details</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Bank Name</label>
+                <input
+                  type="text"
+                  value={profileData.bankname}
+                  onChange={(e) => setProfileData({ ...profileData, bankname: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Company ID</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Account Number</label>
                 <input
                   type="text"
-                  value={profileData.company}
-                  disabled
-                  className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
+                  value={profileData.accountnumber}
+                  onChange={(e) => setProfileData({ ...profileData, accountnumber: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
                 />
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Brand & Organization */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
-              <span className="font-bold text-lg">02</span>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">Brand & Organization</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Company Name</label>
-              <input
-                type="text"
-                value={profileData.companyname}
-                disabled
-                className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Brand Name</label>
-              <input
-                type="text"
-                value={profileData.brandname}
-                onChange={(e) => setProfileData({ ...profileData, brandname: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div className="md:col-span-2 lg:col-span-1">
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Website</label>
-              <input
-                type="text"
-                value={profileData.website}
-                onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div className="md:col-span-2 lg:col-span-3">
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Tagline</label>
-              <input
-                type="text"
-                value={profileData.tagline}
-                onChange={(e) => setProfileData({ ...profileData, tagline: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div className="md:col-span-2 lg:col-span-3">
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Office Address</label>
-              <textarea
-                value={profileData.address}
-                onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-                rows={3}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-900 resize-none"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Compliance & Tax */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center">
-              <span className="font-bold text-lg">03</span>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">Compliance & Tax</h3>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">GST Number</label>
-              <input
-                type="text"
-                value={profileData.companygstnumber}
-                onChange={(e) => setProfileData({ ...profileData, companygstnumber: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">PAN</label>
-              <input
-                type="text"
-                value={profileData.pan}
-                onChange={(e) => setProfileData({ ...profileData, pan: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Registration #</label>
-              <input
-                type="text"
-                value={profileData.registrationnumber}
-                onChange={(e) => setProfileData({ ...profileData, registrationnumber: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Tax Region</label>
-              <input
-                type="text"
-                value={profileData.taxregion}
-                onChange={(e) => setProfileData({ ...profileData, taxregion: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Contact & Support */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center">
-              <span className="font-bold text-lg">04</span>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">Contact & Support</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Support Email</label>
-              <input
-                type="email"
-                value={profileData.supportemail}
-                onChange={(e) => setProfileData({ ...profileData, supportemail: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Billing Email</label>
-              <input
-                type="email"
-                value={profileData.billingemail}
-                onChange={(e) => setProfileData({ ...profileData, billingemail: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Office Phone</label>
-              <input
-                type="tel"
-                value={profileData.officephone}
-                onChange={(e) => setProfileData({ ...profileData, officephone: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Financial Details */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
-              <span className="font-bold text-lg">05</span>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">Financial Details</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Bank Name</label>
-              <input
-                type="text"
-                value={profileData.bankname}
-                onChange={(e) => setProfileData({ ...profileData, bankname: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Account Number</label>
-              <input
-                type="text"
-                value={profileData.accountnumber}
-                onChange={(e) => setProfileData({ ...profileData, accountnumber: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">IFSC Code</label>
-              <input
-                type="text"
-                value={profileData.ifsccode}
-                onChange={(e) => setProfileData({ ...profileData, ifsccode: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Branch Name</label>
-              <input
-                type="text"
-                value={profileData.branchname}
-                onChange={(e) => setProfileData({ ...profileData, branchname: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">UPI ID</label>
-              <input
-                type="text"
-                value={profileData.upiid}
-                onChange={(e) => setProfileData({ ...profileData, upiid: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Currency</label>
-              <select
-                value={profileData.currency}
-                onChange={(e) => setProfileData({ ...profileData, currency: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900 cursor-pointer"
-              >
-                <option value="INR">Indian Rupee (INR)</option>
-                <option value="USD">US Dollar (USD)</option>
-                <option value="EUR">Euro (EUR)</option>
-                <option value="GBP">British Pound (GBP)</option>
-              </select>
-            </div>
-            <div className="md:col-span-2 lg:col-span-1">
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">QR Code URL</label>
-              <div className="relative group cursor-pointer" onClick={() => document.getElementById('qr-upload').click()}>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">IFSC Code</label>
                 <input
-                  type="file"
-                  id="qr-upload"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleQRUpload}
+                  type="text"
+                  value={profileData.ifsccode}
+                  onChange={(e) => setProfileData({ ...profileData, ifsccode: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
                 />
-                <div className="aspect-square w-32 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-indigo-300">
-                  {profileData.qrurl ? (
-                    <img src={profileData.qrurl} alt="QR Code" className="w-full h-full object-contain" />
-                  ) : (
-                    <span className="text-[10px] text-gray-400 font-bold uppercase text-center px-4">Add QR</span>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Branch Name</label>
+                <input
+                  type="text"
+                  value={profileData.branchname}
+                  onChange={(e) => setProfileData({ ...profileData, branchname: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">UPI ID</label>
+                <input
+                  type="text"
+                  value={profileData.upiid}
+                  onChange={(e) => setProfileData({ ...profileData, upiid: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Currency</label>
+                <select
+                  value={profileData.currency}
+                  onChange={(e) => setProfileData({ ...profileData, currency: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900 cursor-pointer"
+                >
+                  <option value="INR">Indian Rupee (INR)</option>
+                  <option value="USD">US Dollar (USD)</option>
+                  <option value="EUR">Euro (EUR)</option>
+                  <option value="GBP">British Pound (GBP)</option>
+                </select>
+              </div>
+              <div className="md:col-span-2 lg:col-span-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">QR Code URL</label>
+                <div className="relative group cursor-pointer" onClick={() => document.getElementById('qr-upload').click()}>
+                  <input
+                    type="file"
+                    id="qr-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleQRUpload}
+                  />
+                  <div className="aspect-square w-32 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-indigo-300">
+                    {profileData.qrurl ? (
+                      <img src={profileData.qrurl} alt="QR Code" className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-[10px] text-gray-400 font-bold uppercase text-center px-4">Add QR</span>
+                    )}
+                  </div>
+                  {profileData.qrurl && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl w-32">
+                      <span className="text-white text-[10px] font-bold uppercase tracking-wider">Change QR</span>
+                    </div>
                   )}
                 </div>
-                {profileData.qrurl && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl w-32">
-                    <span className="text-white text-[10px] font-bold uppercase tracking-wider">Change QR</span>
-                  </div>
-                )}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Preferences */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="w-10 h-10 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center">
-              <span className="font-bold text-lg">06</span>
+          {/* Preferences */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8 space-y-6">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <div className="w-10 h-10 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center">
+                <span className="font-bold text-lg">06</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Preferences</h3>
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Preferences</h3>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Timezone</label>
-              <input
-                type="text"
-                value={profileData.timezone}
-                onChange={(e) => setProfileData({ ...profileData, timezone: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
-                disabled
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Language</label>
-              <input
-                type="text"
-                value={profileData.language}
-                onChange={(e) => setProfileData({ ...profileData, language: e.target.value })}
-                className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed"
-                disabled
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Plan</label>
-              <div className="px-5 py-3 bg-purple-50 border border-purple-100 rounded-xl flex items-center justify-between">
-                <span className="font-bold text-purple-700 uppercase tracking-widest text-xs">{profileData.plan}</span>
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Timezone</label>
+                <input
+                  type="text"
+                  value={profileData.timezone}
+                  onChange={(e) => setProfileData({ ...profileData, timezone: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Language</label>
+                <input
+                  type="text"
+                  value={profileData.language}
+                  onChange={(e) => setProfileData({ ...profileData, language: e.target.value })}
+                  className="w-full px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Plan</label>
+                <div className="px-5 py-3 bg-purple-50 border border-purple-100 rounded-xl flex items-center justify-between">
+                  <span className="font-bold text-purple-700 uppercase tracking-widest text-xs">{profileData.plan}</span>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Submit Actions */}
-        <div className="mt-10 flex items-center justify-end gap-4 border-t border-gray-100 pt-8">
-          <button
-            type="button"
-            className="px-8 py-3.5 border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all active:scale-95"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="px-10 py-3.5 bg-linear-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-2xl shadow-xl shadow-purple-200 hover:shadow-2xl hover:shadow-purple-300 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Saving Changes..." : "Update Profile"}
-          </button>
-        </div>
-      </form>
+          <div className="mt-8 flex items-center justify-end gap-4 border-t border-gray-100 pt-8">
+            <button
+              type="button"
+              className="px-8 py-3.5 border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-10 py-3.5 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-200 hover:shadow-2xl hover:shadow-blue-300 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Saving..." : "Update Company Profile"}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 };
