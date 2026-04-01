@@ -78,24 +78,24 @@ const BasicDetails = () => {
           <User size={18} color="#7c3aed" />
         </div>
         <div style={styles.sectionTitle}>Basic Details</div>
-          <FormField >
-        <Controller
-          control={control}
-          name="IsMultiDestination"
-          render={({ field }) => (
-            <div style={styles.switchRow}>
-              <span style={{ color: "#374151", fontSize: 16 }}>
-                Enable multiple destinations
-              </span>
-              <input
-                type="checkbox"
-                checked={!!field.value}
-                onChange={(e) => field.onChange(e.target.checked)}
-              />
-            </div>
-          )}
-        />
-      </FormField>
+        <FormField >
+          <Controller
+            control={control}
+            name="IsMultiDestination"
+            render={({ field }) => (
+              <div style={styles.switchRow}>
+                <span style={{ color: "#374151", fontSize: 16 }}>
+                  Enable multiple destinations
+                </span>
+                <input
+                  type="checkbox"
+                  checked={!!field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                />
+              </div>
+            )}
+          />
+        </FormField>
       </div>
 
       {/* ===== Client Name ===== */}
@@ -250,6 +250,7 @@ const BasicDetails = () => {
               render={({ field }) => (
                 <input
                   {...field}
+                  type="number"
                   inputMode="numeric"
                   style={{
                     ...styles.input,
@@ -298,85 +299,85 @@ const BasicDetails = () => {
           </FormField>
         </div>
         <div className="flex-1">
-      <FormField
-        label="Departure City"
-        required
-        error={errors.DepartureCity}
-      >
-        <Controller
-          control={control}
-          name="DepartureCity"
-          rules={{ required: "Departure city is required" }}
-          render={({ field }) => (
-            <input
-              {...field}
-              style={{
-                ...styles.input,
-                ...(errors.DepartureCity ? styles.errorInput : {}),
-              }}
-              placeholder="Enter departure city"
+          <FormField
+            label="Departure City"
+            required
+            error={errors.DepartureCity}
+          >
+            <Controller
+              control={control}
+              name="DepartureCity"
+              rules={{ required: "Departure city is required" }}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  style={{
+                    ...styles.input,
+                    ...(errors.DepartureCity ? styles.errorInput : {}),
+                  }}
+                  placeholder="Enter departure city"
+                />
+              )}
             />
-          )}
-        />
-      </FormField>
+          </FormField>
         </div>
       </div>
 
       {/* ===== Multi Destination Toggle ===== */}
-   
+
 
       {/* ===== Departure City ===== */}
 
       <div className="flex">
-           {!isMultiDestination ? (
-        <FormField
-          label="Destination"
-          required
-          error={errors.DestinationName}
-        >
-          <Controller
-            control={control}
-            name="DestinationName"
-            rules={{ required: "Destination is required" }}
-            render={({ field }) => (
-              <CustomPicker
-                items={DestinationList}
-                selectedValue={field.value}
-                onValueChange={(val) => {
-                  field.onChange(val);
-                  setValue("Destinations", [val]);
-                }}
-                placeholder="Select destination"
-                title="Select Destination"
-              />
-            )}
-          />
-        </FormField>
-      ) : (
-        <FormField
-          label="Destinations"
-          required
-          error={
-            destinations.length === 0
-              ? { message: "At least one destination is required" }
-              : undefined
-          }
-        >
-          <MultiSelectDestinations
-            destinations={DestinationList}
-            selectedDestinations={destinations}
-            onSelectionChange={(vals) =>
-              setValue("Destinations", vals)
+        {!isMultiDestination ? (
+          <FormField
+            label="Destination"
+            required
+            error={errors.DestinationName}
+          >
+            <Controller
+              control={control}
+              name="DestinationName"
+              rules={{ required: "Destination is required" }}
+              render={({ field }) => (
+                <CustomPicker
+                  items={DestinationList}
+                  selectedValue={field.value}
+                  onValueChange={(val) => {
+                    field.onChange(val);
+                    setValue("Destinations", [val]);
+                  }}
+                  placeholder="Select destination"
+                  title="Select Destination"
+                />
+              )}
+            />
+          </FormField>
+        ) : (
+          <FormField
+            label="Destinations"
+            required
+            error={
+              destinations.length === 0
+                ? { message: "At least one destination is required" }
+                : undefined
             }
-            placeholder="Select multiple destinations"
-          />
-        </FormField>
-      )}
+          >
+            <MultiSelectDestinations
+              destinations={DestinationList}
+              selectedDestinations={destinations}
+              onSelectionChange={(vals) =>
+                setValue("Destinations", vals)
+              }
+              placeholder="Select multiple destinations"
+            />
+          </FormField>
+        )}
 
-      {/* ===== Destination(s) ===== */}
-   
+        {/* ===== Destination(s) ===== */}
+
       </div>
- 
+
     </div>
   );
 };
@@ -434,6 +435,6 @@ const styles = {
     alignItems: "center",
     gap: 8,
     position: "relative",
-left: 746,
+    left: 746,
   },
 };
