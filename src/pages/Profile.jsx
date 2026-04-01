@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useUserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
-import { useAuthStore } from '../store/authStore';
 import { PersonalInfo } from "./(profile)/PersonalInfo";
 import MarketplacePreviewModal from '../components/modals/MarketplacePreviewModal';
 import {
@@ -250,6 +248,7 @@ const Profile = () => {
         const defaultQuotation = user?.organization?.preferences?.quotationpdf;
 
         const updatedUser = {
+
           company: user?.user?.company || '',
           preferences: {
             invoicepdf: isInvoice ? template.name : (activeTemplates.invoice || defaultInvoice),

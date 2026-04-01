@@ -216,7 +216,7 @@ const OnBoardingPage = () => {
             showToast('Almost there! Please complete your business profile.', 'info');
           } else {
             showToast('Login successful!');
-            navigate("/");
+            window.location.href = "/";
           }
           setShowLoginModal(false);
           // App.jsx ProtectedRoute will handle the redirect to /create-profile if hasProfile is false
