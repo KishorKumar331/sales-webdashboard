@@ -69,7 +69,7 @@ const PublicRoute = ({ isAuthenticated, isLoading, redirectPath = '/' }) => {
 const App = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const { hasProfile, userData } = useAuthStore();
-  console.log(hasProfile)
+  console.log(hasProfile, userData)
   const renderWithLayout = (Component, title) => (
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 overflow-hidden">
