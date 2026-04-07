@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
 import { PersonalInfo } from "./(profile)/PersonalInfo";
 import MarketplacePreviewModal from '../components/modals/MarketplacePreviewModal';
+import PremiumPaymentModal from '../components/modals/PremiumPaymentModal';
 import {
   User,
   CreditCard,
@@ -60,6 +61,64 @@ const Profile = () => {
   const [fetchingTemplates, setFetchingTemplates] = useState(false);
   const [showMarketplacePreview, setShowMarketplacePreview] = useState(false);
   const [selectedTemplateForPreview, setSelectedTemplateForPreview] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState(null);
+
+  const handlePaymentSuccess = async (paymentResponse) => {
+    if (!pendingTemplate) return;
+
+    setFetchingTemplates(true);
+    try {
+      const isInvoice = templateType === 'invoice';
+
+      // Define default hashes from user request if current ones are missing
+      const defaultInvoice = user?.organization?.preferences?.invoicepdf;
+      const defaultQuotation = user?.organization?.preferences?.quotationpdf;
+
+      const updatedUser = {
+        company: user?.user?.company || '',
+        invoicepdf: isInvoice ? pendingTemplate.name : (activeTemplates.invoice || defaultInvoice),
+        quotationpdf: !isInvoice ? pendingTemplate.name : (activeTemplates.quotation || defaultQuotation)
+      };
+
+      console.log('🔥 Updating profile templates after payment:', updatedUser);
+      console.log('Razorpay Payment ID:', paymentResponse.razorpay_payment_id);
+
+      const response = await axios.put('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth', updatedUser);
+
+      if (response.status === 200 || response.status === 204) {
+        setActiveTemplates(prev => ({
+          ...prev,
+          [templateType]: pendingTemplate.name
+        }));
+
+        toast.success(`Active ${templateType} template updated successfully!`);
+        setShowPaymentModal(false);
+        setPendingTemplate(null);
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        throw new Error('Failed to update template');
+      }
+    } catch (error) {
+      console.error('Error setting template:', error);
+      toast.error('Failed to update template. Please contact support.');
+    } finally {
+      setFetchingTemplates(false);
+    }
+  };
+
+  const handleSetTemplate = (template) => {
+    const userEmail = user?.user?.Email;
+    if (!userEmail) {
+      toast.error('User not authenticated. Please log in again.');
+      return;
+    }
+    setPendingTemplate(template);
+    setShowPaymentModal(true);
+  };
 
   useEffect(() => {
     if (user) {
@@ -144,7 +203,6 @@ const Profile = () => {
   const deleteNotification = (id) => {
     setNotifications(notifications.filter(notif => notif.id !== id));
   };
-
 
   // Payment Tab
   const renderPayment = () => (
@@ -232,56 +290,6 @@ const Profile = () => {
       return acc;
     }, {});
 
-    const handleSetTemplate = async (template) => {
-      const userEmail = user?.user?.Email;
-      if (!userEmail) {
-        toast.error('User not authenticated. Please log in again.');
-        return;
-      }
-
-      setFetchingTemplates(true);
-      try {
-        const isInvoice = templateType === 'invoice';
-
-        // Define default hashes from user request if current ones are missing
-        const defaultInvoice = user?.organization?.preferences?.invoicepdf;
-        const defaultQuotation = user?.organization?.preferences?.quotationpdf;
-
-        const updatedUser = {
-
-          company: user?.user?.company || '',
-
-          invoicepdf: isInvoice ? template.name : (activeTemplates.invoice || defaultInvoice),
-          quotationpdf: !isInvoice ? template.name : (activeTemplates.quotation || defaultQuotation)
-
-        };
-
-        console.log('🔥 Updating profile templates:', updatedUser);
-
-        const response = await axios.put('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth', updatedUser);
-
-        if (response.status === 200 || response.status === 204) {
-          setActiveTemplates(prev => ({
-            ...prev,
-            [templateType]: template.name
-          }));
-
-          // Update store and local storage
-          // useAuthStore.getState().setUserData(updatedUser);
-          toast.success(`Active ${templateType} template updated successfully!`);
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-        } else {
-          throw new Error('Failed to update template');
-        }
-      } catch (error) {
-        console.error('Error setting template:', error);
-        toast.error('Failed to set template. Please try again.');
-      } finally {
-        setFetchingTemplates(false);
-      }
-    };
 
     return (
       <div className="space-y-6">
@@ -891,6 +899,16 @@ const Profile = () => {
         onClose={() => setShowMarketplacePreview(false)}
         templateName={selectedTemplateForPreview?.name}
         type={templateType}
+      />
+
+      {/* Premium Payment Modal */}
+      <PremiumPaymentModal
+        visible={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentSuccess}
+        templateName={pendingTemplate?.name}
+        type={templateType}
+        userDetails={user?.user}
       />
     </div>
   );
