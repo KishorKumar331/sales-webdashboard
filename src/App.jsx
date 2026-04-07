@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -26,16 +26,17 @@ import { useAuthStore } from './store/authStore';
 
 // Protected Route Component - redirects to /auth if not authenticated
 const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/auth' }) => {
+  const navigate = useNavigate()
   const shouldRedirectToCreateProfile = isAuthenticated && !hasProfile?.user?.company && window.location.pathname !== '/create-profile';
   const shouldRedirectToHome = isAuthenticated && hasProfile?.user?.company && window.location.pathname === '/create-profile';
 
   useEffect(() => {
     if (shouldRedirectToCreateProfile) {
-      window.location.href = "/create-profile";
+      navigate("/create-profile");
     } else if (shouldRedirectToHome) {
-      window.location.href = "/";
+      navigate("/");
     }
-  }, [shouldRedirectToCreateProfile, shouldRedirectToHome]);
+  }, [isAuthenticated, hasProfile, shouldRedirectToCreateProfile, shouldRedirectToHome, navigate]);
 
   // Don't redirect while loading - wait for auth check to complete
   if (isLoading || isAuthenticated === null) {
