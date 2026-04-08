@@ -57,7 +57,11 @@ export default function CalendarDatePicker({
 
   const handleSelect = (day) => {
     setSelected(day);
-    onDateChange(day.toISOString().split("T")[0]); // SAME OUTPUT
+    const year = day.getFullYear();
+    const month = String(day.getMonth() + 1).padStart(2, "0");
+    const date = String(day.getDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${date}`;
+    onDateChange(formattedDate);
     setVisible(false);
   };
 

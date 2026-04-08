@@ -1,9 +1,6 @@
-
-
-
 import React, { useEffect, useState } from "react";
 import { useFormContext, Controller, useFieldArray } from "react-hook-form";
-import { Calendar, Trash2, Info, PlusCircle, MapPin, Camera, Edit3 } from "lucide-react";
+import { Calendar, Trash2, PlusCircle, Camera, Edit3 } from "lucide-react";
 
 import ActivitySelector from "../ActivitySelector";
 import CalendarDatePicker from "../DatePicker";
@@ -15,7 +12,6 @@ const ItinerarySection = () => {
   const {
     control,
     watch,
-    formState: { errors },
     setValue,
     getValues,
   } = useFormContext();
@@ -34,7 +30,10 @@ const ItinerarySection = () => {
   const formatDate = (date) => {
     if (!date) return "";
     const d = new Date(date);
-    return d.toISOString().split("T")[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   const getItineraryDate = (index) => {
@@ -63,7 +62,7 @@ const ItinerarySection = () => {
       Activity: "",
       ImageUrl: "",
       Description: "",
-    });
+    }, { shouldFocus: false });
   };
 
   /* ------------------ Remove Day ------------------ */
@@ -137,7 +136,7 @@ const ItinerarySection = () => {
           Activity: "",
           ImageUrl: "",
           Description: "",
-        });
+        }, { shouldFocus: false });
       }
     } else if (target < current) {
       for (let i = current - 1; i >= target; i--) {

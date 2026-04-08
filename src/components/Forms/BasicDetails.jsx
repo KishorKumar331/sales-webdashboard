@@ -42,6 +42,21 @@ const DepartureCityList = [
   "Goa",
 ];
 
+/* ---------- FormField ---------- */
+const FormField = ({ label, children, required = false, error }) => (
+  <div style={{ marginBottom: 24 }}>
+    <div style={{ color: "#374151", fontWeight: 600, marginBottom: 8 }}>
+      {label} {required && <span style={{ color: "red" }}>*</span>}
+    </div>
+    {children}
+    {error && (
+      <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+        {error.message}
+      </div>
+    )}
+  </div>
+);
+
 /* ================= COMPONENT ================= */
 
 const BasicDetails = () => {
@@ -54,21 +69,6 @@ const BasicDetails = () => {
 
   const isMultiDestination = watch("IsMultiDestination", false);
   const destinations = watch("Destinations", []);
-
-  /* ---------- FormField ---------- */
-  const FormField = ({ label, children, required = false, error }) => (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ color: "#374151", fontWeight: 600, marginBottom: 8 }}>
-        {label} {required && <span style={{ color: "red" }}>*</span>}
-      </div>
-      {children}
-      {error && (
-        <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
-          {error.message}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div style={styles.card}>
@@ -104,7 +104,7 @@ const BasicDetails = () => {
       {/* ===== Contact + Email ===== */}
       <div style={{ display: "flex", gap: 12, justifyContent: "space-between" }}>
 
-        <div className="flex-1">
+        <div className="flex-[0.3]">
           <FormField
             label="Client Full Name"
             required
@@ -126,7 +126,7 @@ const BasicDetails = () => {
               )}
             />
           </FormField></div>
-        <div className="flex-1">
+        <div className="flex-[0.3]">
           <FormField
             label="Contact Number"
             required
@@ -154,7 +154,7 @@ const BasicDetails = () => {
             />
           </FormField>
         </div>
-        <div className="flex-1">
+        <div className="flex-[0.3]">
           <FormField label="Email Address" error={errors["Client-Email"]}>
             <Controller
               control={control}
@@ -180,6 +180,22 @@ const BasicDetails = () => {
             />
           </FormField>
         </div>
+        <div className="flex-[0.3]">
+          <FormField label="Travel Date" required error={errors.TravelDate}>
+            <Controller
+              control={control}
+              name="TravelDate"
+              rules={{ required: "Travel date is required" }}
+              render={({ field }) => (
+                <CalendarDatePicker
+                  value={field.value}
+                  onDateChange={field.onChange}
+                  placeholder="Select travel date"
+                />
+              )}
+            />
+          </FormField>
+        </div>
       </div>
 
 
@@ -188,20 +204,7 @@ const BasicDetails = () => {
 
 
       {/* ===== Travel Date ===== */}
-      <FormField label="Travel Date" required error={errors.TravelDate}>
-        <Controller
-          control={control}
-          name="TravelDate"
-          rules={{ required: "Travel date is required" }}
-          render={({ field }) => (
-            <CalendarDatePicker
-              value={field.value}
-              onDateChange={field.onChange}
-              placeholder="Select travel date"
-            />
-          )}
-        />
-      </FormField>
+
 
       {/* ===== Pax ===== */}
       <div style={{ display: "flex", gap: 12 }}>
@@ -209,8 +212,9 @@ const BasicDetails = () => {
           ["NoOfPax", "Adults"],
           ["Child", "Children"],
           ["Infant", "Infants"],
+          ["Days", "Days"],
         ].map(([name, label]) => (
-          <div key={name} style={{ flex: 1 }}>
+          <div key={name} style={{ flex: 0.3 }}>
             <FormField label={label} error={errors[name]}>
               <Controller
                 control={control}
@@ -218,6 +222,7 @@ const BasicDetails = () => {
                 render={({ field }) => (
                   <input
                     {...field}
+                    type="number"
                     inputMode="numeric"
                     style={{
                       ...styles.input,
@@ -242,36 +247,9 @@ const BasicDetails = () => {
 
       {/* ===== Days + Budget ===== */}
       <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <FormField label="Days" error={errors.Days}>
-            <Controller
-              control={control}
-              name="Days"
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="number"
-                  inputMode="numeric"
-                  style={{
-                    ...styles.input,
-                    ...(errors.Days ? styles.errorInput : {}),
-                  }}
-                  placeholder="Enter days"
-                  value={field.value ?? ""}
-                  onChange={(e) =>
-                    field.onChange(
-                      e.target.value
-                        ? parseInt(e.target.value) || 0
-                        : 0
-                    )
-                  }
-                />
-              )}
-            />
-          </FormField>
-        </div>
 
-        <div style={{ flex: 1 }}>
+
+        <div style={{ flex: 0.3 }}>
           <FormField label="Budget (₹)" error={errors.Budget}>
             <Controller
               control={control}
@@ -298,7 +276,7 @@ const BasicDetails = () => {
             />
           </FormField>
         </div>
-        <div className="flex-1">
+        <div className="flex-[0.3]">
           <FormField
             label="Departure City"
             required
@@ -321,6 +299,55 @@ const BasicDetails = () => {
             />
           </FormField>
         </div>
+        <div className="flex-[0.3]">
+          {!isMultiDestination ? (
+            <FormField
+              label="Destination"
+              required
+              error={errors.DestinationName}
+            >
+              <Controller
+                control={control}
+                name="DestinationName"
+                rules={{ required: "Destination is required" }}
+                render={({ field }) => (
+                  <CustomPicker
+                    items={DestinationList}
+                    selectedValue={field.value}
+                    onValueChange={(val) => {
+                      field.onChange(val);
+                      setValue("Destinations", [val]);
+                    }}
+                    placeholder="Select destination"
+                    title="Select Destination"
+                  />
+                )}
+              />
+            </FormField>
+          ) : (
+            <FormField
+              label="Destinations"
+              required
+              error={
+                destinations.length === 0
+                  ? { message: "At least one destination is required" }
+                  : undefined
+              }
+            >
+              <MultiSelectDestinations
+                destinations={DestinationList}
+                selectedDestinations={destinations}
+                onSelectionChange={(vals) =>
+                  setValue("Destinations", vals)
+                }
+                placeholder="Select multiple destinations"
+              />
+            </FormField>
+          )}
+
+          {/* ===== Destination(s) ===== */}
+
+        </div>
       </div>
 
       {/* ===== Multi Destination Toggle ===== */}
@@ -328,55 +355,7 @@ const BasicDetails = () => {
 
       {/* ===== Departure City ===== */}
 
-      <div className="flex">
-        {!isMultiDestination ? (
-          <FormField
-            label="Destination"
-            required
-            error={errors.DestinationName}
-          >
-            <Controller
-              control={control}
-              name="DestinationName"
-              rules={{ required: "Destination is required" }}
-              render={({ field }) => (
-                <CustomPicker
-                  items={DestinationList}
-                  selectedValue={field.value}
-                  onValueChange={(val) => {
-                    field.onChange(val);
-                    setValue("Destinations", [val]);
-                  }}
-                  placeholder="Select destination"
-                  title="Select Destination"
-                />
-              )}
-            />
-          </FormField>
-        ) : (
-          <FormField
-            label="Destinations"
-            required
-            error={
-              destinations.length === 0
-                ? { message: "At least one destination is required" }
-                : undefined
-            }
-          >
-            <MultiSelectDestinations
-              destinations={DestinationList}
-              selectedDestinations={destinations}
-              onSelectionChange={(vals) =>
-                setValue("Destinations", vals)
-              }
-              placeholder="Select multiple destinations"
-            />
-          </FormField>
-        )}
 
-        {/* ===== Destination(s) ===== */}
-
-      </div>
 
     </div>
   );

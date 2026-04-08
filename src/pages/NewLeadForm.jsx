@@ -61,7 +61,10 @@ export default function NewLeadForm() {
         const start = new Date(startDate);
         const end = new Date(start);
         end.setDate(start.getDate() + days - 1);
-        return end.toISOString().split("T")[0];
+        const year = end.getFullYear();
+        const month = String(end.getMonth() + 1).padStart(2, "0");
+        const day = String(end.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
       };
 
       // Get sales person info (same logic)

@@ -35,7 +35,7 @@ const HotelsSection = () => {
       CheckInDate: null,
       CheckOutDate: null,
       Comments: "",
-    });
+    }, { shouldFocus: false });
   };
 
   const removeHotel = (index) => {
@@ -132,10 +132,13 @@ const HotelsSection = () => {
             startDate={watch(`Hotels.${index}.CheckInDate`)}
             endDate={watch(`Hotels.${index}.CheckOutDate`)}
             onStartDateChange={(date) => {
-              const normalized = new Date(date);
-              normalized.setHours(0, 0, 0, 0);
+              const d = new Date(date);
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, "0");
+              const day = String(d.getDate()).padStart(2, "0");
+              const formatted = `${year}-${month}-${day}`;
 
-              setValue(`Hotels.${index}.CheckInDate`, normalized, {
+              setValue(`Hotels.${index}.CheckInDate`, formatted, {
                 shouldValidate: true,
               });
               setValue(`Hotels.${index}.CheckOutDate`, null, {
@@ -143,10 +146,13 @@ const HotelsSection = () => {
               });
             }}
             onEndDateChange={(date) => {
-              const normalized = new Date(date);
-              normalized.setHours(23, 59, 59, 999);
+              const d = new Date(date);
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, "0");
+              const day = String(d.getDate()).padStart(2, "0");
+              const formatted = `${year}-${month}-${day}`;
 
-              setValue(`Hotels.${index}.CheckOutDate`, normalized, {
+              setValue(`Hotels.${index}.CheckOutDate`, formatted, {
                 shouldValidate: true,
               });
 

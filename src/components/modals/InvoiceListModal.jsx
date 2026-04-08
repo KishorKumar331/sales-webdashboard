@@ -2,16 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { 
-  X, 
-  Receipt, 
-  Eye, 
-  Edit3, 
-  Plus, 
-  ArrowLeft, 
-  History, 
-  Search, 
-  Clock, 
+import {
+  X,
+  Receipt,
+  Eye,
+  Edit3,
+  Plus,
+  ArrowLeft,
+  History,
+  Search,
+  Clock,
   Calendar,
   Wallet,
   CheckCircle,
@@ -28,7 +28,7 @@ const Header = ({ onClose, tripId, customerName }) => (
   <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 px-6 py-4 shadow-sm">
     <div className="max-w-[1400px] mx-auto flex items-center justify-between">
       <div className="flex items-center gap-6">
-        <button 
+        <button
           onClick={onClose}
           className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all active:scale-95"
         >
@@ -63,7 +63,7 @@ const Header = ({ onClose, tripId, customerName }) => (
 
 const InvoiceCard = ({ invoice, onEdit, onPreview, tripData }) => {
   const totalAmount = (invoice.pricing?.totalAmount || 0) + (invoice.pricing?.gstAmount || 0) + (invoice.pricing?.tcsAmount || 0);
-  
+
   return (
     <div className="group relative bg-white rounded-[2.5rem] p-8 transition-all duration-300 border-2 border-slate-100 hover:border-blue-200 shadow-sm hover:shadow-xl">
       <div className="flex flex-col h-full">
@@ -72,7 +72,7 @@ const InvoiceCard = ({ invoice, onEdit, onPreview, tripData }) => {
             <Receipt size={24} className="text-blue-600" />
           </div>
           <div className="flex flex-col items-end text-right">
-             <div className="bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md mb-2 flex items-center gap-1">
+            <div className="bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md mb-2 flex items-center gap-1">
               <CheckCircle size={10} />
               {invoice.invoiceStatus || 'Generated'}
             </div>
@@ -174,6 +174,7 @@ export default function InvoiceListModal({ visible, onClose, onCreateNew, data }
     try {
       const response = await axios.post(API_URL, {
         type: "invoice",
+        company: "WH",
         mode: "html",
         tripId: data?.TripId,
         invoiceId: invoice?.invoiceId || invoice?.TripId,
@@ -193,15 +194,15 @@ export default function InvoiceListModal({ visible, onClose, onCreateNew, data }
 
   return (
     <div className="fixed inset-0 z-50 bg-[#F8FAFC] flex flex-col animate-in fade-in duration-300 select-none overflow-hidden">
-      <Header 
-        onClose={onClose} 
-        tripId={data?.TripId} 
-        customerName={data?.clientName || data?.GuestName} 
+      <Header
+        onClose={onClose}
+        tripId={data?.TripId}
+        customerName={data?.clientName || data?.GuestName}
       />
 
       <main className="flex-1 overflow-y-auto px-6 py-12 custom-scrollbar">
         <div className="max-w-[1400px] mx-auto">
-          
+
           {loading ? (
             <div className="flex flex-col items-center justify-center py-40">
               <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-6"></div>
@@ -215,7 +216,7 @@ export default function InvoiceListModal({ visible, onClose, onCreateNew, data }
               <h2 className="text-slate-900 font-black text-2xl mb-2">Sync Synchronization Error</h2>
               <p className="text-slate-500 max-w-sm font-medium mb-8">{error}</p>
               <div className="flex gap-4">
-                <button 
+                <button
                   onClick={fetchInvoices}
                   className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
                 >
@@ -258,7 +259,7 @@ export default function InvoiceListModal({ visible, onClose, onCreateNew, data }
                     Tracking <span className="text-slate-900">{invoices.length}</span> individual ledger entries
                   </p>
                 </div>
-                
+
                 <button
                   onClick={() => { onClose(); onCreateNew(); }}
                   className="px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-blue-600 hover:text-blue-600 transition-all flex items-center gap-2 shadow-sm"

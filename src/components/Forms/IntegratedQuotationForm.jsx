@@ -17,7 +17,10 @@ const calculateTravelEndDate = (startDate, days) => {
   if (!startDate || !days) return "";
   const start = new Date(startDate);
   const end = new Date(start.getTime() + (days - 1) * 24 * 60 * 60 * 1000);
-  return end.toISOString().split("T")[0];
+  const year = end.getFullYear();
+  const month = String(end.getMonth() + 1).padStart(2, "0");
+  const day = String(end.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpData }) => {
@@ -59,7 +62,7 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
       "Client-Email": client?.Email || "",
       TravelDate: client?.TravelDate || "",
       TravelDateKey: client?.TravelDate
-        ? +new Date(client.TravelDate).toISOString().slice(0, 10).replace(/-/g, "")
+        ? Number(client.TravelDate.replace(/-/g, ""))
         : null,
       AssignDate: sourceData?.AssignDate || new Date().toISOString(),
       NoOfPax: client?.Pax || "",
@@ -122,7 +125,7 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
       },
       TravelEndDate: calculateTravelEndDate(client?.TravelDate, Number(client?.Days)),
       TravelEndDateKey: client?.TravelDate
-        ? +new Date(client.TravelDate).toISOString().slice(0, 10).replace(/-/g, "")
+        ? Number(calculateTravelEndDate(client?.TravelDate, Number(client?.Days)).replace(/-/g, ""))
         : null,
       ...initialData,
     }),
