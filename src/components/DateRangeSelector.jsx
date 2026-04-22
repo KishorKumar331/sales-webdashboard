@@ -160,7 +160,7 @@ const DateRangeSelector = ({
 
       <button
         type="button"
-        className="flex items-center justify-between gap-4 w-[34rem] p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 shadow-sm transition-colors cursor-pointer"
+        className="flex items-center justify-between gap-4 w-136 p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 shadow-sm transition-colors cursor-pointer"
         onClick={() => setShowModal(true)}
       >
         <div className="flex-1">
@@ -180,8 +180,14 @@ const DateRangeSelector = ({
       </button>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-9999"
+          onClick={handleCancel}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-lg font-semibold text-center mb-4">Select Dates</div>
 
             <div className="flex justify-between items-center mb-3">

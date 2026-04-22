@@ -169,8 +169,8 @@ const ActivitySelector = ({
 
       {/* Modal */}
       {showModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
+        <div style={styles.modalOverlay} onClick={() => setShowModal(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             {/* Search Header */}
             <div style={styles.searchContainer}>
               <Search size={18} />
@@ -369,15 +369,22 @@ const styles = {
   modalOverlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.5)",
+    background: "rgba(0,0,0,0.2)",
+    backdropFilter: "blur(4px)",
     zIndex: 1000,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   modal: {
     background: "#fff",
-    maxWidth: 600,
-    margin: "40px auto",
-    borderRadius: 12,
+    maxWidth: 800,
+    width: "90%",
+    maxHeight: "90vh",
+    borderRadius: 24,
     overflow: "hidden",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+    animation: "modalAppear 0.3s ease-out",
   },
   searchContainer: {
     display: "flex",

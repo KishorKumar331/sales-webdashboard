@@ -17,7 +17,6 @@ const InvoiceTrackingDashboard = () => {
     profitLoss: 0
   });
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   // Get user email from localStorage or context
@@ -192,76 +191,16 @@ const InvoiceTrackingDashboard = () => {
     }
   };
 
-  // Update invoice status when all installments are paid
-  const updateInvoiceStatus = async (invoiceId, newStatus) => {
-    try {
-      console.log('🔥 Updating invoice status:', { invoiceId, newStatus });
-
-      const response = await fetch(`https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice-status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          invoiceId,
-          status: newStatus,
-          companyEmail: user?.user?.Email
-        })
-      });
-
-      console.log('🔥 Invoice status API response status:', response.status);
-
-      if (!response.ok) {
-        console.log('🔥 Invoice status API failed:', response.statusText);
-        throw new Error('Failed to update invoice status');
-      }
-
-      const result = await response.json();
-      console.log('🔥 Invoice status API response:', result);
-
-      // Update local invoice status
-      setInvoices(prev => {
-        const updated = prev.map(invoice =>
-          invoice.invoiceId === invoiceId
-            ? { ...invoice, status: newStatus }
-            : invoice
-        );
-        console.log('🔥 Updated invoices array:', updated);
-        return updated;
-      });
-
-      // Update selected invoice if modal is open
-      if (selectedInvoice && selectedInvoice.invoiceId === invoiceId) {
-        const updatedSelected = { ...selectedInvoice, status: newStatus };
-        console.log('🔥 Updated selected invoice:', updatedSelected);
-        setSelectedInvoice(updatedSelected);
-      }
-
-      // Recalculate summary
-      calculateSummary(
-        invoices.map(invoice =>
-          invoice.invoiceId === invoiceId
-            ? { ...invoice, status: newStatus }
-            : invoice
-        )
-      );
-
-    } catch (error) {
-      console.error('🔥 Error updating invoice status:', error);
-      alert('Failed to update invoice status: ' + error.message);
-    }
-  };
+  // Update invoice status when all installments are paid removed as it was unused and causing errors
 
   // Open invoice detail modal
   const openInvoiceDetail = (invoice) => {
     setSelectedInvoice(invoice);
-    setShowDetailModal(true);
   };
 
   // Close modal
   const closeDetailModal = () => {
     setSelectedInvoice(null);
-    setShowDetailModal(false);
   };
   const setMockData = () => {
     const mockInvoices = [
@@ -493,8 +432,14 @@ const InvoiceTrackingDashboard = () => {
     if (!selectedInvoice) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div 
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300"
+        onClick={closeDetailModal}
+      >
+        <div 
+          className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-300"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Modal Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
             <div>

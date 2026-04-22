@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ChevronRight, 
+import {
+  ChevronRight,
   Plane,
   ArrowRight,
   Calendar,
@@ -36,14 +36,9 @@ const QuotationCards = ({ leadData }) => {
 
   const handleCreateQuote = useMemo(
     () => () => {
-      const uniqueId =
-        leadData?.TripId ||
-        leadData?.id ||
-        leadData?._id ||
-        `${leadData?.clientContact || 'LEAD'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       const formattedLeadData = {
-                CreatedAt:leadData?.CreatedAt,
+        CreatedAt: leadData?.CreatedAt,
 
         TripId: leadData?.TripId,
         company: leadData?.company,
