@@ -787,152 +787,151 @@ export default function InvoiceForm({
   return (
     <div className="flex-1 bg-gray-50 overflow-auto p-6">
       <div className="p-1">
-        {selectedQuotation && (
-          <div className="bg-blue-50 p-3 rounded-lg mb-4 flex justify-between items-center">
-            <span className="text-blue-800">
-              Using Quotation #
-              {selectedQuotation?.QuoteId || selectedQuotation?.id}
-            </span>
-          </div>
-        )}
 
         {/* Header */}
-        <div className="bg-white rounded-xl p-4 mb-4">
-          <span className="text-2xl font-bold text-gray-900 mb-2 block">
-            Create Invoice
-          </span>
-          <span className="text-gray-600 block">
-            Select a quotation and fill in the details
-          </span>
-        </div>
 
-        {/* Quotation Selection */}
-        <div className="bg-white rounded-xl p-4 mb-4">
-          <span className="text-lg font-semibold text-gray-900 mb-3 block">
-            Select Quotation
-          </span>
-          {quotationsLoading ? (
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-          ) : (
-            <CustomPicker
-              items={quotationOptions}
-              selectedValue={formData?.finalPackageQuotationId}
-              onValueChange={handleQuotationSelectFromPicker}
-              placeholder="Select a quotation"
-              title="Select Quotation"
-            />
-          )}
-        </div>
-
-        {/* Customer Details */}
-        <div className="bg-white rounded-xl p-4 mb-4">
-          <span className="text-lg font-semibold text-gray-900 mb-3 block">
-            Customer Details
-          </span>
-
-          <span className="text-sm font-medium text-gray-700 mb-2 block">
-            Name *
-          </span>
-          <input
-            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
-            value={formData?.customer?.name || ""}
-            onChange={(e) =>
-              updateNestedField("customer", "name", e.target.value)
-            }
-            placeholder="Customer name"
-          />
-
-          <span className="text-sm font-medium text-gray-700 mb-2 block">
-            Email
-          </span>
-          <input
-            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
-            value={formData?.customer?.email || ""}
-            onChange={(e) =>
-              updateNestedField("customer", "email", e.target.value)
-            }
-            placeholder="customer@email.com"
-            type="email"
-          />
-
-          <span className="text-sm font-medium text-gray-700 mb-2 block">
-            Contact
-          </span>
-          <input
-            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
-            value={formData?.customer?.contact || ""}
-            onChange={(e) =>
-              updateNestedField("customer", "contact", e.target.value)
-            }
-            placeholder="Phone number"
-            type="tel"
-          />
-
-          {/* Address */}
-          <span className="text-base font-semibold text-gray-900 mt-3 mb-2 block">
-            Address
-          </span>
-
-          <span className="text-sm font-medium text-gray-700 mb-2 block">
-            Street
-          </span>
-          <input
-            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
-            value={formData?.customer?.address?.street || ""}
-            onChange={(e) => updateAddressField("street", e.target.value)}
-            placeholder="Street address"
-          />
-
-          <div className="flex gap-3 mb-3">
+        {/* Quotation Selection and Customer Details */}
+        <div className="bg-white rounded-xl p-5 mb-4 shadow-sm border border-gray-100">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
             <div className="flex-1">
-              <span className="text-sm font-medium text-gray-700 mb-2 block">
-                City
-              </span>
-              <input
-                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
-                value={formData?.customer?.address?.city || ""}
-                onChange={(e) => updateAddressField("city", e.target.value)}
-                placeholder="City"
-              />
-            </div>
-
-            <div className="flex-1">
-              <span className="text-sm font-medium text-gray-700 mb-2 block">
-                State
-              </span>
-              <input
-                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
-                value={formData?.customer?.address?.state || ""}
-                onChange={(e) => updateAddressField("state", e.target.value)}
-                placeholder="State"
-              />
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">
+                Select Quotation
+              </label>
+              {quotationsLoading ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+              ) : (
+                <CustomPicker
+                  items={quotationOptions}
+                  selectedValue={formData?.finalPackageQuotationId}
+                  onValueChange={handleQuotationSelectFromPicker}
+                  placeholder="Choose a quotation to prefill form"
+                  title="Select Quotation"
+                />
+              )}
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <span className="text-sm font-medium text-gray-700 mb-2 block">
-                Zip Code
-              </span>
-              <input
-                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
-                value={formData?.customer?.address?.zipCode || ""}
-                onChange={(e) => updateAddressField("zipCode", e.target.value)}
-                placeholder="Zip"
-                type="number"
-              />
+          <div className="mb-6">
+            <span className="text-lg font-bold text-gray-900 mb-4 block">
+              Customer Information
+            </span>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                  Name *
+                </label>
+                <input
+                  className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                  value={formData?.customer?.name || ""}
+                  onChange={(e) =>
+                    updateNestedField("customer", "name", e.target.value)
+                  }
+                  placeholder="Customer name"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                  Email
+                </label>
+                <input
+                  className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                  value={formData?.customer?.email || ""}
+                  onChange={(e) =>
+                    updateNestedField("customer", "email", e.target.value)
+                  }
+                  placeholder="customer@email.com"
+                  type="email"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                  Contact
+                </label>
+                <input
+                  className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                  value={formData?.customer?.contact || ""}
+                  onChange={(e) =>
+                    updateNestedField("customer", "contact", e.target.value)
+                  }
+                  placeholder="Phone number"
+                  type="tel"
+                />
+              </div>
             </div>
 
-            <div className="flex-1">
-              <span className="text-sm font-medium text-gray-700 mb-2 block">
-                Country
-              </span>
-              <input
-                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
-                value={formData?.customer?.address?.country || ""}
-                onChange={(e) => updateAddressField("country", e.target.value)}
-                placeholder="Country"
-              />
+            {/* Address */}
+            <div className="mt-4 pt-4 border-t border-gray-50">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 block">
+                Billing Address
+              </label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                    Street
+                  </label>
+                  <input
+                    className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    value={formData?.customer?.address?.street || ""}
+                    onChange={(e) => updateAddressField("street", e.target.value)}
+                    placeholder="Street address"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                      City
+                    </label>
+                    <input
+                      className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      value={formData?.customer?.address?.city || ""}
+                      onChange={(e) => updateAddressField("city", e.target.value)}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                      State
+                    </label>
+                    <input
+                      className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      value={formData?.customer?.address?.state || ""}
+                      onChange={(e) => updateAddressField("state", e.target.value)}
+                      placeholder="State"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="md:col-span-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                    Zip Code
+                  </label>
+                  <input
+                    className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    value={formData?.customer?.address?.zipCode || ""}
+                    onChange={(e) => updateAddressField("zipCode", e.target.value)}
+                    placeholder="Zip"
+                    type="number"
+                  />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                    Country
+                  </label>
+                  <input
+                    className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    value={formData?.customer?.address?.country || ""}
+                    onChange={(e) => updateAddressField("country", e.target.value)}
+                    placeholder="Country"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -943,30 +942,26 @@ export default function InvoiceForm({
             Financial Details
           </span>
 
-          {/* Package Amount (Read-only from quotation) */}
-          <div className="bg-gray-50 rounded-lg p-3 mb-3">
-            <span className="text-sm text-gray-600 mb-1 block">
-              Package Amount
-            </span>
-            <span className="text-2xl font-bold text-gray-900 block">
-              ₹
-              {parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString(
-                "en-IN"
-              )}
-            </span>
-            <span className="text-xs text-gray-500 mt-1 block">
-              From selected quotation
-            </span>
-          </div>
-
-          {/* Editable GST and TCS */}
-          <div className="flex gap-3 mb-3">
-            <div className="flex-1">
-              <span className="text-sm font-medium text-gray-700 mb-2 block">
-                GST (₹)
+          {/* Pricing Row: Package Amount, GST, and TCS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                Base Package Amount
+              </label>
+              <span className="text-xl font-bold text-gray-900 flex items-center">
+                ₹{parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString("en-IN")}
+                <span className="text-[10px] font-medium text-gray-400 ml-2 bg-white px-1.5 py-0.5 rounded border border-gray-100">
+                  Fixed
+                </span>
               </span>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                GST (₹)
+              </label>
               <input
-                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm"
                 value={(formData?.pricing?.gstAmount || 0).toString()}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -977,17 +972,17 @@ export default function InvoiceForm({
                     },
                   }))
                 }
-                placeholder="GST amount"
+                placeholder="GST"
                 type="number"
               />
             </div>
 
-            <div className="flex-1">
-              <span className="text-sm font-medium text-gray-700 mb-2 block">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
                 TCS (₹)
-              </span>
+              </label>
               <input
-                className="border border-gray-300 rounded-lg p-3 bg-white w-full"
+                className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm"
                 value={(formData?.pricing?.tcsAmount || 0).toString()}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -998,60 +993,48 @@ export default function InvoiceForm({
                     },
                   }))
                 }
-                placeholder="TCS amount"
+                placeholder="TCS"
                 type="number"
               />
             </div>
           </div>
 
-          {/* Invoice Total Calculation */}
-          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-            <span className="text-sm font-semibold text-gray-700 mb-2 block">
-              Invoice Breakdown
-            </span>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-700">Package Amount:</span>
-                <span className="font-semibold text-gray-900">
-                  ₹
-                  {parseFloat(
-                    formData?.pricing?.totalAmount || 0
-                  ).toLocaleString("en-IN")}
-                </span>
+          {/* Invoice Total Calculation - Linear Stripe */}
+          <div className="bg-purple-50 rounded-xl p-3 border border-purple-100 flex flex-wrap items-center gap-x-8 gap-y-3 shadow-sm">
+            <div className="hidden lg:block">
+              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest block">Summary</span>
+              <span className="text-xs font-semibold text-purple-700">Invoice Breakdown</span>
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center">
+                <span className="text-gray-500 text-xs mr-2">Package:</span>
+                <span className="font-bold text-gray-900">₹{parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString("en-IN")}</span>
               </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-700">GST:</span>
-                <span className="font-semibold text-gray-900">
-                  ₹
-                  {parseFloat(formData?.pricing?.gstAmount || 0).toLocaleString(
-                    "en-IN"
-                  )}
-                </span>
+              
+              <div className="h-4 w-px bg-purple-200 hidden sm:block"></div>
+              
+              <div className="flex items-center">
+                <span className="text-gray-500 text-xs mr-2">GST:</span>
+                <span className="font-bold text-gray-900">₹{parseFloat(formData?.pricing?.gstAmount || 0).toLocaleString("en-IN")}</span>
               </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-700">TCS:</span>
-                <span className="font-semibold text-gray-900">
-                  ₹
-                  {parseFloat(formData?.pricing?.tcsAmount || 0).toLocaleString(
-                    "en-IN"
-                  )}
-                </span>
-              </div>
-
-              <div className="border-t border-purple-300 pt-2 mt-2">
-                <div className="flex justify-between">
-                  <span className="text-lg font-bold text-purple-700">
-                    Invoice Total:
-                  </span>
-                  <span className="text-lg font-bold text-purple-700">
-                    ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
-                  </span>
-                </div>
+              
+              <div className="h-4 w-px bg-purple-200 hidden sm:block"></div>
+              
+              <div className="flex items-center">
+                <span className="text-gray-500 text-xs mr-2">TCS:</span>
+                <span className="font-bold text-gray-900">₹{parseFloat(formData?.pricing?.tcsAmount || 0).toLocaleString("en-IN")}</span>
               </div>
             </div>
+
+            <div className="flex items-center ml-auto bg-white px-4 py-2 rounded-xl border border-purple-200 shadow-sm">
+              <span className="text-purple-600 font-bold mr-3 uppercase text-[10px] tracking-tighter">Total Amount:</span>
+              <span className="font-extrabold text-purple-700 text-xl leading-none">
+                ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
+              </span>
+            </div>
           </div>
+
         </div>
 
         {/* Installments */}
@@ -1069,54 +1052,61 @@ export default function InvoiceForm({
             </button>
           </div>
 
-          {formData?.payment?.installments?.map((installment, index) => (
-            <div
-              key={index}
-              className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-gray-900">
-                  Installment {index + 1}
-                </span>
+          <div className="space-y-2">
+            {formData?.payment?.installments?.map((installment, index) => (
+              <div
+                key={index}
+                className="flex flex-col md:flex-row items-center gap-3 p-2 bg-gray-50 border border-gray-100 rounded-lg hover:border-purple-200 transition-colors"
+              >
+                <div className="flex items-center shrink-0">
+                  <span className="bg-purple-100 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold">
+                    {index + 1}
+                  </span>
+                </div>
+
+                <div className="flex-1 w-full">
+                  <div className="relative">
+                    <span className="absolute -top-2 left-2 px-1 bg-gray-50 text-[9px] font-bold text-gray-400 uppercase leading-none">Amount</span>
+                    <input
+                      className="text-sm border border-gray-200 rounded-md p-2 w-full bg-white focus:ring-1 focus:ring-purple-500 outline-none"
+                      value={installment.installmentAmount.toString()}
+                      onChange={(e) =>
+                        updateInstallment(
+                          index,
+                          "installmentAmount",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      placeholder="Amount"
+                      type="number"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-1 w-full">
+                  <div className="relative">
+                    <span className="absolute -top-2 left-2 px-1 bg-gray-50 text-[9px] font-bold text-gray-400 uppercase leading-none">Due Date</span>
+                    <CalendarDatePicker
+                      value={installment.installmentDate}
+                      onDateChange={(value) =>
+                        updateInstallment(index, "installmentDate", value)
+                      }
+                      placeholder="Select date"
+                    />
+                  </div>
+                </div>
+
                 {formData?.payment?.installments?.length > 1 && (
                   <button
                     onClick={() => removeInstallment(index)}
-                    className="bg-red-100 rounded-full p-1"
+                    className="text-red-400 hover:text-red-600 transition-colors p-1"
                   >
-                    <Trash2 size={16} className="text-red-600" />
+                    <Trash2 size={16} />
                   </button>
                 )}
               </div>
-
-              <span className="text-sm font-medium text-gray-700 mb-2 block">
-                Amount (₹)
-              </span>
-              <input
-                className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
-                value={installment.installmentAmount.toString()}
-                onChange={(e) =>
-                  updateInstallment(
-                    index,
-                    "installmentAmount",
-                    parseFloat(e.target.value) || 0
-                  )
-                }
-                placeholder="Installment amount"
-                type="number"
-              />
-
-              <span className="text-sm font-medium text-gray-700 mb-2 block">
-                Installment Date
-              </span>
-              <CalendarDatePicker
-                value={installment.installmentDate}
-                onDateChange={(value) =>
-                  updateInstallment(index, "installmentDate", value)
-                }
-                placeholder="Select installment date"
-              />
-            </div>
-          ))}
+            ))}
+          </div>
 
           {/* Installment Summary */}
           <div className="bg-purple-50 rounded-lg p-3 mt-2">
@@ -1189,69 +1179,74 @@ export default function InvoiceForm({
             </button>
           </div>
 
-          {formData?.pricing?.tcsClaim &&
-            Array.isArray(formData.pricing.tcsClaim) &&
-            formData.pricing.tcsClaim.map((claim, index) => (
-              <div
-                key={index}
-                className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-gray-900">
-                    TCS Claim {index + 1}
-                  </span>
+          <div className="space-y-2">
+            {formData?.pricing?.tcsClaim &&
+              Array.isArray(formData.pricing.tcsClaim) &&
+              formData.pricing.tcsClaim.map((claim, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col md:flex-row items-center gap-3 p-2 bg-gray-50 border border-gray-100 rounded-lg hover:border-blue-200 transition-colors"
+                >
+                  <div className="flex items-center shrink-0">
+                    <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      {index + 1}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="relative">
+                      <span className="absolute -top-2 left-2 px-1 bg-gray-50 text-[9px] font-bold text-gray-400 uppercase leading-none">PAN</span>
+                      <input
+                        className="text-sm border border-gray-200 rounded-md p-2 w-full bg-white uppercase focus:ring-1 focus:ring-purple-500 outline-none"
+                        value={claim.panNumber}
+                        onChange={(e) =>
+                          updateTcsClaim(index, "panNumber", e.target.value)
+                        }
+                        placeholder="PAN"
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <span className="absolute -top-2 left-2 px-1 bg-gray-50 text-[9px] font-bold text-gray-400 uppercase leading-none">Name</span>
+                      <input
+                        className="text-sm border border-gray-200 rounded-md p-2 w-full bg-white focus:ring-1 focus:ring-purple-500 outline-none"
+                        value={claim.name}
+                        onChange={(e) =>
+                          updateTcsClaim(index, "name", e.target.value)
+                        }
+                        placeholder="Name"
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <span className="absolute -top-2 left-2 px-1 bg-gray-50 text-[9px] font-bold text-gray-400 uppercase leading-none">Percentage</span>
+                      <input
+                        className="text-sm border border-gray-200 rounded-md p-2 w-full bg-white focus:ring-1 focus:ring-purple-500 outline-none"
+                        value={claim.percentage.toString()}
+                        onChange={(e) =>
+                          updateTcsClaim(
+                            index,
+                            "percentage",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        placeholder="%"
+                        type="number"
+                      />
+                    </div>
+                  </div>
+
                   {formData.pricing.tcsClaim.length > 1 && (
                     <button
                       onClick={() => removeTcsClaim(index)}
-                      className="bg-red-100 rounded-full p-1"
+                      className="text-red-400 hover:text-red-600 transition-colors p-1"
                     >
-                      <Trash2 size={16} className="text-red-600" />
+                      <Trash2 size={16} />
                     </button>
                   )}
                 </div>
-
-                <span className="text-sm font-medium text-gray-700 mb-2 block">
-                  PAN Number
-                </span>
-                <input
-                  className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full uppercase"
-                  value={claim.panNumber}
-                  onChange={(e) =>
-                    updateTcsClaim(index, "panNumber", e.target.value)
-                  }
-                  placeholder="PAN Number"
-                />
-
-                <span className="text-sm font-medium text-gray-700 mb-2 block">
-                  Name
-                </span>
-                <input
-                  className="border border-gray-300 rounded-lg p-3 mb-3 bg-white w-full"
-                  value={claim.name}
-                  onChange={(e) =>
-                    updateTcsClaim(index, "name", e.target.value)
-                  }
-                  placeholder="Name"
-                />
-
-                <span className="text-sm font-medium text-gray-700 mb-2 block">
-                  Percentage (%)
-                </span>
-                <input
-                  className="border border-gray-300 rounded-lg p-3 bg-white w-full"
-                  value={claim.percentage.toString()}
-                  onChange={(e) =>
-                    updateTcsClaim(
-                      index,
-                      "percentage",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  placeholder="Percentage"
-                  type="number"
-                />
-              </div>
-            ))}
+              ))}
+          </div>
         </div>
 
         {/* Notes */}
