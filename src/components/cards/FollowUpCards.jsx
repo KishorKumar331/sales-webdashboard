@@ -73,10 +73,10 @@ const FollowUpCards = ({ data }) => {
       );
 
       toast.success("Note saved successfully! ✅");
-      
+
       // Update local data
       data.salesComment = notes;
-      
+
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error("Save note error:", error);
@@ -121,7 +121,7 @@ const FollowUpCards = ({ data }) => {
   }, [data.pax, data.child, data.infant]);
 
   return (
-    <div className="bg-white rounded-4xl p-6 shadow-sm border border-gray-50 flex flex-col gap-6 w-full hover:shadow-md transition-shadow duration-300">
+    <div className="bg-white mx-auto rounded-4xl p-6 shadow-sm border border-gray-50 flex flex-col gap-6 w-full hover:shadow-md transition-shadow duration-300">
       {/* Top Header Section */}
       <div className="flex items-start justify-between relative">
         <div className="flex gap-4">
@@ -307,7 +307,7 @@ const FollowUpCards = ({ data }) => {
 
       {/* Footer Notes Section (Accordion) */}
       <div className="flex flex-col">
-        <button 
+        <button
           onClick={() => setIsNotesExpanded(!isNotesExpanded)}
           className="bg-[#FFFBEB]/50 border border-[#FEF3C7] rounded-2xl p-4 flex items-center justify-between hover:bg-[#FFFBEB] transition-all group/notes"
         >
@@ -337,7 +337,7 @@ const FollowUpCards = ({ data }) => {
                 Edit Internal Note
               </h4>
             </div>
-            
+
             <div className="relative group/input">
               <textarea
                 value={notes}
@@ -348,9 +348,9 @@ const FollowUpCards = ({ data }) => {
                 placeholder="Type your internal note here..."
                 className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-sm min-h-32 focus:ring-2 focus:ring-[#FEF3C7] focus:border-[#FEF3C7] focus:bg-white outline-none transition-all resize-none font-medium text-gray-700 shadow-inner"
               />
-              
+
               <div className={`flex justify-end gap-2 mt-3 transition-opacity duration-300 ${hasUnsavedChanges ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-                 <button 
+                <button
                   onClick={() => {
                     setNotes(data?.salesComment || "");
                     setHasUnsavedChanges(false);
@@ -359,7 +359,7 @@ const FollowUpCards = ({ data }) => {
                 >
                   Reset
                 </button>
-                <button 
+                <button
                   onClick={handleSaveNotes}
                   disabled={isSavingNotes || !hasUnsavedChanges}
                   className="bg-[#D97706] text-white px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-md hover:bg-[#B45309] active:scale-95 transition-all disabled:opacity-50"
