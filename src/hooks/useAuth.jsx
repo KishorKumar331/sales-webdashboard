@@ -7,8 +7,10 @@ const SESSION_API =
 
 const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
 
+let globalSessionPromise = null;
+
 export const useAuth = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!globalSessionPromise || !globalSessionPromise.isResolved);
 
   // Get state from zustand store
   const {
@@ -33,59 +35,79 @@ export const useAuth = () => {
    * Check session using Amplify
    */
   const checkSession = useCallback(async (emailToRevalidate) => {
-    setIsLoading(true);
+    // If a request is already in flight, reuse it (unless explicitly forced by emailToRevalidate)
+    if (globalSessionPromise && !emailToRevalidate) {
+      try {
+        return await globalSessionPromise;
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-    try {
-      const session = await fetchAuthSession();
-      if (session.tokens) {
-        setIsAuthenticated(true);
+    const performCheck = async () => {
+      try {
+        const session = await fetchAuthSession();
+        if (session.tokens) {
+          setIsAuthenticated(true);
 
-        // Get current user from Cognito
-        const user = await getCurrentUser();
-        const userEmail = user.signInDetails?.loginId || emailToRevalidate;
-        
-        if (userEmail) {
-          setUserEmail(userEmail);
+          // Get current user from Cognito
+          const user = await getCurrentUser();
+          const userEmail = user.signInDetails?.loginId || emailToRevalidate;
           
-          // Make API call to profile API with user email
-          try {
-            const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
-            console.log('🔥 Calling profile API:', profileUrl);
+          if (userEmail) {
+            setUserEmail(userEmail);
             
-            const response = await fetch(profileUrl, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-            
-            if (response.ok) {
-              const profileData = await response.json();
-              console.log('🔥 Profile API response:', profileData);
+            // Make API call to profile API with user email
+            try {
+              const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
+              console.log('🔥 Calling profile API:', profileUrl);
               
-              // Set user data in store
-              const userData = Array.isArray(profileData) ? profileData[0] : profileData;
-              if (userData && Object.keys(userData).length > 0) {
-                useAuthStore.getState().setUserData(userData);
-                console.log('🔥 User data set in store:', userData);
-                setIsAuthenticated(true);
-                return userData;
+              const response = await fetch(profileUrl, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              });
+              
+              if (response.ok) {
+                const profileData = await response.json();
+                console.log('🔥 Profile API response:', profileData);
+                
+                // Set user data in store
+                const userData = Array.isArray(profileData) ? profileData[0] : profileData;
+                if (userData && Object.keys(userData).length > 0) {
+                  useAuthStore.getState().setUserData(userData);
+                  console.log('🔥 User data set in store:', userData);
+                  setIsAuthenticated(true);
+                  return userData;
+                }
+              } else {
+                console.log('🔥 Profile API failed:', response.status);
               }
-            } else {
-              console.log('🔥 Profile API failed:', response.status);
+            } catch (apiError) {
+              console.error('🔥 Profile API error:', apiError);
             }
-          } catch (apiError) {
-            console.error('🔥 Profile API error:', apiError);
           }
+        } else {
+          setIsAuthenticated(false);
+          useAuthStore.getState().setHasProfile(false);
         }
-      } else {
+      } catch (error) {
+        console.error("Session check error:", error);
         setIsAuthenticated(false);
         useAuthStore.getState().setHasProfile(false);
       }
-    } catch (error) {
-      console.error("Session check error:", error);
-      setIsAuthenticated(false);
-      useAuthStore.getState().setHasProfile(false);
+    };
+
+    setIsLoading(true);
+    globalSessionPromise = performCheck();
+    globalSessionPromise.finally(() => {
+      globalSessionPromise.isResolved = true;
+    });
+
+    try {
+      const result = await globalSessionPromise;
+      return result;
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +117,13 @@ export const useAuth = () => {
    * Run on app mount
    */
   useEffect(() => {
-    checkSession();
+    // Determine whether to check or just wait
+    if (!globalSessionPromise || (globalSessionPromise.isResolved && !useAuthStore.getState().isAuthenticated)) {
+      checkSession();
+    } else {
+      setIsLoading(true);
+      globalSessionPromise.finally(() => setIsLoading(false));
+    }
   }, [checkSession]);
 
   /**
