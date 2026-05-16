@@ -10,19 +10,25 @@ const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/pro
 let globalSessionPromise = null;
 
 export const useAuth = () => {
-  const [isLoading, setIsLoading] = useState(!globalSessionPromise || !globalSessionPromise.isResolved);
 
-  // Get state from zustand store
-  const {
-    userData,
-    isAuthenticated,
-    inspectedUser,
-    setUserEmail,
-    setIsAuthenticated,
-    setInspectedUser,
-    clearInspectedUser,
-    clearAuth
-  } = useAuthStore();
+  // Get state from zustand store using selective selectors for stability
+  const userData = useAuthStore(state => state.userData);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const inspectedUser = useAuthStore(state => state.inspectedUser);
+  const isLoading = useAuthStore(state => state.isLoading);
+  
+  const setUserEmail = useAuthStore(state => state.setUserEmail);
+  const setIsAuthenticated = useAuthStore(state => state.setIsAuthenticated);
+  const setInspectedUser = useAuthStore(state => state.setInspectedUser);
+  const clearInspectedUser = useAuthStore(state => state.clearInspectedUser);
+  const clearAuth = useAuthStore(state => state.clearAuth);
+  const setGlobalLoading = useAuthStore(state => state.setIsLoading);
+
+  const setIsLoading = useCallback((loading) => {
+    if (useAuthStore.getState().isLoading !== loading) {
+      setGlobalLoading(loading);
+    }
+  }, [setGlobalLoading]);
 
   // Derive user from store data - prioritize inspected user
   const user = inspectedUser || userData;
@@ -118,19 +124,19 @@ export const useAuth = () => {
    * Run on app mount
    */
   useEffect(() => {
-    // Determine whether to check or just wait
-    if (!globalSessionPromise || (globalSessionPromise.isResolved && !useAuthStore.getState().isAuthenticated)) {
+    if (!globalSessionPromise) {
       checkSession();
-    } else {
-      setIsLoading(true);
-      globalSessionPromise.finally(() => setIsLoading(false));
+    } else if (globalSessionPromise.isResolved && isLoading) {
+      // Only set to false if it's currently true
+      setIsLoading(false);
     }
-  }, [checkSession]);
+  }, [checkSession, isLoading, setIsLoading]);
 
   /**
    * Login → set user data and revalidate session from backend (cookie-based)
    */
   const login = async (userData) => {
+    setIsLoading(true);
     let email = null;
     let fullUserData = null;
 

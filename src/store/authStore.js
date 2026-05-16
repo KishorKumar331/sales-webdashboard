@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 export const useAuthStore = create(
   persist(
     (set) => ({
-      // State
+      isLoading: true,
       userEmail: null,
       userData: null,
       isAuthenticated: null,
@@ -12,6 +12,7 @@ export const useAuthStore = create(
       inspectedUser: null,
 
       // Actions
+      setIsLoading: (loading) => set({ isLoading: loading }),
       setUserEmail: (email) => set({ userEmail: email }),
       setUserData: (user) => {
         const profile = user?.user || user;
@@ -26,6 +27,7 @@ export const useAuthStore = create(
       clearInspectedUser: () => set({ inspectedUser: null }),
 
       clearAuth: () => set({
+        isLoading: false,
         userEmail: null,
         userData: null,
         isAuthenticated: false,
@@ -35,6 +37,12 @@ export const useAuthStore = create(
     }),
     {
       name: 'auth-storage', // unique name for localStorage key
+      partialize: (state) => ({
+        userEmail: state.userEmail,
+        userData: state.userData,
+        isAuthenticated: state.isAuthenticated,
+        hasProfile: state.hasProfile,
+      }),
     }
   )
 );
