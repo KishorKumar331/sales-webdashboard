@@ -46,7 +46,7 @@ const Profile = () => {
   const { logout } = useAuth();
   const { tab } = useParams();
   const [activeTab, setActiveTab] = useState(tab || 'personal');
-  
+
   useEffect(() => {
     if (tab) {
       setActiveTab(tab);
@@ -108,7 +108,7 @@ const Profile = () => {
         toast.success(`Active ${templateType} template updated successfully!`);
         setShowPaymentModal(false);
         setPendingTemplate(null);
-        
+
         setTimeout(() => {
           window.location.reload();
         }, 2000);
@@ -888,11 +888,9 @@ const Profile = () => {
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="text-sm font-medium text-gray-900">
-              {loading ? 'Loading...' : (user?.name || user?.username || 'Admin User')}
+              {loading ? 'Loading...' : (user?.user?.fullname || user?.username || 'Adminwww User')}
             </p>
-            <p className="text-xs text-gray-500">
-              Member since {user?.joinDate || '2024-01-15'}
-            </p>
+
           </div>
           <div className="w-12 h-12 bg-linear-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-lg">
             {loading ? '?' : ((user?.user?.fullname || user?.user?.fullname || 'Admin User').split(' ').map(n => n[0]).join(''))}
