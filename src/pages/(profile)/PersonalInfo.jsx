@@ -40,6 +40,7 @@ export const PersonalInfo = () => {
     timezone: 'Asia/Kolkata',
     language: 'en',
     plan: 'premium',
+    cancellation: '',
   });
 
   // Initialize profileData when user data is available
@@ -82,6 +83,7 @@ export const PersonalInfo = () => {
         timezone: settings.timezone || 'Asia/Kolkata',
         language: settings.language || 'en',
         plan: settings.plan || 'premium',
+        cancellation: settings.cancellation || '',
       });
     }
   }, [user]);
@@ -153,6 +155,7 @@ export const PersonalInfo = () => {
         timezone: profileData.timezone || "Asia/Kolkata",
         language: profileData.language || "en",
         plan: profileData.plan || "premium",
+        cancellation: profileData.cancellation,
       };
 
       await axios.put(
@@ -578,6 +581,16 @@ export const PersonalInfo = () => {
                   <span className="font-bold text-purple-700 uppercase tracking-widest text-xs">{profileData.plan}</span>
                   <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
                 </div>
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Cancellation Policy</label>
+                <textarea
+                  value={profileData.cancellation}
+                  onChange={(e) => setProfileData({ ...profileData, cancellation: e.target.value })}
+                  rows={4}
+                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-500/20 focus:border-gray-500 outline-none transition-all font-medium text-gray-900 resize-none"
+                  placeholder="Describe your cancellation and refund policy..."
+                />
               </div>
             </div>
           </div>

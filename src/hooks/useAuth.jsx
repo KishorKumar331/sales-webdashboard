@@ -35,8 +35,9 @@ export const useAuth = () => {
    * Check session using Amplify
    */
   const checkSession = useCallback(async (emailToRevalidate) => {
-    // If a request is already in flight, reuse it (unless explicitly forced by emailToRevalidate)
-    if (globalSessionPromise && !emailToRevalidate) {
+    // If a request is already in flight, reuse it. 
+    // If it's resolved, only reuse it if we are already authenticated and no revalidation is requested.
+    if (globalSessionPromise && !emailToRevalidate && (!globalSessionPromise.isResolved || useAuthStore.getState().isAuthenticated)) {
       try {
         return await globalSessionPromise;
       } finally {

@@ -207,7 +207,7 @@ const OnBoardingPage = () => {
       }
 
       if (signInResult.isSignedIn) {
-        const result = await login();
+        const result = await login({ email: loginInput });
         debugger;
         if (result.success) {
           console.log(result.hasProfile)

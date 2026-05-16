@@ -172,7 +172,7 @@ const App = () => {
             />
 
             <Route
-              path="/profile"
+              path="/profile/:tab?"
               element={renderWithLayout(<Profile />, "Profile")}
             />
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
@@ -34,7 +34,9 @@ import {
   Globe,
   Lock,
   Key,
-  LogOut
+  LogOut,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 
 const Profile = () => {
@@ -42,7 +44,18 @@ const Profile = () => {
   const { user, loading } = useAuth();
   console.log(user)
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('personal');
+  const { tab } = useParams();
+  const [activeTab, setActiveTab] = useState(tab || 'personal');
+  
+  useEffect(() => {
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [tab]);
+
+  const handleTabChange = (tabId) => {
+    navigate(`/profile/${tabId}`);
+  };
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([
     { id: 1, type: 'card', last4: '4242', brand: 'Visa', isDefault: true },
@@ -157,11 +170,6 @@ const Profile = () => {
     { id: 'personal', label: 'Personal Info', icon: User },
     { id: 'payment', label: 'Payment', icon: CreditCard },
     { id: 'marketplace', label: 'Marketplace', icon: ShoppingCart },
-    { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'help', label: 'Help', icon: HelpCircle },
   ];
 
   const handleFileUpload = (e) => {
@@ -292,108 +300,136 @@ const Profile = () => {
 
 
     return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-purple-100/50 border border-white/60 p-8 relative overflow-hidden">
+          {/* Animated background accent */}
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-200/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+
+          <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-12">
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Design Builder</h3>
-              <p className="text-sm text-gray-500 mt-1">Select and customize your document templates</p>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-purple-600 rounded-xl shadow-lg shadow-purple-200">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-3xl font-black text-slate-900 tracking-tight">Design Studio</h3>
+              </div>
+              <p className="text-slate-500 font-medium ml-12">Elevate your brand with premium document architecture</p>
             </div>
 
-            <div className="flex p-1 bg-gray-100 rounded-xl w-full sm:w-auto">
+            <div className="flex p-1.5 bg-slate-100/80 backdrop-blur-md rounded-2xl w-full lg:w-auto border border-slate-200/50">
               <button
                 onClick={() => setTemplateType('quotation')}
-                className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${templateType === 'quotation'
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                className={`flex-1 lg:px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${templateType === 'quotation'
+                  ? 'bg-white text-purple-600 shadow-xl scale-105'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                   }`}
               >
-                Quotation
+                Quotations
               </button>
               <button
                 onClick={() => setTemplateType('invoice')}
-                className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-semibold transition-all ${templateType === 'invoice'
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                className={`flex-1 lg:px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${templateType === 'invoice'
+                  ? 'bg-white text-purple-600 shadow-xl scale-105'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                   }`}
               >
-                Invoice
+                Invoices
               </button>
             </div>
           </div>
 
           {fetchingTemplates ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-              <p className="text-gray-500 font-medium">Loading templates...</p>
+            <div className="flex flex-col items-center justify-center py-24">
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-purple-100 border-t-purple-600 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Package className="w-8 h-8 text-purple-600 animate-bounce" />
+                </div>
+              </div>
+              <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px] mt-8">Synchronizing Assets...</p>
             </div>
           ) : (
-            <div className="space-y-10">
+            <div className="space-y-16">
               {Object.entries(groupedTemplates).map(([category, templates]) => (
-                <div key={category} className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-px flex-1 bg-gray-200"></div>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2">{category}</span>
-                    <div className="h-px flex-1 bg-gray-200"></div>
+                <div key={category} className="space-y-8">
+                  <div className="flex items-center gap-6">
+                    <span className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em] whitespace-nowrap bg-purple-50 px-4 py-1.5 rounded-full border border-purple-100">{category}</span>
+                    <div className="h-px flex-1 bg-linear-to-r from-purple-100 to-transparent"></div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                     {templates.map((template, idx) => {
                       const isActive = activeTemplates[templateType] === template.name;
                       return (
                         <div
                           key={idx}
-                          className={`group relative bg-white border-2 rounded-2xl p-5 transition-all duration-300 ${isActive
-                            ? 'border-purple-600 shadow-lg ring-4 ring-purple-50'
-                            : 'border-gray-100 hover:border-purple-200 hover:shadow-md'
+                          className={`group relative bg-white rounded-[2rem] p-6 transition-all duration-500 border-2 ${isActive
+                            ? 'border-purple-600 shadow-2xl shadow-purple-100 -translate-y-2'
+                            : 'border-slate-50 hover:border-purple-200 hover:shadow-xl hover:-translate-y-2'
                             }`}
                         >
-                          <div className="flex justify-between items-start mb-4">
-                            <div className={`p-3 rounded-xl ${isActive ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400'}`}>
+                          {/* Card Header */}
+                          <div className="flex justify-between items-start mb-8">
+                            <div className={`p-4 rounded-2xl transition-all duration-500 ${isActive ? 'bg-purple-600 text-white shadow-lg rotate-3' : 'bg-slate-50 text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 group-hover:rotate-6'}`}>
                               <FileText className="w-6 h-6" />
                             </div>
-                            {isActive && (
-                              <span className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                                <Check className="w-3 h-3" />
-                                ACTIVE
-                              </span>
+                            {isActive ? (
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
+                                  <Check className="w-3 h-3" strokeWidth={3} />
+                                  Live Instance
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="px-3 py-1 bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-purple-100">
+                                  Ready to Deploy
+                                </span>
+                              </div>
                             )}
                           </div>
 
-                          <div className="mb-6">
-                            <h4 className="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
-                              {template.original_name.replace('.hbs', '')}
+                          {/* Content */}
+                          <div className="mb-8">
+                            <h4 className="text-xl font-black text-slate-900 group-hover:text-purple-600 transition-colors tracking-tight mb-2 uppercase">
+                              {template.original_name.replace('.hbs', '').replace(/_/g, ' ')}
                             </h4>
-                            <p className="text-sm text-gray-500 mt-1 line-clamp-1">
-                              {template.name}
-                            </p>
+                            <div className="flex items-center gap-2 text-slate-400">
+                              <Globe className="w-3 h-3" />
+                              <p className="text-[10px] font-bold uppercase tracking-widest">
+                                Global Standard • v2.0
+                              </p>
+                            </div>
                           </div>
 
+                          {/* Actions */}
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => handlePreviewTemplate(template)}
-                              className="flex-1 px-4 py-2.5 text-purple-600 border border-purple-600 rounded-xl hover:bg-purple-50 transition-all flex items-center justify-center gap-2 bg-white"
-                              title="Preview Template"
+                              className="flex-1 px-4 py-3.5 text-purple-600 bg-purple-50 rounded-xl hover:bg-purple-600 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 group/btn"
+                              title="Preview Digital Proof"
                             >
-                              <Eye className="w-4 h-4" />
-                              <span className="text-sm font-bold">Preview</span>
+                              <Eye className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
+                              <span className="text-xs font-black uppercase tracking-widest">Proof</span>
                             </button>
 
                             {!isActive ? (
                               <button
                                 onClick={() => handleSetTemplate(template)}
                                 disabled={fetchingTemplates}
-                                className="flex-1 px-4 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors shadow-sm disabled:opacity-50"
+                                className="flex-1 px-4 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-purple-600 transition-all duration-300 shadow-lg shadow-slate-200 hover:shadow-purple-200 flex items-center justify-center gap-2 disabled:opacity-50"
                               >
-                                {fetchingTemplates ? 'Setting...' : 'Set'}
+                                <span className="text-xs font-black uppercase tracking-widest">Deploy</span>
+                                <Plus className="w-4 h-4" strokeWidth={3} />
                               </button>
                             ) : (
                               <button
-                                className="flex-1 px-4 py-2.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors shadow-md flex items-center justify-center gap-2"
+                                className="flex-1 px-4 py-3.5 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 cursor-default"
                                 disabled
                               >
-                                <Check className="w-4 h-4" />
-                                Active
+                                <Check className="w-4 h-4" strokeWidth={3} />
+                                <span className="text-xs font-black uppercase tracking-widest">Active</span>
                               </button>
                             )}
                           </div>
@@ -405,31 +441,37 @@ const Profile = () => {
               ))}
 
               {filteredTemplates.length === 0 && (
-                <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                  <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mx-auto mb-4">
-                    <ShoppingCart className="w-8 h-8 text-gray-300" />
+                <div className="text-center py-32 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
+                  <div className="w-20 h-20 bg-white rounded-3xl shadow-xl border border-slate-100 flex items-center justify-center mx-auto mb-6 transform -rotate-6">
+                    <ShoppingCart className="w-10 h-10 text-slate-200" />
                   </div>
-                  <h4 className="text-lg font-bold text-gray-900">No templates found</h4>
-                  <p className="text-gray-500 mt-2">We couldn't find any {templateType} templates in this category.</p>
+                  <h4 className="text-2xl font-black text-slate-900 tracking-tight">Zero Assets Found</h4>
+                  <p className="text-slate-500 font-medium mt-2 max-w-sm mx-auto">Our design engine couldn't locate any {templateType} templates in the selected cloud category.</p>
                 </div>
               )}
             </div>
           )}
         </div>
 
-        <div className="bg-linear-to-br from-purple-600 to-purple-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-400/20 rounded-full -ml-16 -mb-16 blur-2xl"></div>
+        {/* Custom Design Banner */}
+        <div className="group bg-linear-to-br from-slate-900 to-indigo-950 rounded-[3rem] p-12 text-white relative overflow-hidden shadow-2xl transition-all duration-700 hover:shadow-indigo-200/50">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] group-hover:bg-purple-500/20 transition-all duration-700"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] group-hover:bg-indigo-500/20 transition-all duration-700"></div>
 
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="max-w-md">
-              <h3 className="text-2xl font-bold mb-3 italic">Custom Template Design?</h3>
-              <p className="text-purple-100 leading-relaxed">
-                Need a specific design for your company? Our designers can create a bespoke template tailored to your brand identity.
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-12 text-center md:text-left">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full border border-white/10 mb-6 backdrop-blur-md">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Enterprise Solutions</span>
+              </div>
+              <h3 className="text-4xl font-black mb-4 tracking-tight leading-none italic">Bespoke Brand<br />Architecture?</h3>
+              <p className="text-slate-400 text-lg font-medium leading-relaxed">
+                Unlock exclusive identity design. Our expert studio can engineer a custom template ecosystem tailored perfectly to your unique brand DNA.
               </p>
             </div>
-            <button className="px-8 py-4 bg-white text-purple-700 font-bold rounded-2xl hover:bg-purple-50 transition-all transform hover:scale-105 active:scale-95 shadow-xl">
-              Contact Design Team
+            <button className="whitespace-nowrap px-10 py-5 bg-white text-slate-900 font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-purple-50 transition-all transform hover:scale-105 active:scale-95 shadow-2xl flex items-center gap-3 group/btn">
+              Consult Studio
+              <TrendingUp className="w-4 h-4 text-purple-600 transition-transform group-hover/btn:-translate-y-1 group-hover/btn:translate-x-1" />
             </button>
           </div>
         </div>
@@ -831,12 +873,7 @@ const Profile = () => {
       case 'personal': return <PersonalInfo />;
       case 'payment': return renderPayment();
       case 'marketplace': return renderMarketplace();
-      case 'documents': return renderDocuments();
-      case 'security': return renderSecurity();
-      case 'notifications': return renderNotifications();
-      case 'settings': return renderSettings();
-      case 'help': return renderHelp();
-      default: return null;
+      default: return <PersonalInfo />;
     }
   };
 
@@ -877,13 +914,13 @@ const Profile = () => {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 cursor-pointer py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${activeTab === tab.id
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-2 px-6 cursor-pointer py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id
+                ? 'bg-purple-600 text-white shadow-xl shadow-purple-200 scale-105'
+                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
                 }`}
             >
-              <tab.icon className="w-4 h-4" />
+              <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
               {tab.label}
             </button>
           ))}
