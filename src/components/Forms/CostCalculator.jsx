@@ -258,7 +258,7 @@ const styles = {
     backgroundColor: "#f9fafb",
     padding: 16,
     borderRadius: 12,
-    width: 134,
+    width: "fit-content",
     position: "relative",
     left: 776,
     display: "flex",

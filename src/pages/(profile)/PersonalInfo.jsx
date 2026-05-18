@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import JoditEditor from "jodit-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useAuthStore } from "../../store/authStore";
 import { toast } from "react-toastify";
@@ -10,6 +11,26 @@ export const PersonalInfo = () => {
   const { setUserData } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const isTeamLeader = user?.user?.role === 'teamleader' || user?.user?.role === 'admin' || user?.user?.role === 'teamled';
+
+  const editor = useRef(null);
+
+  const joditConfig = useMemo(() => ({
+    readonly: false,
+    placeholder: "Describe your cancellation and refund policy...",
+    buttons: [
+      'bold', 'italic', 'underline', 'strikethrough', '|',
+      'ul', 'ol', '|',
+      'font', 'fontsize', 'brush', 'paragraph', '|',
+      'table', 'link', '|',
+      'align', 'undo', 'redo', '|',
+      'hr', 'eraser', 'source', 'fullsize'
+    ],
+    height: 300,
+    theme: 'default',
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
+    defaultActionOnPaste: 'insert_as_html',
+  }), []);
 
   const [profileData, setProfileData] = useState({
     userId: '',
@@ -584,13 +605,15 @@ export const PersonalInfo = () => {
               </div>
               <div className="md:col-span-3">
                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Cancellation Policy</label>
-                <textarea
-                  value={profileData.cancellation}
-                  onChange={(e) => setProfileData({ ...profileData, cancellation: e.target.value })}
-                  rows={4}
-                  className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-500/20 focus:border-gray-500 outline-none transition-all font-medium text-gray-900 resize-none"
-                  placeholder="Describe your cancellation and refund policy..."
-                />
+                <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 bg-white">
+                  <JoditEditor
+                    ref={editor}
+                    value={profileData.cancellation}
+                    config={joditConfig}
+                    tabIndex={1}
+                    onBlur={(newContent) => setProfileData(prev => ({ ...prev, cancellation: newContent }))}
+                  />
+                </div>
               </div>
             </div>
           </div>
