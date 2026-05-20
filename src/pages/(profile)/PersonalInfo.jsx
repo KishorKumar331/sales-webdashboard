@@ -104,7 +104,7 @@ export const PersonalInfo = () => {
         timezone: settings.timezone || 'Asia/Kolkata',
         language: settings.language || 'en',
         plan: settings.plan || 'premium',
-        cancellation: settings.cancellation || '',
+        cancellation: org?.cancellation || '',
       });
     }
   }, [user]);

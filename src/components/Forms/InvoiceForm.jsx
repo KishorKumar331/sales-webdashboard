@@ -1005,22 +1005,22 @@ export default function InvoiceForm({
               <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest block">Summary</span>
               <span className="text-xs font-semibold text-purple-700">Invoice Breakdown</span>
             </div>
-            
+
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center">
                 <span className="text-gray-500 text-xs mr-2">Package:</span>
                 <span className="font-bold text-gray-900">₹{parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString("en-IN")}</span>
               </div>
-              
+
               <div className="h-4 w-px bg-purple-200 hidden sm:block"></div>
-              
+
               <div className="flex items-center">
                 <span className="text-gray-500 text-xs mr-2">GST:</span>
                 <span className="font-bold text-gray-900">₹{parseFloat(formData?.pricing?.gstAmount || 0).toLocaleString("en-IN")}</span>
               </div>
-              
+
               <div className="h-4 w-px bg-purple-200 hidden sm:block"></div>
-              
+
               <div className="flex items-center">
                 <span className="text-gray-500 text-xs mr-2">TCS:</span>
                 <span className="font-bold text-gray-900">₹{parseFloat(formData?.pricing?.tcsAmount || 0).toLocaleString("en-IN")}</span>
@@ -1142,28 +1142,6 @@ export default function InvoiceForm({
           </div>
         </div>
 
-        {/* Cancellation Details */}
-        <div className="bg-white rounded-xl p-4 mb-4">
-          <span className="text-lg font-semibold text-gray-900 mb-3 block">
-            Cancellation Policy
-          </span>
-          <textarea
-            className="border border-gray-300 rounded-lg p-3 bg-white w-full"
-            value={formData?.cancellationPolicy?.flights || ""}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                cancellationPolicy: {
-                  ...prev.cancellationPolicy,
-                  flights: e.target.value,
-                },
-              }))
-            }
-            placeholder="Enter cancellation policy details..."
-            rows={8}
-          />
-        </div>
-
         {/* TCS Claim */}
         <div className="bg-white rounded-xl p-4 mb-4">
           <div className="flex justify-between items-center mb-3">
@@ -1249,19 +1227,7 @@ export default function InvoiceForm({
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="bg-white rounded-xl p-4 mb-4">
-          <span className="text-lg font-semibold text-gray-900 mb-3 block">
-            Notes
-          </span>
-          <textarea
-            className="border border-gray-300 rounded-lg p-3 bg-white w-full"
-            value={formData?.notes || ""}
-            onChange={(e) => updateFormData("notes", e.target.value)}
-            placeholder="Additional notes..."
-            rows={4}
-          />
-        </div>
+
 
         {/* Action Buttons */}
         <div className="flex justify-between mt-6 mb-8">

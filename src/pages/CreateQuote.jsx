@@ -56,10 +56,10 @@ export default function CreateQuote() {
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
         const searchableText = [
-          lead['Client-Name'] || '',
+          lead.clientName || lead['Client-Name'] || '',
           lead.TripId?.toString() || '',
-          lead['Client-Email'] || '',
-          lead['Client-Contact'] || ''
+          lead.clientEmail || lead['Client-Email'] || '',
+          lead.clientContact || lead['Client-Contact'] || ''
         ].join(' ').toLowerCase();
 
         if (!searchableText.includes(searchTerm)) {
@@ -68,12 +68,15 @@ export default function CreateQuote() {
       }
 
       // Destination filter
-      if (filters.destination && lead['Client-Destination'] !== filters.destination) {
-        return false;
+      if (filters.destination) {
+        const dest = lead.destination || lead['Client-Destination'];
+        if (dest !== filters.destination) {
+          return false;
+        }
       }
 
       // Budget range filter
-      const budget = parseFloat(lead['Client-Budget']) || 0;
+      const budget = parseFloat(lead.budget || lead['Client-Budget']) || 0;
       if (filters.minBudget && budget < parseFloat(filters.minBudget)) {
         return false;
       }
@@ -83,7 +86,7 @@ export default function CreateQuote() {
 
       // Travel date range filter
       if (filters.minTravelDate || filters.maxTravelDate) {
-        const travelDate = new Date(lead['Client-TravelDate']);
+        const travelDate = new Date(lead.travelDate || lead['Client-TravelDate']);
         if (!isNaN(travelDate.getTime())) {
           if (filters.minTravelDate && travelDate < new Date(filters.minTravelDate)) {
             return false;
@@ -95,7 +98,7 @@ export default function CreateQuote() {
       }
 
       // Pax range filter
-      const pax = parseInt(lead['Client-Pax']) || 0;
+      const pax = parseInt(lead.pax || lead['Client-Pax']) || 0;
       if (filters.minPax && pax < parseInt(filters.minPax)) {
         return false;
       }

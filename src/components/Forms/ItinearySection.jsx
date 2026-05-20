@@ -62,6 +62,7 @@ const ItinerarySection = () => {
       Activity: "",
       ImageUrl: "",
       Description: "",
+      OtherActivityImages: [],
     }, { shouldFocus: false });
   };
 
@@ -101,6 +102,7 @@ const ItinerarySection = () => {
     setValue(`Itinearies.${index}.Activity`, activity.Activity || "");
     setValue(`Itinearies.${index}.ImageUrl`, activity.ImageUrl || "");
     setValue(`Itinearies.${index}.Description`, activity.Description || "");
+    setValue(`Itinearies.${index}.OtherActivityImages`, activity.OtherActivityImages || []);
     setValue(`Itinearies.${index}.Date`, itineraryDate);
     setValue(`Itinearies.${index}.DateKey`, dateKey);
 
@@ -136,6 +138,7 @@ const ItinerarySection = () => {
           Activity: "",
           ImageUrl: "",
           Description: "",
+          OtherActivityImages: [],
         }, { shouldFocus: false });
       }
     } else if (target < current) {

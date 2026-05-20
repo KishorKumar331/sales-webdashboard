@@ -31,7 +31,7 @@ const Navbar = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative z-50">
       {/* Subtle shadow for depth */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 rounded-b-3xl shadow-2xl"></div>
       
@@ -41,31 +41,7 @@ const Navbar = ({
         <div className="flex items-center justify-between mb-4">
           {/* Search bar or back button */}
           {showSearch && !showBack && (
-            <div className="relative flex-1 mr-4">
-              <div className={`
-                group flex items-center bg-white/20 backdrop-blur-sm rounded-full 
-                px-4 py-2.5 transition-all duration-300 ease-out
-                ${isSearchFocused ? 'bg-white/30 shadow-lg scale-[1.02]' : 'hover:bg-white/25'}
-              `}>
-                <Search className={`text-white transition-colors duration-200 ${isSearchFocused ? 'text-white/90' : 'text-white/80'} group-hover:text-white/90`} size={20} />
-                <input
-                  type="text"
-                  onFocus={handleSearchFocus}
-                  onBlur={handleSearchBlur}
-                  placeholder={!isSearchFocused ? 'Search' : 'Search TripId'}
-                  className="
-                    text-white bg-transparent border-none outline-none ml-3 w-full
-                    placeholder-white/70 text-base font-medium
-                    transition-all duration-200
-                  "
-                />
-              </div>
-              {/* Animated underline when focused */}
-              <div className={`
-                absolute bottom-0 left-0 h-0.5 bg-white/40 rounded-full
-                transition-all duration-300 ease-out
-                ${isSearchFocused ? 'w-full' : 'w-0'}
-              `}></div>
+            <div id="navbar-filter-portal" className="relative flex-1 mr-4 z-[60]">
             </div>
           )}
 
