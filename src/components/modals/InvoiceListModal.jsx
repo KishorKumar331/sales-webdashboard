@@ -260,13 +260,13 @@ export default function InvoiceListModal({ visible, onClose, onCreateNew, data }
                   </p>
                 </div>
 
-                <button
+                {/* <button
                   onClick={() => { onClose(); onCreateNew(); }}
                   className="px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-blue-600 hover:text-blue-600 transition-all flex items-center gap-2 shadow-sm"
                 >
                   <Plus size={16} strokeWidth={3} />
                   New Record
-                </button>
+                </button> */}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
