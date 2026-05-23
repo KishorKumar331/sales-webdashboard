@@ -126,6 +126,7 @@ export default function InvoiceListModal({ visible, onClose, onCreateNew, data }
   const [error, setError] = useState(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [pdfHtml, setPdfHtml] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {
     if (visible && data?.TripId) {
@@ -172,6 +173,7 @@ export default function InvoiceListModal({ visible, onClose, onCreateNew, data }
 
   const handleShareInvoice = async (invoice) => {
     try {
+      setSelectedInvoice(invoice);
       const response = await axios.post(API_URL, {
         type: "invoice",
         company: "WH",
@@ -288,14 +290,18 @@ export default function InvoiceListModal({ visible, onClose, onCreateNew, data }
       <PdfPreviewModal
         visible={showPdfModal}
         pdfHtml={pdfHtml}
+        data={selectedInvoice}
+        documentType="invoice"
         onShare={() => {
           setShowPdfModal(false);
           setPdfHtml(null);
+          setSelectedInvoice(null);
         }}
         clientName="DigitalInvoice"
         onClose={() => {
           setShowPdfModal(false);
           setPdfHtml(null);
+          setSelectedInvoice(null);
         }}
       />
 

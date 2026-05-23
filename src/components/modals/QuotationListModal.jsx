@@ -275,6 +275,7 @@ export default function QuotationListModal({ visible, onClose, tripId, data }) {
         visible={showPdfModal}
         pdfHtml={pdfHtml}
         clientName={selectedQuotation?.QuoteId || "Quotation"}
+        data={selectedQuotation}
         onClose={() => {
           setShowPdfModal(false);
           setSelectedQuotation(null);

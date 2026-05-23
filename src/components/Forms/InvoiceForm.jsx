@@ -1261,6 +1261,8 @@ export default function InvoiceForm({
         visible={showPdfModal}
         pdfUri={pdfUri}
         pdfHtml={pdfHtml}
+        data={formDataToSubmit}
+        documentType="invoice"
         onClose={handlePreviewClose}
         onShare={handleShare}
       />

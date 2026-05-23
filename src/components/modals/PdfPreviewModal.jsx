@@ -12,10 +12,43 @@ const PdfPreviewModal = ({
   onClose,
   clientName = "Quotation",
   onShare,
+  documentType = "quotation",
+  fileName,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, _] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const generateFileName = () => {
+    if (fileName) return fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+
+    const date = new Date();
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const timestamp = `${day}-${month}-${year}`;
+
+    let name = "client";
+    let dest = "";
+    let d = "";
+
+    if (data) {
+      name = data.customer?.name || data["Client-Name"] || data.clientName || data.GuestName || clientName;
+      dest = data.destination || data.DestinationName || "";
+      d = data.packageSummary?.days || data.Days || data.days || "";
+    } else {
+      name = clientName !== "Quotation" && clientName !== "DigitalInvoice" ? clientName : "client";
+    }
+
+    if (typeof name === 'string') name = name.replace(/\s+/g, '');
+    if (typeof dest === 'string') dest = dest.replace(/\s+/g, '');
+
+    if (documentType === "invoice") {
+      return `${name}invoice${timestamp}.pdf`;
+    } else {
+      return `${name}${dest}${d ? d + 'days' : ''}${timestamp}.pdf`;
+    }
+  };
 
   const handleDownload = async () => {
     try {
@@ -25,14 +58,15 @@ const PdfPreviewModal = ({
       }
 
       setIsGenerating(true);
+      const finalFileName = generateFileName();
 
       const response = await axios.post(API_URL, {
         mode: "pdf",
-        type: "quotation",
+        type: documentType,
         html: pdfHtml,
-        fileName: `${clientName}.pdf`,
-        tripId: data?.TripId,
-        quoteId: data?.QuoteId,
+        fileName: finalFileName,
+        tripId: data?.TripId || data?.tripId,
+        quoteId: data?.QuoteId || data?.quoteId,
       });
 
       const fileUrl = response?.data?.url;
@@ -44,7 +78,7 @@ const PdfPreviewModal = ({
 
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.setAttribute("download", `${clientName}.pdf`);
+      link.setAttribute("download", finalFileName);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

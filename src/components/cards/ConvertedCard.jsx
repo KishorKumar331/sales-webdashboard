@@ -225,15 +225,14 @@ const [showPdfModal,setShowPdfModal]=useState(false);
         onClose={() => setIsModalVisible(false)}
         quote={{ ...quoteDetails, ...data }}
       />
-       <PdfPreviewModal
+      <PdfPreviewModal
         visible={showPdfModal}
         pdfHtml={pdfHtml}
-        clientName={
-           "InvoicePdf"
-        }
+        data={data}
+        documentType="invoice"
+        clientName={"InvoicePdf"}
         onClose={() => {
           setShowPdfModal(false);
-          setSelectedQuotation(null);
         }}
       />
     </>

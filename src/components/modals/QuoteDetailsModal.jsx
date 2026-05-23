@@ -231,9 +231,8 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
       <PdfPreviewModal
         visible={showPdfModal}
         pdfHtml={pdfHtml}
-        clientName={
-          "Quotation"
-        }
+        data={quote}
+        clientName={"Quotation"}
         onShare={() => {
           setShowPdfModal(false);
         }}
