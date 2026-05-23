@@ -28,7 +28,7 @@ const PremiumPaymentModal = ({ visible, onClose, onSuccess, templateName, userDe
     const amount = 99900; // ₹999 in paise
 
     const options = {
-      key: 'rzp_test_SabYfXGJ3Hc0bg',
+      key: 'rzp_live_SshSY8T6PNSHPq',
       amount: amount,
       currency: 'INR',
       name: 'Quick Quotes Premium',

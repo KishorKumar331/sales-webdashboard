@@ -48,7 +48,7 @@ const PaymentPage = () => {
       description: 'Quick Quotes Premium - Complete Setup',
       image: 'https://i.imgur.com/3g7nmJC.png',
       currency: 'INR',
-      key: 'rzp_test_S5OVwU720vAaEY',
+      key: "rzp_live_SshSY8T6PNSHPq",
       amount: '99900', // ₹999 in paise
       name: 'Quick Quotes Premium',
       order_id: '',
@@ -80,15 +80,15 @@ const PaymentPage = () => {
 
   const initializeRazorpay = (options) => {
     const razorpay = new window.Razorpay(options);
-    
+
     razorpay.open();
-    
+
     razorpay.on('payment.success', async (response) => {
       console.log('Payment Success:', response);
       await handlePaymentSuccess(response);
       setIsLoading(false);
     });
-    
+
     razorpay.on('payment.error', (response) => {
       console.log('Payment Error:', response);
       handlePaymentError(response);
@@ -230,13 +230,13 @@ const PaymentPage = () => {
       {/* Header */}
       <div className="bg-white px-5 py-6 shadow-sm border-b border-gray-100">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="p-3 rounded-xl hover:bg-gray-100 transition-colors"
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
-          
+
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Crown className="w-6 h-6 text-yellow-500" />
@@ -244,7 +244,7 @@ const PaymentPage = () => {
             </h1>
             <p className="text-gray-600 mt-1">Choose your plan and get started</p>
           </div>
-          
+
           <div className="w-12" />
         </div>
       </div>
@@ -266,13 +266,13 @@ const PaymentPage = () => {
             <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12" />
-              
+
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4">
                   <Crown className="w-8 h-8 text-yellow-300" />
                   <span className="text-2xl font-bold">Premium Plan</span>
                 </div>
-                
+
                 <div className="mb-6">
                   <div className="flex items-baseline gap-2">
                     <span className="text-5xl font-bold">₹999</span>
@@ -318,7 +318,7 @@ const PaymentPage = () => {
             </div>
           </div>
 
-{/* vgsahjgdjhas sdhjasj */}
+          {/* vgsahjgdjhas sdhjasj */}
           {/* Right Column - User Details & Payment */}
           <div className="space-y-6">
             {/* User Details Card */}
@@ -443,12 +443,12 @@ const PaymentPage = () => {
             <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-10 h-10 text-white" />
             </div>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful! 🎉</h2>
             <p className="text-gray-600 mb-6">
               Your account has been set up successfully. Welcome to Quick Quotes Premium!
             </p>
-            
+
             <div className="space-y-3">
               <button
                 onClick={() => navigate('/')}
