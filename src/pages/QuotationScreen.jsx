@@ -51,7 +51,8 @@ const QuotationScreen = () => {
     try {
       const dataWithUser = {
         ...data,
-        company: user?.user?.company
+        company: user?.user?.company,
+        adminemailid: user?.user?.adminemailid
       };
 
       console.log("Data with user:", dataWithUser);

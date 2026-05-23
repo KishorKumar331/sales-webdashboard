@@ -73,7 +73,7 @@ export default function NewLeadForm() {
       // Keep EXACT payload logic
       const leadData = {
         company: salesPersonInfo.organization?.company,
-
+        adminemailid: salesPersonInfo.user?.adminemailid,
         "clientName": data["Client-Name"],
         "clientEmail": data["Client-Email"],
         "clientContact": data["Client-Contact"],

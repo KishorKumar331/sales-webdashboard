@@ -176,6 +176,8 @@ export default function InvoiceForm({
     if (initialData) {
       setFormData((prev) => ({
         ...prev,
+        company: userProfile?.user?.company,
+
         invoiceId: initialData?.invoiceId || prev.invoiceId,
         companyEmail: userProfile?.user?.Email,
         invoiceNumber: initialData?.invoiceNumber || prev.invoiceNumber,
@@ -548,6 +550,8 @@ export default function InvoiceForm({
       const dataWithUser = {
         ...formData,
         company: userProfile?.user?.company,
+        adminemailid: userProfile?.user?.adminemailid
+
       };
 
       console.log("Invoice data with user:", dataWithUser);
@@ -698,6 +702,8 @@ export default function InvoiceForm({
 
       const cleanedData = {
         invoiceNumber,
+        company: userProfile?.user?.company,
+
         invoiceId: formData.tripId || tripId,
         tripId: formData.tripId || tripId,
         finalPackageQuotationId: formData.finalPackageQuotationId,
@@ -806,11 +812,10 @@ export default function InvoiceForm({
                 isCancelled: !prev.cancellationDetails?.isCancelled
               }
             }))}
-            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
-              formData?.cancellationDetails?.isCancelled
-                ? "bg-red-100 text-red-600 border border-red-200"
-                : "bg-white text-red-500 border border-red-200 hover:bg-red-50"
-            }`}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${formData?.cancellationDetails?.isCancelled
+              ? "bg-red-100 text-red-600 border border-red-200"
+              : "bg-white text-red-500 border border-red-200 hover:bg-red-50"
+              }`}
           >
             {formData?.cancellationDetails?.isCancelled ? "Remove Cancellation" : "Cancellation"}
           </button>

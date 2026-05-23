@@ -11,12 +11,7 @@ import {
   ArrowLeft,
   History,
   Search,
-  Clock,
-  Calendar,
-  Wallet,
   CheckCircle,
-  FileText,
-  Sparkles
 } from "lucide-react";
 import PdfPreviewModal from "./PdfPreviewModal";
 
