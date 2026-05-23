@@ -147,6 +147,12 @@ export default function InvoiceForm({
       { item: "Scanned copy of PAN card", required: true, provided: false },
     ],
     notes: "",
+    cancellationDetails: {
+      isCancelled: initialData?.cancellationDetails?.isCancelled || false,
+      reason: initialData?.cancellationDetails?.reason || "",
+      charges: initialData?.cancellationDetails?.charges || 0,
+      refundAmount: initialData?.cancellationDetails?.refundAmount || 0,
+    },
     meta: {
       lastUpdatedBy: userProfile?.user?.Email,
       source: "website",
@@ -704,6 +710,7 @@ export default function InvoiceForm({
         pricing: formData.pricing,
         payment: formData.payment,
         cancellationPolicy: formData.cancellationPolicy,
+        cancellationDetails: formData.cancellationDetails,
         deliverables: formData.deliverables,
         notes: formData.notes,
         invoiceDate: today.split("T")[0],
@@ -788,7 +795,77 @@ export default function InvoiceForm({
     <div className="flex-1 bg-gray-50 overflow-auto p-6">
       <div className="p-1">
 
-        {/* Header */}
+        {/* Header Section with Cancellation Toggle */}
+        <div className="flex justify-between items-center mb-4 px-1">
+          <h2 className="text-xl font-bold text-gray-900">Invoice Details</h2>
+          <button
+            onClick={() => setFormData(prev => ({
+              ...prev,
+              cancellationDetails: {
+                ...prev.cancellationDetails,
+                isCancelled: !prev.cancellationDetails?.isCancelled
+              }
+            }))}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              formData?.cancellationDetails?.isCancelled
+                ? "bg-red-100 text-red-600 border border-red-200"
+                : "bg-white text-red-500 border border-red-200 hover:bg-red-50"
+            }`}
+          >
+            {formData?.cancellationDetails?.isCancelled ? "Remove Cancellation" : "Cancellation"}
+          </button>
+        </div>
+
+        {formData?.cancellationDetails?.isCancelled && (
+          <div className="bg-red-50 rounded-xl p-5 mb-4 border border-red-100 shadow-sm">
+            <h3 className="text-red-800 font-bold mb-4">Cancellation Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-3">
+                <label className="text-xs font-semibold text-red-700 uppercase mb-1 block">
+                  Cancellation Reason
+                </label>
+                <textarea
+                  className="border border-red-200 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-red-500 outline-none"
+                  value={formData?.cancellationDetails?.reason || ""}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    cancellationDetails: { ...prev.cancellationDetails, reason: e.target.value }
+                  }))}
+                  placeholder="Enter cancellation reason..."
+                  rows="2"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-red-700 uppercase mb-1 block">
+                  Cancellation Charges (₹)
+                </label>
+                <input
+                  type="number"
+                  className="border border-red-200 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-red-500 outline-none"
+                  value={(formData?.cancellationDetails?.charges || 0).toString()}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    cancellationDetails: { ...prev.cancellationDetails, charges: parseFloat(e.target.value) || 0 }
+                  }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-red-700 uppercase mb-1 block">
+                  Refund Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  className="border border-red-200 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-red-500 outline-none"
+                  value={(formData?.cancellationDetails?.refundAmount || 0).toString()}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    cancellationDetails: { ...prev.cancellationDetails, refundAmount: parseFloat(e.target.value) || 0 }
+                  }))}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quotation Selection and Customer Details */}
         <div className="bg-white rounded-xl p-5 mb-4 shadow-sm border border-gray-100">

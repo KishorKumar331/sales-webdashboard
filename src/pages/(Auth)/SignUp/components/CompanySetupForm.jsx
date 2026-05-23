@@ -56,7 +56,8 @@ export const CompanySetupForm = ({ initialData = {} }) => {
       qrurl: initialData.qrurl || "",
       timezone: "Asia/Kolkata",
       language: "en",
-      plan: "premium"
+      plan: "premium",
+      adminemailid: initialData.adminemailid || ""
     },
     mode: "onChange"
   });
@@ -123,10 +124,12 @@ export const CompanySetupForm = ({ initialData = {} }) => {
 
       if (response.status === 201) {
         localStorage.removeItem(LS_FORM_KEY);
-        setUserData(data)
-        setHasProfile(true)
-        // navigate("/(auth)/PaymentGateway/payment");
-        navigate("/");
+        navigate("/payment");
+        // Update state after navigation to prevent ProtectedRoute from redirecting to "/"
+        setTimeout(() => {
+          setUserData(data);
+          setHasProfile(true);
+        }, 100);
 
       } else {
         const res = await response.json();

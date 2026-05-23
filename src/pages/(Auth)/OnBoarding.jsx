@@ -127,8 +127,6 @@ const OnBoardingPage = () => {
       await handleForgotPasswordRequest();
     } else if (authState === 'confirm_reset') {
       await handleConfirmReset();
-    } else {
-      await handleSignup();
     }
   };
 
@@ -232,24 +230,7 @@ const OnBoardingPage = () => {
     }
   };
 
-  const handleSignup = async () => {
-    if (!loginInput.trim()) {
-      showToast('Please enter your email or phone number', 'error');
-      return;
-    }
 
-    setIsLoading(true);
-
-    try {
-      // Navigate to signup page with pre-filled data
-      setShowLoginModal(false);
-      navigate('/signup');
-    } catch (err) {
-      console.log(err)
-      showToast('Error redirecting to signup. Please try again.', 'error');
-      setIsLoading(false);
-    }
-  };
 
   const goToSlide = (index) => {
     if (scrollViewRef.current) {
@@ -300,8 +281,7 @@ const OnBoardingPage = () => {
             </button>
             <button
               onClick={() => {
-                setShowLoginModal(true);
-                setAuthState('signup');
+                navigate('/signup');
               }}
               className="px-6 py-2.5 rounded-xl bg-white text-purple-700 font-medium hover:bg-gray-100 transition-all duration-200 flex items-center gap-2 shadow-lg"
             >
@@ -363,8 +343,7 @@ const OnBoardingPage = () => {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <button
                     onClick={() => {
-                      setShowLoginModal(true);
-                      setAuthState('signup');
+                      navigate('/signup');
                     }}
                     className="px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-800 text-white font-semibold rounded-xl hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
                   >
@@ -433,12 +412,10 @@ const OnBoardingPage = () => {
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
                   {authState === 'login' ? 'Welcome Back' :
-                    authState === 'signup' ? 'Create Account' :
                       authState === 'forgot_password' ? 'Reset Password' : 'Confirm Reset'}
                 </h2>
                 <p className="text-gray-600 mt-1">
                   {authState === 'login' ? 'Sign in to continue to Quick Quotes' :
-                    authState === 'signup' ? 'Start your free trial today' :
                       authState === 'forgot_password' ? 'Enter your email to receive a code' : 'Enter the code sent to your email'}
                 </p>
               </div>
@@ -449,30 +426,6 @@ const OnBoardingPage = () => {
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-
-            {/* Tab Toggle */}
-            {(authState === 'login' || authState === 'signup') && (
-              <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-                <button
-                  onClick={() => setAuthState('login')}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${authState === 'login'
-                    ? 'bg-white text-purple-700 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => setAuthState('signup')}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${authState === 'signup'
-                    ? 'bg-white text-purple-700 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                >
-                  Sign Up
-                </button>
-              </div>
-            )}
 
             <div className="space-y-4">
               <div>
@@ -549,7 +502,6 @@ const OnBoardingPage = () => {
                 {isLoading && <Loader2 className="animate-spin" size={20} />}
                 {isLoading ? 'Processing...' :
                   authState === 'login' ? 'Sign In' :
-                    authState === 'signup' ? 'Create Account' :
                       authState === 'forgot_password' ? 'Send Reset Code' : 'Reset Password'}
               </button>
 
@@ -559,14 +511,13 @@ const OnBoardingPage = () => {
                     if (authState === 'forgot_password') {
                       setAuthState('login');
                     } else {
-                      setAuthState(authState === 'login' ? 'signup' : 'login');
+                      navigate('/signup');
                     }
                   }}
                   className="w-full bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-200 transition-colors"
                   disabled={isLoading}
                 >
-                  {authState === 'login' ? "Don't have an account? Sign up" :
-                    authState === 'signup' ? "Already have an account? Sign in" : "Back to Login"}
+                  {authState === 'login' ? "Don't have an account? Sign up" : "Back to Login"}
                 </button>
               )}
 

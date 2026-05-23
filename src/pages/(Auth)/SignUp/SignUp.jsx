@@ -29,10 +29,22 @@ export default function SignUp() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!formData.email || !formData.password || !formData.fullname) {
+    if (!formData.email || !formData.password || !formData.fullname || !formData.phone) {
       alert("Please fill all fields");
       return;
     }
+
+    let formattedPhone = formData.phone.trim();
+    if (!formattedPhone.startsWith('+')) {
+      if (formattedPhone.startsWith('91') && formattedPhone.length === 12) {
+        formattedPhone = '+' + formattedPhone;
+      } else {
+        formattedPhone = '+91' + formattedPhone;
+      }
+    }
+    
+    // Update formData state so it propagates to downstream components/hooks
+    setFormData((prev) => ({ ...prev, phone: formattedPhone }));
 
     setIsLoading(true);
     try {
@@ -45,7 +57,7 @@ export default function SignUp() {
           userAttributes: {
             email: formData.email,
             name: formData.fullname,
-            phone_number: formData.phone,
+            phone_number: formattedPhone,
           }
         }
       });

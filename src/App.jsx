@@ -27,8 +27,9 @@ import { useAuthStore } from './store/authStore';
 // Protected Route Component - redirects to /auth if not authenticated
 const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/auth' }) => {
   const navigate = useNavigate()
-  const shouldRedirectToCreateProfile = isAuthenticated && !hasProfile?.user?.company && window.location.pathname !== '/create-profile';
-  const shouldRedirectToHome = isAuthenticated && hasProfile?.user?.company && window.location.pathname === '/create-profile';
+  const userCompany = hasProfile?.company || hasProfile?.user?.company;
+  const shouldRedirectToCreateProfile = isAuthenticated && !userCompany && window.location.pathname !== '/create-profile';
+  const shouldRedirectToHome = isAuthenticated && userCompany && window.location.pathname === '/create-profile';
 
   useEffect(() => {
     if (shouldRedirectToCreateProfile) {

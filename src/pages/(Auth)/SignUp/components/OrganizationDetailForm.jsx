@@ -16,7 +16,7 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                 stepNumber={2}
                 isActive={true}
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pb-4 border-b border-gray-100">
                     <Field label="Admin Full Name" required icon={<User className="w-4 h-4" />} error={errors.fullname}>
                         <Input
                             {...register("fullname", { required: "Full Name is required" })}
@@ -32,6 +32,22 @@ export const OrganizationDetailForm = ({ handleLogoUpload }) => {
                             placeholder="Confirm your phone"
                             icon={<Phone className="w-5 h-5" />}
                             hasError={!!errors.phone}
+                        />
+                    </Field>
+
+                    <Field label="Admin Email ID" required icon={<Mail className="w-4 h-4" />} error={errors.adminemailid}>
+                        <Input
+                            {...register("adminemailid", { 
+                                required: "Admin Email is required",
+                                pattern: {
+                                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                    message: "Invalid email address"
+                                }
+                            })}
+                            placeholder="Admin email ID"
+                            icon={<Mail className="w-5 h-5" />}
+                            hasError={!!errors.adminemailid}
+                            type="email"
                         />
                     </Field>
                 </div>

@@ -23,7 +23,8 @@ const Teams = () => {
     name: '',
     email: '',
     phone: '',
-    password: ''
+    password: '',
+    adminemailid: ''
   });
 
   const [otp, setOtp] = useState('');
@@ -39,7 +40,7 @@ const Teams = () => {
 
     try {
       setIsLoading(true);
-      const company = realUser?.user?.company;
+      const company = realUser?.company || realUser?.user?.company;
       const profileUrl = `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?company=${encodeURIComponent(company)}&action=billing_status`;
       console.log('Fetching team members from:', profileUrl);
 
@@ -142,10 +143,11 @@ const Teams = () => {
         FullName: newMember.name,
         Email: newMember.email,
         Phone: newMember.phone,
-        company: realUser?.user?.company,
+        company: realUser?.company || realUser?.user?.company,
         Role: 'TeamMember',
         Status: 'Active',
-        CreatedAt: new Date().toISOString()
+        CreatedAt: new Date().toISOString(),
+        adminemailid: newMember.adminemailid
       };
 
       const response = await fetch('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?', {
@@ -162,7 +164,7 @@ const Teams = () => {
         setActiveTab('manage');
 
         // Reset states
-        setNewMember({ name: '', email: '', phone: '', password: '' });
+        setNewMember({ name: '', email: '', phone: '', password: '', adminemailid: '' });
         setOtp('');
         setOtpSent(false);
       } else {
@@ -426,6 +428,19 @@ const Teams = () => {
                       <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-600 transition-colors">
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-slate-400 text-[10px] font-black uppercase tracking-widest pl-4">Admin Email ID</label>
+                    <div className="relative">
+                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                      <input
+                        type="email"
+                        value={newMember.adminemailid}
+                        onChange={(e) => setNewMember({ ...newMember, adminemailid: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-purple-200 focus:outline-none transition-all font-bold text-sm"
+                        placeholder="Admin Email ID"
+                      />
                     </div>
                   </div>
                 </div>
