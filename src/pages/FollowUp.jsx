@@ -24,7 +24,6 @@ export default function FollowUp() {
       );
       return res.data;
     },
-    refetchInterval: 5000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });

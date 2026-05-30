@@ -551,7 +551,6 @@ export default function InvoiceForm({
         ...formData,
         company: userProfile?.user?.company,
         adminemailid: userProfile?.user?.adminemailid
-
       };
 
       console.log("Invoice data with user:", dataWithUser);
