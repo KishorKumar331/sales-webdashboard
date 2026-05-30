@@ -64,6 +64,7 @@ export const PersonalInfo = () => {
     cancellation: '',
   });
 
+  console.log(profileData)
   // Initialize profileData when user data is available
   useEffect(() => {
     if (user) {
@@ -128,7 +129,7 @@ export const PersonalInfo = () => {
     setIsLoading(true);
     try {
       const payload = {
-        Email: profileData.email,
+        Email: user?.user?.adminemailid,
         fullname: profileData.fullname,
         Phone: profileData.phone,
       };
@@ -152,6 +153,7 @@ export const PersonalInfo = () => {
     setIsLoading(true);
     try {
       const payload = {
+        Email: user?.user?.adminemailid,
         company: profileData.company,
         companyname: profileData.companyname,
         brandname: profileData.brandname,

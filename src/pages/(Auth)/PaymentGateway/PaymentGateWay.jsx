@@ -49,7 +49,7 @@ const PaymentPage = () => {
       image: 'https://i.imgur.com/3g7nmJC.png',
       currency: 'INR',
       key: "rzp_live_SshSY8T6PNSHPq",
-      amount: '99900', // ₹999 in paise
+      amount: '117900', // ₹1179 in paise (₹999 + 18% GST)
       name: 'Quick Quotes Premium',
       order_id: '',
       prefill: {

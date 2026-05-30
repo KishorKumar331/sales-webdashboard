@@ -24,8 +24,7 @@ const PremiumPaymentModal = ({ visible, onClose, onSuccess, templateName, userDe
     }
 
     setIsProcessingPayment(true);
-
-    const amount = 99900; // ₹999 in paise
+    const amount = 117882; // ₹999 + 18% GST (₹179.82) = ₹1178.82 in paise
 
     const options = {
       key: 'rzp_live_SshSY8T6PNSHPq',
@@ -113,11 +112,21 @@ const PremiumPaymentModal = ({ visible, onClose, onSuccess, templateName, userDe
           </div>
 
           <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-            <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200">
-              <span className="text-slate-500 font-bold">Premium Template Cost</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-slate-900">₹999</span>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">One-time</span>
+            <div className="space-y-2 mb-4 pb-4 border-b border-slate-200">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500 font-medium">Premium Template Cost</span>
+                <span className="font-bold text-slate-800">₹999.00</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500 font-medium">GST (18%)</span>
+                <span className="font-bold text-slate-800">₹179.82</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200/60">
+                <span className="text-slate-950 font-black">Total Price</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-slate-900">₹1,178.82</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">One-time</span>
+                </div>
               </div>
             </div>
 

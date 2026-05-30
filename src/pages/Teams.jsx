@@ -542,7 +542,7 @@ const PaymentModal = ({ member, onSuccess, onClose }) => {
       image: 'https://i.imgur.com/3g7nmJC.png',
       currency: 'INR',
       key: 'rzp_live_SshSY8T6PNSHPq',
-      amount: '99900',
+      amount: '117882', // ₹999 + 18% GST (₹179.82) = ₹1178.82 in paise
       name: 'Journey Routers',
       prefill: {
         email: member.Email,
@@ -592,9 +592,19 @@ const PaymentModal = ({ member, onSuccess, onClose }) => {
 
         <div className="p-8 space-y-6">
           <div className="bg-slate-50 rounded-3xl p-6 border-2 border-slate-100">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Subscription License</span>
-              <span className="text-slate-900 font-black text-xl">₹999</span>
+            <div className="space-y-2 mb-4 pb-4 border-b border-slate-200">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Subscription License</span>
+                <span className="font-bold text-slate-800">₹999.00</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">GST (18%)</span>
+                <span className="font-bold text-slate-800">₹179.82</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                <span className="text-slate-900 font-black">Total Price</span>
+                <span className="text-slate-900 font-black text-xl">₹1,178.82</span>
+              </div>
             </div>
             <p className="text-slate-500 text-xs font-semibold leading-relaxed mb-4">One-time provisioning fee for enterprise-grade team member access, unlimited quotation capacity, and real-time CRM synchronization.</p>
             <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 text-emerald-600 rounded-lg self-start">

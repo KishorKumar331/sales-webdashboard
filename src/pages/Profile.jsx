@@ -89,6 +89,7 @@ const Profile = () => {
       const defaultQuotation = user?.organization?.preferences?.quotationpdf;
 
       const updatedUser = {
+        Email: user?.user?.adminemailid,
         company: user?.user?.company || '',
         invoicepdf: isInvoice ? pendingTemplate.name : (activeTemplates.invoice || defaultInvoice),
         quotationpdf: !isInvoice ? pendingTemplate.name : (activeTemplates.quotation || defaultQuotation)
