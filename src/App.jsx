@@ -23,6 +23,7 @@ import SignUp from './pages/(Auth)/SignUp/SignUp';
 import CreateProfile from './pages/(Auth)/CreateProfile';
 import InspectBanner from './components/InspectBanner';
 import { useAuthStore } from './store/authStore';
+import RestrictedAccessScreen from './components/RestrictedAccessScreen';
 
 // Protected Route Component - redirects to /auth if not authenticated
 const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/auth' }) => {
@@ -69,7 +70,7 @@ const PublicRoute = ({ isAuthenticated, isLoading, redirectPath = '/' }) => {
   return <Outlet />;
 };
 const App = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, logout } = useAuth();
   const { hasProfile, userData } = useAuthStore();
   console.log(hasProfile, userData)
   const renderWithLayout = (Component, title) => (
@@ -92,6 +93,17 @@ const App = () => {
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  const isRestricted = isAuthenticated && userData?.access_restricted && userData?.payment_url;
+
+  if (isRestricted) {
+    return (
+      <RestrictedAccessScreen
+        paymentUrl={userData.payment_url}
+        onLogout={logout}
+      />
     );
   }
 
