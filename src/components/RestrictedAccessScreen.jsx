@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, LogOut, ArrowRight, Star } from 'lucide-react';
 
-const RestrictedAccessScreen = ({ paymentUrl, onLogout }) => {
+const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession }) => {
   const [timeLeft, setTimeLeft] = useState(5);
+  const [hasStartedPayment, setHasStartedPayment] = useState(false);
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      window.location.href = paymentUrl;
+      window.open(paymentUrl, '_blank');
+      setHasStartedPayment(true);
       return;
     }
     const timer = setTimeout(() => {
@@ -15,8 +17,31 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout }) => {
     return () => clearTimeout(timer);
   }, [timeLeft, paymentUrl]);
 
+  useEffect(() => {
+    if (!hasStartedPayment || !checkSession || !userEmail) return;
+
+    // Trigger check immediately upon redirection/click
+    checkSession(userEmail, true).catch(console.error);
+
+    let isChecking = false;
+    const interval = setInterval(async () => {
+      if (isChecking) return;
+      isChecking = true;
+      try {
+        await checkSession(userEmail, true);
+      } catch (err) {
+        console.error("Error during profile status check:", err);
+      } finally {
+        isChecking = false;
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [hasStartedPayment, checkSession, userEmail]);
+
   const handlePayNow = () => {
-    window.location.href = paymentUrl;
+    window.open(paymentUrl, '_blank');
+    setHasStartedPayment(true);
   };
 
   return (
@@ -24,7 +49,11 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout }) => {
       {/* Background Gradients */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-purple-900/20 blur-[120px]" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-indigo-900/20 blur-[120px]" />
-      
+
+
+
+
+
       <div className="w-full max-w-md bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-[2.5rem] p-8 shadow-2xl relative z-10 flex flex-col items-center text-center">
         {/* Animated Lock Badge */}
         <div className="relative mb-6">
@@ -34,16 +63,25 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout }) => {
           </div>
         </div>
 
+
+
+
         {/* Title */}
         <h2 className="text-2xl font-black tracking-tight text-white mb-2 flex items-center gap-2 justify-center">
+
+
           Access Restricted
+
+
         </h2>
-        
+
         {/* Status Badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest rounded-full mb-6">
           <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           Subscription Expired
         </div>
+
+
 
         {/* Description */}
         <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed max-w-sm">
@@ -53,7 +91,7 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout }) => {
         {/* Countdown / Redirecting message */}
         <div className="w-full bg-slate-800/40 border border-slate-800/50 rounded-2xl p-4 mb-6 text-xs text-slate-400 font-medium flex items-center justify-center gap-2">
           <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
-          Redirecting to secure payment in <span className="text-purple-400 font-bold text-sm mx-0.5">{timeLeft}</span> seconds...
+          Please ComeBack After Payment Success
         </div>
 
         {/* Pay Button */}

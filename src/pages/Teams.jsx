@@ -41,12 +41,13 @@ const Teams = () => {
     try {
       setIsLoading(true);
       const company = realUser?.company || realUser?.user?.company;
-      const profileUrl = `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?company=${encodeURIComponent(company)}&action=billing_status`;
+      const profileUrl = `https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth?company=${encodeURIComponent(company)}&action=billing_status`;
       console.log('Fetching team members from:', profileUrl);
 
       const response = await axios.get(profileUrl, {
         headers: {
           'Content-Type': 'application/json',
+          'X-User-Id': email,
         }
       });
 
@@ -150,7 +151,7 @@ const Teams = () => {
         adminemailid: newMember.adminemailid
       };
 
-      const response = await fetch('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?', {
+      const response = await fetch('https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth?', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileData)

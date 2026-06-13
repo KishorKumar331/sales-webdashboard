@@ -96,9 +96,12 @@ const Profile = () => {
       };
 
       console.log('🔥 Updating profile templates after payment:', updatedUser);
-      console.log('Razorpay Payment ID:', paymentResponse.razorpay_payment_id);
-
-      const response = await axios.put('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth', updatedUser);
+      const response = await axios.put('https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth', updatedUser, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': user?.user?.Email
+        }
+      });
 
       if (response.status === 200 || response.status === 204) {
         setActiveTemplates(prev => ({

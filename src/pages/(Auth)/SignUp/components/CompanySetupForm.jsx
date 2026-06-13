@@ -114,7 +114,7 @@ export const CompanySetupForm = ({ initialData = {} }) => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth",
+        "https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

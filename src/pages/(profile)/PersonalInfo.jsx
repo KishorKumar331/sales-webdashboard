@@ -6,6 +6,22 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { uploadCompanyLogo, uploadPaymentQR } from "../../utils/FileUploadUrl";
 
+const CANCELLATION_LIMIT = 1500;
+
+const getCharacterCount = (html) => {
+  if (!html || typeof html !== 'string') return 0;
+  const formattedHtml = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/li>/gi, '\n');
+
+  const temp = document.createElement('div');
+  temp.innerHTML = formattedHtml;
+  const text = temp.textContent || temp.innerText || '';
+  return text.length;
+};
+
 export const PersonalInfo = () => {
   const { user } = useAuth();
   const { setUserData } = useAuthStore();
@@ -64,6 +80,12 @@ export const PersonalInfo = () => {
     cancellation: '',
   });
 
+  const [cancellationCharCount, setCancellationCharCount] = useState(0);
+
+  useEffect(() => {
+    setCancellationCharCount(getCharacterCount(profileData.cancellation));
+  }, [profileData.cancellation]);
+
   console.log(profileData)
   // Initialize profileData when user data is available
   useEffect(() => {
@@ -113,7 +135,7 @@ export const PersonalInfo = () => {
   const fetchUpdatedUser = async () => {
     try {
       const response = await axios.get(
-        `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?Email=${encodeURIComponent(profileData.email)}`
+        `https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth?Email=${encodeURIComponent(profileData.email)}`
       );
       if (response.data) {
         const updatedUserData = Array.isArray(response.data) ? response.data[0] : response.data;
@@ -135,8 +157,14 @@ export const PersonalInfo = () => {
       };
 
       await axios.put(
-        `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth`,
-        payload
+        `https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth`,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': user?.user?.Email
+          }
+        }
       );
       toast.success("Personal information updated successfully!");
       await fetchUpdatedUser();
@@ -150,6 +178,13 @@ export const PersonalInfo = () => {
 
   const handleCompanySubmit = async (e) => {
     e.preventDefault();
+    
+    const charCount = getCharacterCount(profileData.cancellation);
+    if (charCount > CANCELLATION_LIMIT) {
+      toast.error(`Cancellation Policy cannot exceed ${CANCELLATION_LIMIT} characters. Current length: ${charCount} characters.`);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const payload = {
@@ -182,8 +217,14 @@ export const PersonalInfo = () => {
       };
 
       await axios.put(
-        `https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth`,
-        payload
+        `https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth`,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': user?.user?.Email
+          }
+        }
       );
       toast.success("Company profile updated successfully!");
       await fetchUpdatedUser();
@@ -607,14 +648,25 @@ export const PersonalInfo = () => {
               </div>
               <div className="md:col-span-3">
                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Cancellation Policy</label>
-                <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 bg-white">
+                <div className={`border rounded-xl overflow-hidden focus-within:ring-2 bg-white ${cancellationCharCount > CANCELLATION_LIMIT ? 'border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500' : 'border-gray-200 focus-within:ring-purple-500/20 focus-within:border-purple-500'}`}>
                   <JoditEditor
                     ref={editor}
                     value={profileData.cancellation}
                     config={joditConfig}
                     tabIndex={1}
                     onBlur={(newContent) => setProfileData(prev => ({ ...prev, cancellation: newContent }))}
+                    onChange={(newContent) => setCancellationCharCount(getCharacterCount(newContent))}
                   />
+                </div>
+                <div className="flex justify-between items-center mt-2 px-1 text-xs">
+                  <span className={cancellationCharCount > CANCELLATION_LIMIT ? "text-red-500 font-bold" : "text-gray-500 font-medium"}>
+                    {cancellationCharCount} / {CANCELLATION_LIMIT} characters
+                  </span>
+                  {cancellationCharCount > CANCELLATION_LIMIT && (
+                    <span className="text-red-500 font-semibold animate-pulse">
+                      Limit exceeded by {cancellationCharCount - CANCELLATION_LIMIT} characters.
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

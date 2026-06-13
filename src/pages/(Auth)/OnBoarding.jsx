@@ -42,7 +42,7 @@ const OnBoardingPage = () => {
   // No longer need auto-switch here, App.jsx handles it via ProtectedRoute
 
   // PROFILE_API constant
-  const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+  const PROFILE_API = 'https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth?';
 
 
   // Enhanced carousel data with better content

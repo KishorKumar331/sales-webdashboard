@@ -73,7 +73,7 @@ export const uploadFileToProfileAPI = async (file, filePath) => {
     });
     
     // Make API call
-    const response = await axios.post('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/resources', payload, {
+    const response = await axios.post('https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/resources', payload, {
       headers: {
         'Content-Type': 'application/json',
       }

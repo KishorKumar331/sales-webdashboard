@@ -70,7 +70,7 @@ const PublicRoute = ({ isAuthenticated, isLoading, redirectPath = '/' }) => {
   return <Outlet />;
 };
 const App = () => {
-  const { isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isLoading, logout, checkSession } = useAuth();
   const { hasProfile, userData } = useAuthStore();
   console.log(hasProfile, userData)
   const renderWithLayout = (Component, title) => (
@@ -103,6 +103,8 @@ const App = () => {
       <RestrictedAccessScreen
         paymentUrl={userData.payment_url}
         onLogout={logout}
+        userEmail={userData.Email || userData.user?.Email}
+        checkSession={checkSession}
       />
     );
   }

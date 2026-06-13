@@ -3,9 +3,9 @@ import { fetchAuthSession, getCurrentUser, signOut, resetPassword, confirmResetP
 import { useAuthStore } from "../store/authStore";
 
 const SESSION_API =
-  "https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/session";
+  "https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/session";
 
-const PROFILE_API = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+const PROFILE_API = 'https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth?';
 
 let globalSessionPromise = null;
 
@@ -16,7 +16,7 @@ export const useAuth = () => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const inspectedUser = useAuthStore(state => state.inspectedUser);
   const isLoading = useAuthStore(state => state.isLoading);
-  
+
   const setUserEmail = useAuthStore(state => state.setUserEmail);
   const setIsAuthenticated = useAuthStore(state => state.setIsAuthenticated);
   const setInspectedUser = useAuthStore(state => state.setInspectedUser);
@@ -40,14 +40,14 @@ export const useAuth = () => {
   /**
    * Check session using Amplify
    */
-  const checkSession = useCallback(async (emailToRevalidate) => {
+  const checkSession = useCallback(async (emailToRevalidate, isSilent = false) => {
     // If a request is already in flight, reuse it. 
     // If it's resolved, only reuse it if we are already authenticated and no revalidation is requested.
     if (globalSessionPromise && !emailToRevalidate && (!globalSessionPromise.isResolved || useAuthStore.getState().isAuthenticated)) {
       try {
         return await globalSessionPromise;
       } finally {
-        setIsLoading(false);
+        if (!isSilent) setIsLoading(false);
       }
     }
 
@@ -60,26 +60,26 @@ export const useAuth = () => {
           // Get current user from Cognito
           const user = await getCurrentUser();
           const userEmail = user.signInDetails?.loginId || emailToRevalidate;
-          
+
           if (userEmail) {
             setUserEmail(userEmail);
-            
+
             // Make API call to profile API with user email
             try {
               const profileUrl = `${PROFILE_API}Email=${encodeURIComponent(userEmail)}`;
               console.log('🔥 Calling profile API:', profileUrl);
-              
+
               const response = await fetch(profileUrl, {
                 method: 'GET',
                 headers: {
                   'Content-Type': 'application/json',
                 },
               });
-              
+
               if (response.ok) {
                 const profileData = await response.json();
                 console.log('🔥 Profile API response:', profileData);
-                
+
                 // Set user data in store
                 const userData = Array.isArray(profileData) ? profileData[0] : profileData;
                 if (userData && Object.keys(userData).length > 0) {
@@ -106,7 +106,7 @@ export const useAuth = () => {
       }
     };
 
-    setIsLoading(true);
+    if (!isSilent) setIsLoading(true);
     globalSessionPromise = performCheck();
     globalSessionPromise.finally(() => {
       globalSessionPromise.isResolved = true;
@@ -116,7 +116,7 @@ export const useAuth = () => {
       const result = await globalSessionPromise;
       return result;
     } finally {
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false);
     }
   }, [setUserEmail, setIsAuthenticated]);
 
@@ -153,7 +153,7 @@ export const useAuth = () => {
 
       // Store complete user data from login API
       setIsAuthenticated(true);
-      
+
       // Set user data in store if available from login
       if (fullUserData) {
         useAuthStore.getState().setUserData(fullUserData);

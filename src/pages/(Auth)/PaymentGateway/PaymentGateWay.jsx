@@ -126,10 +126,11 @@ const PaymentPage = () => {
           Features_AnalyticsDashboard: isPaid,
         };
 
-        const response = await fetch('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/Auth', {
+        const response = await fetch('https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'X-User-Id': userDetails?.Email || userDetails?.email || '',
           },
           body: JSON.stringify(updatedData),
         });
