@@ -30,6 +30,10 @@ const DestinationList = [
   "Nepal",
   "Bhutan",
   "Sri Lanka",
+  "Kashmir",
+  "Kerala",
+  "Himachal",
+  "Andaman"
 ];
 
 export default function NewLeadForm() {
