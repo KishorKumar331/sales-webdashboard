@@ -18,6 +18,12 @@ const InvoiceTrackingDashboard = () => {
   });
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  
+  // States for Invoice Editing and Cancellation
+  const [isEditing, setIsEditing] = useState(false);
+  const [editInvoiceData, setEditInvoiceData] = useState(null);
+  const [isCancellationFormOpen, setIsCancellationFormOpen] = useState(false);
+  const [savingInvoice, setSavingInvoice] = useState(false);
 
   // Get user email from localStorage or context
 
@@ -63,6 +69,14 @@ const InvoiceTrackingDashboard = () => {
   const calculateSummary = (invoiceList) => {
     const totals = invoiceList.reduce(
       (acc, invoice) => {
+        // Exclude cancelled and refunded invoices from standard financial totals
+        if (
+          invoice.status?.toUpperCase() === 'CANCELLED' ||
+          invoice.status?.toUpperCase() === 'REFUNDED'
+        ) {
+          return acc;
+        }
+
         // Calculate total amount by summing all installments regardless of status
         const installments = invoice.payment?.installments || [];
         const totalAmount = installments.reduce((sum, p) => sum + (p.installmentAmount || 0), 0);
@@ -201,7 +215,196 @@ const InvoiceTrackingDashboard = () => {
   // Close modal
   const closeDetailModal = () => {
     setSelectedInvoice(null);
+    setIsEditing(false);
+    setEditInvoiceData(null);
+    setIsCancellationFormOpen(false);
   };
+
+  // Save updated invoice to backend
+  const handleSaveInvoice = async () => {
+    if (!editInvoiceData) return;
+
+    // Basic validation
+    if (!editInvoiceData.customer?.name) {
+      alert("Customer Name is required.");
+      return;
+    }
+
+    try {
+      setSavingInvoice(true);
+      
+      // Deep copy to prepare payload
+      let updatedInvoicePayload = JSON.parse(JSON.stringify(editInvoiceData));
+      
+      if (isCancellationFormOpen) {
+        // Ensure file_cancellation_management object exists
+        if (!updatedInvoicePayload.file_cancellation_management) {
+          updatedInvoicePayload.file_cancellation_management = {
+            reason: "client got better deal",
+            cancellationdate: new Date().toISOString().split('T')[0],
+            refunds: {
+              packagecost: 0,
+              gst: 0,
+              tcs: 0,
+              cancellationcharge: 0,
+              refundamount: 0,
+              notes: ""
+            }
+          };
+        }
+        updatedInvoicePayload.status = 'CANCELLED';
+      } else {
+        // If cancellation details exist but form was closed, remove cancellation details
+        delete updatedInvoicePayload.file_cancellation_management;
+        
+        // Re-evaluate status based on installments
+        const installments = updatedInvoicePayload.payment?.installments || [];
+        const allPaid = installments.length > 0 && installments.every(inst => inst.status === 'Paid');
+        updatedInvoicePayload.status = allPaid ? 'PAID' : 'PENDING';
+      }
+
+      console.log('Sending Save Invoice Payload:', JSON.stringify(updatedInvoicePayload, null, 2));
+
+      const response = await fetch(
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedInvoicePayload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to save invoice details");
+      }
+
+      const result = await response.json();
+      console.log('Save Invoice API Response:', result);
+
+      // Merge response data back into local state
+      const apiUpdatedInvoice = {
+        ...updatedInvoicePayload,
+        ...(result.payment?.installments ? {
+          payment: {
+            ...updatedInvoicePayload.payment,
+            installments: result.payment.installments
+          }
+        } : {})
+      };
+
+      setSelectedInvoice(apiUpdatedInvoice);
+      
+      setInvoices(prev =>
+        prev.map(inv =>
+          inv.invoiceId === apiUpdatedInvoice.invoiceId ? apiUpdatedInvoice : inv
+        )
+      );
+
+      calculateSummary(
+        invoices.map(inv =>
+          inv.invoiceId === apiUpdatedInvoice.invoiceId ? apiUpdatedInvoice : inv
+        )
+      );
+
+      setIsEditing(false);
+      setEditInvoiceData(null);
+      setIsCancellationFormOpen(false);
+      
+      alert('Invoice details saved successfully.');
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      alert('Failed to save invoice. Please try again.');
+    } finally {
+      setSavingInvoice(false);
+    }
+  };
+
+  // Cancellation and refund field helper functions
+  const handleToggleCancellation = () => {
+    if (isCancellationFormOpen) {
+      setIsCancellationFormOpen(false);
+    } else {
+      setIsCancellationFormOpen(true);
+      const data = editInvoiceData || selectedInvoice;
+      if (data && !data.file_cancellation_management) {
+        const pkgCost = Number(data.pricing?.baseAmount) || Number(data.pricing?.totalAmount) || 0;
+        const gstVal = Number(data.pricing?.gstAmount) || 0;
+        const tcsVal = Number(data.pricing?.tcsAmount) || 0;
+        const defaultRefund = pkgCost + gstVal + tcsVal;
+        
+        setEditInvoiceData(prev => ({
+          ...prev,
+          file_cancellation_management: {
+            reason: "client got better deal",
+            cancellationdate: new Date().toISOString().split('T')[0],
+            refunds: {
+              packagecost: pkgCost,
+              gst: gstVal,
+              tcs: tcsVal,
+              cancellationcharge: 5000,
+              refundamount: Math.max(0, defaultRefund - 5000),
+              notes: ""
+            }
+          }
+        }));
+      }
+    }
+  };
+
+  const handleCancellationFieldChange = (field, value) => {
+    setEditInvoiceData(prev => {
+      const updated = { ...prev };
+      if (!updated.file_cancellation_management) {
+        updated.file_cancellation_management = { refunds: {} };
+      }
+      updated.file_cancellation_management[field] = value;
+      return updated;
+    });
+  };
+
+  const handleRefundFieldChange = (field, value) => {
+    setEditInvoiceData(prev => {
+      const updated = JSON.parse(JSON.stringify(prev));
+      if (!updated.file_cancellation_management) {
+        updated.file_cancellation_management = { refunds: {} };
+      }
+      if (!updated.file_cancellation_management.refunds) {
+        updated.file_cancellation_management.refunds = {};
+      }
+      
+      const numVal = parseFloat(value) || 0;
+      updated.file_cancellation_management.refunds[field] = numVal;
+      
+      // Auto-calculate refundamount if we change packagecost, gst, tcs, or cancellationcharge
+      if (['packagecost', 'gst', 'tcs', 'cancellationcharge'].includes(field)) {
+        const pCost = field === 'packagecost' ? numVal : (Number(updated.file_cancellation_management.refunds.packagecost) || 0);
+        const gstVal = field === 'gst' ? numVal : (Number(updated.file_cancellation_management.refunds.gst) || 0);
+        const tcsVal = field === 'tcs' ? numVal : (Number(updated.file_cancellation_management.refunds.tcs) || 0);
+        const cCharge = field === 'cancellationcharge' ? numVal : (Number(updated.file_cancellation_management.refunds.cancellationcharge) || 0);
+        
+        updated.file_cancellation_management.refunds.refundamount = Math.max(0, (pCost + gstVal + tcsVal) - cCharge);
+      }
+      
+      return updated;
+    });
+  };
+
+  const handleRefundNotesChange = (value) => {
+    setEditInvoiceData(prev => {
+      const updated = { ...prev };
+      if (!updated.file_cancellation_management) {
+        updated.file_cancellation_management = { refunds: {} };
+      }
+      if (!updated.file_cancellation_management.refunds) {
+        updated.file_cancellation_management.refunds = {};
+      }
+      updated.file_cancellation_management.refunds.notes = value;
+      return updated;
+    });
+  };
+
   const setMockData = () => {
     const mockInvoices = [
       {
@@ -256,24 +459,24 @@ const InvoiceTrackingDashboard = () => {
 
   // Get status color
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Paid': return 'text-green-600 bg-green-100';
+    switch (status?.toUpperCase()) {
       case 'PAID': return 'text-green-600 bg-green-100';
-      case 'Pending': return 'text-yellow-600 bg-yellow-100';
       case 'PENDING': return 'text-yellow-600 bg-yellow-100';
-      case 'Overdue': return 'text-red-600 bg-red-100';
+      case 'OVERDUE': return 'text-red-600 bg-red-100';
+      case 'CANCELLED': return 'text-rose-600 bg-rose-100 border border-rose-200';
+      case 'REFUNDED': return 'text-blue-600 bg-blue-100 border border-blue-200';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
 
   // Get status icon
   const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Paid': return <CheckCircle className="w-4 h-4" />;
+    switch (status?.toUpperCase()) {
       case 'PAID': return <CheckCircle className="w-4 h-4" />;
-      case 'Pending': return <Clock className="w-4 h-4" />;
       case 'PENDING': return <Clock className="w-4 h-4" />;
-      case 'Overdue': return <XCircle className="w-4 h-4" />;
+      case 'OVERDUE': return <XCircle className="w-4 h-4" />;
+      case 'CANCELLED': return <XCircle className="w-4 h-4 text-rose-500" />;
+      case 'REFUNDED': return <TrendingDown className="w-4 h-4 text-blue-500" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
@@ -427,165 +630,6 @@ const InvoiceTrackingDashboard = () => {
     </div>
   );
 
-  // Invoice Detail Modal
-  const InvoiceDetailModal = () => {
-    if (!selectedInvoice) return null;
-
-    return (
-      <div 
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300"
-        onClick={closeDetailModal}
-      >
-        <div 
-          className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-300"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Modal Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">{selectedInvoice.invoiceNumber}</h2>
-              <p className="text-sm text-gray-500">Invoice ID: {selectedInvoice.invoiceId}</p>
-            </div>
-            <button
-              onClick={closeDetailModal}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-
-          {/* Modal Content */}
-          <div className="p-6 space-y-6">
-            {/* Customer Information */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Name</p>
-                  <p className="font-medium">{selectedInvoice.customer?.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-medium">{selectedInvoice.customer?.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Contact</p>
-                  <p className="font-medium">{selectedInvoice.customer?.contact}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Destination</p>
-                  <p className="font-medium">{selectedInvoice.destination}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Installments */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Installments</h3>
-              <div className="space-y-3">
-                {selectedInvoice.payment?.installments?.map((installment) => (
-                  <div key={installment.sequence} className="bg-white border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <div>
-                        <p className="font-medium text-gray-900">Installment {installment.sequence}</p>
-                        <p className="text-sm text-gray-600">Due: {installment.installmentDate}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-purple-600">
-                          {formatCurrency(installment.installmentAmount)}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(installment.status)}`}>
-                          {getStatusIcon(installment.status)}
-                          {installment.status}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Status Change Buttons */}
-                    <div className="flex gap-2">
-                      {installment.status === 'Pending' && (
-                        <button
-                          onClick={() => updateInstallmentStatus(selectedInvoice.invoiceId, installment.sequence, 'Paid')}
-                          disabled={updatingStatus}
-                          className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          {updatingStatus ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Updating...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-4 h-4" />
-                              Mark as Paid
-                            </>
-                          )}
-                        </button>
-                      )}
-
-                      {installment.status === 'Paid' && (
-                        <button
-                          onClick={() => updateInstallmentStatus(selectedInvoice.invoiceId, installment.sequence, 'Pending')}
-                          disabled={updatingStatus}
-                          className="flex-1 bg-yellow-600 text-white px-3 py-2 rounded-md text-sm hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          {updatingStatus ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Updating...
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-4 h-4" />
-                              Mark as Pending
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="bg-purple-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Summary</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Total Amount</p>
-                  <p className="text-xl font-bold text-purple-600">
-                    {formatCurrency(
-                      (selectedInvoice.payment?.installments || []).reduce((sum, p) => sum + (p.installmentAmount || 0), 0)
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Received</p>
-                  <p className="text-xl font-bold text-green-600">
-                    {formatCurrency(
-                      (selectedInvoice.payment?.installments || []).filter(p => p.status === 'Paid')
-                        .reduce((sum, p) => sum + (p.installmentAmount || 0), 0)
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Pending</p>
-                  <p className="text-xl font-bold text-yellow-600">
-                    {formatCurrency(
-                      (selectedInvoice.payment?.installments || []).filter(p => p.status === 'Pending')
-                        .reduce((sum, p) => sum + (p.installmentAmount || 0), 0)
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -738,8 +782,488 @@ const InvoiceTrackingDashboard = () => {
           </div>
         )}
 
-        {/* Invoice Detail Modal */}
-        <InvoiceDetailModal />
+        {/* Invoice Detail Modal rendered inline to maintain DOM state and scroll position */}
+        {selectedInvoice && (
+          <div 
+            className="fixed inset-0 bg-black/25 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300"
+            onClick={closeDetailModal}
+          >
+            <div 
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-900">{selectedInvoice.invoiceNumber}</h2>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedInvoice.status || 'Pending')}`}>
+                      {selectedInvoice.status || 'Pending'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">Invoice ID: {selectedInvoice.invoiceId}</p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {!isEditing ? (
+                    <button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setEditInvoiceData(JSON.parse(JSON.stringify(selectedInvoice)));
+                        setIsCancellationFormOpen(selectedInvoice.file_cancellation_management ? true : false);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-all"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Edit Invoice
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setIsEditing(false);
+                          setEditInvoiceData(null);
+                          setIsCancellationFormOpen(false);
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveInvoice}
+                        disabled={savingInvoice}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 rounded-lg transition-all shadow-sm"
+                      >
+                        {savingInvoice ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            Save Changes
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    onClick={closeDetailModal}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 space-y-6">
+                
+                {/* View Mode Cancellation Summary Banner */}
+                {!isEditing && selectedInvoice.file_cancellation_management && (
+                  <div className="bg-rose-50 border border-rose-200 rounded-xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-rose-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="w-5 h-5 text-rose-600" />
+                        <h3 className="text-rose-800 font-bold text-lg">Cancelled & Refund Details</h3>
+                      </div>
+                      <span className="text-xs font-semibold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-200">
+                        Cancelled on {selectedInvoice.file_cancellation_management.cancellationdate}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-xs font-semibold text-gray-500 block uppercase">Cancellation Reason</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedInvoice.file_cancellation_management.reason || "N/A"}</span>
+                      </div>
+                      {selectedInvoice.file_cancellation_management.refunds?.notes && (
+                        <div>
+                          <span className="text-xs font-semibold text-gray-500 block uppercase">Refund Notes</span>
+                          <span className="text-sm font-medium text-gray-900">{selectedInvoice.file_cancellation_management.refunds.notes}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-white rounded-lg p-4 border border-rose-100 grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div>
+                        <span className="text-xs text-gray-500 block">Package Cost</span>
+                        <span className="text-sm font-bold text-gray-800">
+                          {formatCurrency(selectedInvoice.file_cancellation_management.refunds?.packagecost || 0)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 block">GST</span>
+                        <span className="text-sm font-bold text-gray-800">
+                          {formatCurrency(selectedInvoice.file_cancellation_management.refunds?.gst || 0)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 block">TCS</span>
+                        <span className="text-sm font-bold text-gray-800">
+                          {formatCurrency(selectedInvoice.file_cancellation_management.refunds?.tcs || 0)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 block">Cancellation Charge</span>
+                        <span className="text-sm font-bold text-rose-600">
+                          {formatCurrency(selectedInvoice.file_cancellation_management.refunds?.cancellationcharge || 0)}
+                        </span>
+                      </div>
+                      <div className="col-span-2 md:col-span-1 border-t md:border-t-0 md:border-l border-rose-100 pt-2 md:pt-0 md:pl-4">
+                        <span className="text-xs text-rose-800 font-bold block uppercase tracking-wider">Refund Amount</span>
+                        <span className="text-lg font-extrabold text-rose-600">
+                          {formatCurrency(selectedInvoice.file_cancellation_management.refunds?.refundamount || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Customer Information */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Information</h3>
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Customer Name</label>
+                        <input
+                          type="text"
+                          value={editInvoiceData?.customer?.name || ""}
+                          onChange={(e) => setEditInvoiceData(prev => ({
+                            ...prev,
+                            customer: { ...(prev.customer || {}), name: e.target.value }
+                          }))}
+                          className="w-full text-sm border border-gray-300 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Customer Email</label>
+                        <input
+                          type="email"
+                          value={editInvoiceData?.customer?.email || ""}
+                          onChange={(e) => setEditInvoiceData(prev => ({
+                            ...prev,
+                            customer: { ...(prev.customer || {}), email: e.target.value }
+                          }))}
+                          className="w-full text-sm border border-gray-300 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Customer Contact</label>
+                        <input
+                          type="text"
+                          value={editInvoiceData?.customer?.contact || ""}
+                          onChange={(e) => setEditInvoiceData(prev => ({
+                            ...prev,
+                            customer: { ...(prev.customer || {}), contact: e.target.value }
+                          }))}
+                          className="w-full text-sm border border-gray-300 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Destination</label>
+                        <input
+                          type="text"
+                          value={editInvoiceData?.destination || ""}
+                          onChange={(e) => setEditInvoiceData(prev => ({
+                            ...prev,
+                            destination: e.target.value
+                          }))}
+                          className="w-full text-sm border border-gray-300 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Travel Start Date</label>
+                        <input
+                          type="date"
+                          value={editInvoiceData?.startDate || ""}
+                          onChange={(e) => setEditInvoiceData(prev => ({
+                            ...prev,
+                            startDate: e.target.value
+                          }))}
+                          className="w-full text-sm border border-gray-300 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Travel End Date</label>
+                        <input
+                          type="date"
+                          value={editInvoiceData?.endDate || ""}
+                          onChange={(e) => setEditInvoiceData(prev => ({
+                            ...prev,
+                            endDate: e.target.value
+                          }))}
+                          className="w-full text-sm border border-gray-300 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Name</p>
+                        <p className="font-medium">{selectedInvoice.customer?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Email</p>
+                        <p className="font-medium">{selectedInvoice.customer?.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Contact</p>
+                        <p className="font-medium">{selectedInvoice.customer?.contact}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Destination</p>
+                        <p className="font-medium">{selectedInvoice.destination}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Travel Dates</p>
+                        <p className="font-medium">{selectedInvoice.startDate} - {selectedInvoice.endDate}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Edit Mode - Cancellation / Refund Toggle Section */}
+                {isEditing && (
+                  <div className="space-y-4">
+                    <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="text-rose-800 font-semibold">Cancel Invoice & Process Refund</h4>
+                        <p className="text-xs text-rose-600">Mark this invoice as cancelled and calculate client refund details.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleToggleCancellation}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-sm ${
+                          isCancellationFormOpen
+                            ? "bg-rose-600 text-white hover:bg-rose-700"
+                            : "bg-white text-rose-600 border border-rose-300 hover:bg-rose-50"
+                        }`}
+                      >
+                        {isCancellationFormOpen ? "Remove Cancellation" : "Enable Cancellation"}
+                      </button>
+                    </div>
+
+                    {isCancellationFormOpen && (
+                      <div className="bg-rose-50/30 border border-rose-100 rounded-xl p-5 space-y-4">
+                        <h3 className="text-rose-800 font-bold text-base flex items-center gap-1.5 border-b border-rose-100 pb-2">
+                          <XCircle className="w-5 h-5 text-rose-500" />
+                          Cancellation & Refund Management Form
+                        </h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-semibold text-rose-700 uppercase mb-1 block">
+                              Cancellation Reason *
+                            </label>
+                            <textarea
+                              rows="2"
+                              value={editInvoiceData?.file_cancellation_management?.reason || ""}
+                              onChange={(e) => handleCancellationFieldChange('reason', e.target.value)}
+                              placeholder="e.g. client got better deal"
+                              className="w-full text-sm border border-rose-200 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-rose-700 uppercase mb-1 block">
+                              Cancellation Date *
+                            </label>
+                            <input
+                              type="date"
+                              value={editInvoiceData?.file_cancellation_management?.cancellationdate || ""}
+                              onChange={(e) => handleCancellationFieldChange('cancellationdate', e.target.value)}
+                              className="w-full text-sm border border-rose-200 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="bg-white border border-rose-100 rounded-xl p-4 space-y-4 shadow-sm">
+                          <h4 className="text-gray-800 font-semibold text-sm border-b border-gray-100 pb-2">Refund Financials</h4>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 mb-1 block">Package Cost (₹)</label>
+                              <input
+                                type="number"
+                                value={editInvoiceData?.file_cancellation_management?.refunds?.packagecost ?? 0}
+                                onChange={(e) => handleRefundFieldChange('packagecost', e.target.value)}
+                                className="w-full text-sm border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 mb-1 block">GST (₹)</label>
+                              <input
+                                type="number"
+                                value={editInvoiceData?.file_cancellation_management?.refunds?.gst ?? 0}
+                                onChange={(e) => handleRefundFieldChange('gst', e.target.value)}
+                                className="w-full text-sm border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 mb-1 block">TCS (₹)</label>
+                              <input
+                                type="number"
+                                value={editInvoiceData?.file_cancellation_management?.refunds?.tcs ?? 0}
+                                onChange={(e) => handleRefundFieldChange('tcs', e.target.value)}
+                                className="w-full text-sm border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 mb-1 block">Cancellation Charge (₹)</label>
+                              <input
+                                type="number"
+                                value={editInvoiceData?.file_cancellation_management?.refunds?.cancellationcharge ?? 0}
+                                onChange={(e) => handleRefundFieldChange('cancellationcharge', e.target.value)}
+                                className="w-full text-sm border border-rose-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                              />
+                            </div>
+
+                            <div className="col-span-2 md:col-span-1 bg-rose-50 rounded-lg p-2 border border-rose-100">
+                              <label className="text-xs font-bold text-rose-800 uppercase block mb-1">Refund Amount (₹)</label>
+                              <input
+                                type="number"
+                                value={editInvoiceData?.file_cancellation_management?.refunds?.refundamount ?? 0}
+                                onChange={(e) => handleRefundFieldChange('refundamount', e.target.value)}
+                                className="w-full text-sm font-bold text-rose-700 bg-white border border-rose-200 rounded p-1 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="text-[11px] text-gray-500 border-t border-gray-100 pt-2 flex justify-between items-center">
+                            <span><strong>Formula:</strong> Refund Amount = Package Cost + GST + TCS - Cancellation Charge</span>
+                            <span className="text-rose-600 font-semibold bg-rose-50 px-1.5 py-0.5 rounded">Auto-calculated (editable)</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-rose-700 uppercase mb-1 block">
+                            Refund Notes
+                          </label>
+                          <textarea
+                            rows="2"
+                            value={editInvoiceData?.file_cancellation_management?.refunds?.notes || ""}
+                            onChange={(e) => handleRefundNotesChange(e.target.value)}
+                            placeholder="Enter refund reference notes..."
+                            className="w-full text-sm border border-rose-200 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Installments - Read-only or Status Edit */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Installments</h3>
+                  <div className="space-y-3">
+                    {(isEditing ? editInvoiceData : selectedInvoice).payment?.installments?.map((installment) => (
+                      <div key={installment.sequence} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <div>
+                            <p className="font-medium text-gray-900">Installment {installment.sequence}</p>
+                            <p className="text-sm text-gray-600">Due: {installment.installmentDate}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg font-bold text-purple-600">
+                              {formatCurrency(installment.installmentAmount)}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(installment.status)}`}>
+                              {getStatusIcon(installment.status)}
+                              {installment.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Status Change Buttons (only active when not editing main invoice details) */}
+                        {!isEditing && (
+                          <div className="flex gap-2">
+                            {installment.status === 'Pending' && (
+                              <button
+                                onClick={() => updateInstallmentStatus(selectedInvoice.invoiceId, installment.sequence, 'Paid')}
+                                disabled={updatingStatus}
+                                className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                              >
+                                {updatingStatus ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    Updating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="w-4 h-4" />
+                                    Mark as Paid
+                                  </>
+                                )}
+                              </button>
+                            )}
+
+                            {installment.status === 'Paid' && (
+                              <button
+                                onClick={() => updateInstallmentStatus(selectedInvoice.invoiceId, installment.sequence, 'Pending')}
+                                disabled={updatingStatus}
+                                className="flex-1 bg-yellow-600 text-white px-3 py-2 rounded-md text-sm hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                              >
+                                {updatingStatus ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    Updating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Clock className="w-4 h-4" />
+                                    Mark as Pending
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Summary</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Amount</p>
+                      <p className="text-xl font-bold text-purple-600">
+                        {formatCurrency(
+                          ((isEditing ? editInvoiceData : selectedInvoice).payment?.installments || []).reduce((sum, p) => sum + (p.installmentAmount || 0), 0)
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Received</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {formatCurrency(
+                          ((isEditing ? editInvoiceData : selectedInvoice).payment?.installments || []).filter(p => p.status === 'Paid')
+                            .reduce((sum, p) => sum + (p.installmentAmount || 0), 0)
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Pending</p>
+                      <p className="text-xl font-bold text-yellow-600">
+                        {formatCurrency(
+                          ((isEditing ? editInvoiceData : selectedInvoice).payment?.installments || []).filter(p => p.status === 'Pending')
+                            .reduce((sum, p) => sum + (p.installmentAmount || 0), 0)
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
