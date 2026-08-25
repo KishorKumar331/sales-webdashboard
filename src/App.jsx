@@ -24,6 +24,7 @@ import CreateProfile from './pages/(Auth)/CreateProfile';
 import InspectBanner from './components/InspectBanner';
 import { useAuthStore } from './store/authStore';
 import RestrictedAccessScreen from './components/RestrictedAccessScreen';
+import FloatingPlayStoreButton from './components/FloatingPlayStoreButton';
 
 // Protected Route Component - redirects to /auth if not authenticated
 const ProtectedRoute = ({ isAuthenticated, hasProfile, isLoading, redirectPath = '/auth' }) => {
@@ -207,6 +208,7 @@ const App = () => {
         </Routes>
 
         <ToastContainer position="top-right" autoClose={3000} />
+        <FloatingPlayStoreButton />
       </div>
     </Router>
   );

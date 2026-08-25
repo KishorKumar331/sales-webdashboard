@@ -129,6 +129,34 @@ const Sidebar = () => {
               <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
           </div>
+
+          {/* Mobile App Download Banner */}
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <a
+              href="https://play.google.com/store/apps/details?id=com.salesboard.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-500/20 via-teal-500/10 to-transparent border border-emerald-500/30 hover:border-emerald-400 transition-all duration-300 shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center">
+                  <svg className="w-5 h-5" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M325.8 243.7L80.2 4.4C74.6-1.1 66.7-1.5 60.7 1.8L325.8 243.7z" fill="#00A0FF" />
+                    <path d="M418.1 228.6l-92.3-54.9L262.1 237.4l63.7 63.7 92.3-54.9c13.7-8.1 13.7-22.5 0-30.6z" fill="#FFC107" />
+                    <path d="M60.7 510.2c6 3.3 13.9 2.9 19.5-2.6l245.6-239.3L60.7 510.2z" fill="#FF3D00" />
+                    <path d="M60.7 1.8C54.4 5.3 50.3 12.3 50.3 20.6v470.8c0 8.3 4.1 15.3 10.4 18.8l214.5-253.2L60.7 1.8z" fill="#00E676" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-white text-xs font-bold leading-tight group-hover:text-emerald-300 transition-colors">Get Mobile App</p>
+                  <p className="text-white/60 text-[10px]">Google Play Store</p>
+                </div>
+              </div>
+              <span className="text-xs bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full shadow group-hover:scale-105 transition-transform">
+                Get
+              </span>
+            </a>
+          </div>
         </nav>
 
         {/* Bottom section - Enhanced user info */}
