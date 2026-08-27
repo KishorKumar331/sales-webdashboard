@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Download, X, Smartphone, ExternalLink, QrCode } from 'lucide-react';
 
 const FloatingPlayStoreButton = ({ 
-  appUrl = "https://play.google.com/store/apps/details?id=com.salesboard.app",
-  apkUrl = "#",
+  appUrl = "https://drive.usercontent.google.com/download?id=1RZndlwHAhG27lOgaaMvC575qruQ0CgE9&export=download&confirm=t",
+  apkUrl = "https://drive.usercontent.google.com/download?id=1RZndlwHAhG27lOgaaMvC575qruQ0CgE9&export=download&confirm=t",
   appName = "Quick Quotes Sales App",
   packageName = "com.salesboard.app"
 }) => {
@@ -13,13 +13,9 @@ const FloatingPlayStoreButton = ({
 
   if (isDismissed) return null;
 
-  const handlePlayStoreClick = (e) => {
-    // If apkUrl is provided and not '#', allow direct download or open playstore link
-    if (appUrl && appUrl !== '#') {
-      window.open(appUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      alert("App link will be active once published on Google Play Store!");
-    }
+  const handleDirectDownload = (e) => {
+    if (e) e.preventDefault();
+    window.location.href = "/api/download-app";
   };
 
   return (
@@ -51,12 +47,9 @@ const FloatingPlayStoreButton = ({
           </p>
 
           {/* Main Google Play Download Badge Button */}
-          <a
-            href={appUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handlePlayStoreClick}
-            className="w-full group relative flex items-center gap-3 bg-black hover:bg-slate-950 text-white p-3 rounded-xl border border-slate-700 hover:border-emerald-500/50 transition-all duration-300 shadow-xl overflow-hidden cursor-pointer"
+          <button
+            onClick={handleDirectDownload}
+            className="w-full group relative flex items-center gap-3 bg-black hover:bg-slate-950 text-white p-3 rounded-xl border border-slate-700 hover:border-emerald-500/50 transition-all duration-300 shadow-xl overflow-hidden cursor-pointer text-left"
           >
             {/* Play Store Logo SVG */}
             <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
@@ -87,12 +80,12 @@ const FloatingPlayStoreButton = ({
             </div>
 
             <div className="flex flex-col text-left flex-1">
-              <span className="text-[9px] uppercase tracking-wider font-semibold text-slate-400">GET IT ON</span>
-              <span className="text-sm font-extrabold tracking-tight text-white group-hover:text-emerald-400 transition-colors">Google Play</span>
+              <span className="text-[9px] uppercase tracking-wider font-semibold text-slate-400">DOWNLOAD NOW</span>
+              <span className="text-sm font-extrabold tracking-tight text-white group-hover:text-emerald-400 transition-colors">Direct APK Download</span>
             </div>
 
-            <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
-          </a>
+            <Download className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+          </button>
 
           {/* Quick Direct Download Options */}
           <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
@@ -101,27 +94,22 @@ const FloatingPlayStoreButton = ({
               v1.2.0 (Latest Release)
             </span>
 
-            <a
-              href={appUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={handleDirectDownload}
               className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-medium hover:underline text-[11px]"
             >
               <Download className="w-3 h-3" /> Direct Download
-            </a>
+            </button>
           </div>
         </div>
       )}
 
       {/* Floating Main PlayStore Button */}
       <div className="flex items-center gap-2 group">
-        {/* PlayStore Action Badge */}
-        <a
-          href={appUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handlePlayStoreClick}
-          className="relative flex items-center gap-3 bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 text-white px-4 py-2.5 rounded-full shadow-2xl border border-slate-700/80 hover:border-emerald-500/80 hover:shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden"
+        {/* Direct Action Badge */}
+        <button
+          onClick={handleDirectDownload}
+          className="relative flex items-center gap-3 bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 text-white px-4 py-2.5 rounded-full shadow-2xl border border-slate-700/80 hover:border-emerald-500/80 hover:shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden text-left"
         >
           {/* Animated Shine Highlight */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -157,11 +145,11 @@ const FloatingPlayStoreButton = ({
           {/* Text Content */}
           <div className="flex flex-col text-left">
             <span className="text-[9px] uppercase tracking-widest font-semibold text-slate-400 leading-none">DOWNLOAD APP</span>
-            <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors leading-tight">Google Play</span>
+            <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors leading-tight">Get Android APK</span>
           </div>
 
           <Download className="w-4 h-4 text-emerald-400 animate-bounce ml-1" />
-        </a>
+        </button>
 
         {/* Toggle Info Card / Dismiss Controls */}
         <button

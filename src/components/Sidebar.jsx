@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, FilePlus, Clock, CheckCircle, Search, User, Users, TrendingUp, Sparkles, Zap } from 'lucide-react';
+import { Home, FilePlus, Clock, CheckCircle, Search, User, Users, TrendingUp, Sparkles, Zap, Download } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const Sidebar = () => {
@@ -15,6 +15,11 @@ const Sidebar = () => {
     { to: "/accounting", icon: <Users className="w-5 h-5" />, label: "Accounting", badge: null },
     { to: "/profile", icon: <User className="w-5 h-5" />, label: "Profile", badge: null },
   ];
+
+  const handleDirectDownload = (e) => {
+    if (e) e.preventDefault();
+    window.location.href = "/api/download-app";
+  };
 
   return (
     <div className="relative w-64 h-full flex-shrink-0 overflow-hidden">
@@ -132,30 +137,51 @@ const Sidebar = () => {
 
           {/* Mobile App Download Banner */}
           <div className="mt-4 pt-4 border-t border-white/10">
-            <a
-              href="https://play.google.com/store/apps/details?id=com.salesboard.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-500/20 via-teal-500/10 to-transparent border border-emerald-500/30 hover:border-emerald-400 transition-all duration-300 shadow-md"
+            <button
+              onClick={handleDirectDownload}
+              className="relative w-full group flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 text-white shadow-xl border border-slate-700/80 hover:border-emerald-500/80 hover:shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden text-left"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center">
-                  <svg className="w-5 h-5" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M325.8 243.7L80.2 4.4C74.6-1.1 66.7-1.5 60.7 1.8L325.8 243.7z" fill="#00A0FF" />
-                    <path d="M418.1 228.6l-92.3-54.9L262.1 237.4l63.7 63.7 92.3-54.9c13.7-8.1 13.7-22.5 0-30.6z" fill="#FFC107" />
-                    <path d="M60.7 510.2c6 3.3 13.9 2.9 19.5-2.6l245.6-239.3L60.7 510.2z" fill="#FF3D00" />
-                    <path d="M60.7 1.8C54.4 5.3 50.3 12.3 50.3 20.6v470.8c0 8.3 4.1 15.3 10.4 18.8l214.5-253.2L60.7 1.8z" fill="#00E676" />
+              {/* Animated Shine Highlight */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+
+              <div className="flex items-center gap-3 relative z-10">
+                {/* Play Store Logo SVG */}
+                <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M325.8 243.7L80.2 4.4C74.6-1.1 66.7-1.5 60.7 1.8L325.8 243.7z" fill="url(#sidebar_play_blue)" />
+                    <path d="M418.1 228.6l-92.3-54.9L262.1 237.4l63.7 63.7 92.3-54.9c13.7-8.1 13.7-22.5 0-30.6z" fill="url(#sidebar_play_yellow)" />
+                    <path d="M60.7 510.2c6 3.3 13.9 2.9 19.5-2.6l245.6-239.3L60.7 510.2z" fill="url(#sidebar_play_red)" />
+                    <path d="M60.7 1.8C54.4 5.3 50.3 12.3 50.3 20.6v470.8c0 8.3 4.1 15.3 10.4 18.8l214.5-253.2L60.7 1.8z" fill="url(#sidebar_play_green)" />
+                    <defs>
+                      <linearGradient id="sidebar_play_blue" x1="50" y1="250" x2="330" y2="250" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#00A0FF" />
+                        <stop offset="1" stopColor="#00C8FF" />
+                      </linearGradient>
+                      <linearGradient id="sidebar_play_yellow" x1="260" y1="250" x2="430" y2="250" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#FFC107" />
+                        <stop offset="1" stopColor="#FF8F00" />
+                      </linearGradient>
+                      <linearGradient id="sidebar_play_red" x1="50" y1="250" x2="330" y2="250" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#FF3D00" />
+                        <stop offset="1" stopColor="#DD2C00" />
+                      </linearGradient>
+                      <linearGradient id="sidebar_play_green" x1="50" y1="20" x2="270" y2="250" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#00E676" />
+                        <stop offset="1" stopColor="#00B0FF" />
+                      </linearGradient>
+                    </defs>
                   </svg>
                 </div>
-                <div>
-                  <p className="text-white text-xs font-bold leading-tight group-hover:text-emerald-300 transition-colors">Get Mobile App</p>
-                  <p className="text-white/60 text-[10px]">Google Play Store</p>
+
+                {/* Text Content */}
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] uppercase tracking-widest font-semibold text-slate-400 leading-none">DOWNLOAD APP</span>
+                  <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors leading-tight mt-0.5">Get Android APK</span>
                 </div>
               </div>
-              <span className="text-xs bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full shadow group-hover:scale-105 transition-transform">
-                Get
-              </span>
-            </a>
+
+              <Download className="w-4 h-4 text-emerald-400 animate-bounce flex-shrink-0 relative z-10" />
+            </button>
           </div>
         </nav>
 
