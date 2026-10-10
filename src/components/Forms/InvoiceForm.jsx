@@ -547,8 +547,17 @@ export default function InvoiceForm({
     setIsGeneratingPdf(true);
 
     try {
+      const sanitizedPricing = {
+        ...formData.pricing,
+        totalAmount: parseFloat(formData.pricing?.totalAmount) || 0,
+        baseAmount: parseFloat(formData.pricing?.baseAmount) || parseFloat(formData.pricing?.totalAmount) || 0,
+        gstAmount: parseFloat(formData.pricing?.gstAmount) || 0,
+        tcsAmount: parseFloat(formData.pricing?.tcsAmount) || 0,
+      };
+
       const dataWithUser = {
         ...formData,
+        pricing: sanitizedPricing,
         company: userProfile?.user?.company,
         adminemailid: userProfile?.user?.adminemailid
       };
@@ -673,8 +682,8 @@ export default function InvoiceForm({
       toast.error("Customer name is required");
       return false;
     }
-    if (!formData.pricing.totalAmount) {
-      toast.error("Error", "Total amount is required");
+    if (!formData.pricing.totalAmount || parseFloat(formData.pricing.totalAmount) <= 0) {
+      toast.error("Total amount is required");
       return false;
     }
     return true;
@@ -712,7 +721,13 @@ export default function InvoiceForm({
         endDate: formData.endDate,
         travelDate: formData.travelDate,
         travelerSummary: formData.travelerSummary,
-        pricing: formData.pricing,
+        pricing: {
+          ...formData.pricing,
+          totalAmount: parseFloat(formData.pricing?.totalAmount) || 0,
+          baseAmount: parseFloat(formData.pricing?.baseAmount) || parseFloat(formData.pricing?.totalAmount) || 0,
+          gstAmount: parseFloat(formData.pricing?.gstAmount) || 0,
+          tcsAmount: parseFloat(formData.pricing?.tcsAmount) || 0,
+        },
         payment: formData.payment,
         cancellationPolicy: formData.cancellationPolicy,
         cancellationDetails: formData.cancellationDetails,
@@ -1025,16 +1040,28 @@ export default function InvoiceForm({
 
           {/* Pricing Row: Package Amount, GST, and TCS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                Base Package Amount
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                Base Package Amount (₹)
               </label>
-              <span className="text-xl font-bold text-gray-900 flex items-center">
-                ₹{parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString("en-IN")}
-                <span className="text-[10px] font-medium text-gray-400 ml-2 bg-white px-1.5 py-0.5 rounded border border-gray-100">
-                  Fixed
-                </span>
-              </span>
+              <input
+                className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm font-semibold text-gray-900"
+                value={formData?.pricing?.totalAmount ?? ""}
+                onChange={(e) => {
+                  const rawVal = e.target.value;
+                  const val = rawVal === "" ? "" : parseFloat(rawVal);
+                  setFormData((prev) => ({
+                    ...prev,
+                    pricing: {
+                      ...prev.pricing,
+                      totalAmount: val === "" ? "" : isNaN(val) ? 0 : val,
+                      baseAmount: val === "" ? "" : isNaN(val) ? 0 : val,
+                    },
+                  }));
+                }}
+                placeholder="Base Package Amount"
+                type="number"
+              />
             </div>
 
             <div>
@@ -1043,16 +1070,18 @@ export default function InvoiceForm({
               </label>
               <input
                 className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm"
-                value={(formData?.pricing?.gstAmount || 0).toString()}
-                onChange={(e) =>
+                value={formData?.pricing?.gstAmount ?? ""}
+                onChange={(e) => {
+                  const rawVal = e.target.value;
+                  const val = rawVal === "" ? "" : parseFloat(rawVal);
                   setFormData((prev) => ({
                     ...prev,
                     pricing: {
                       ...prev.pricing,
-                      gstAmount: parseFloat(e.target.value) || 0,
+                      gstAmount: val === "" ? "" : isNaN(val) ? 0 : val,
                     },
-                  }))
-                }
+                  }));
+                }}
                 placeholder="GST"
                 type="number"
               />
@@ -1064,16 +1093,18 @@ export default function InvoiceForm({
               </label>
               <input
                 className="border border-gray-300 rounded-lg p-2.5 bg-white w-full focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm"
-                value={(formData?.pricing?.tcsAmount || 0).toString()}
-                onChange={(e) =>
+                value={formData?.pricing?.tcsAmount ?? ""}
+                onChange={(e) => {
+                  const rawVal = e.target.value;
+                  const val = rawVal === "" ? "" : parseFloat(rawVal);
                   setFormData((prev) => ({
                     ...prev,
                     pricing: {
                       ...prev.pricing,
-                      tcsAmount: parseFloat(e.target.value) || 0,
+                      tcsAmount: val === "" ? "" : isNaN(val) ? 0 : val,
                     },
-                  }))
-                }
+                  }));
+                }}
                 placeholder="TCS"
                 type="number"
               />

@@ -1,4 +1,5 @@
 import { useRef, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Phone,
   ChevronRight,
@@ -10,23 +11,20 @@ import {
   Award,
   Star,
   Eye,
-  Download,
   Share2,
+  FileText,
 } from "lucide-react";
 import { FetchQuoteByTripID } from "../../api/leads/FetchLeads";
 import QuoteDetailsModal from "../modals/QuoteDetailsModal";
-import PdfPreviewModal from "../modals/PdfPreviewModal";
-import axios from "axios";
+import InvoiceListModal from "../modals/InvoiceListModal";
 import { toast } from "react-toastify";
-const API_URL =
-  "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html";
 
 const ConvertedCards = ({ data, onStatusChange }) => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [quoteDetails, setQuoteDetails] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-const [pdfHtml,setPdfHtml]=useState(null);
-const [showPdfModal,setShowPdfModal]=useState(false);
+  const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
 
 
   const fetchLatestQuote = async () => {
@@ -49,29 +47,15 @@ const [showPdfModal,setShowPdfModal]=useState(false);
     }
   };
 
-  const handleInvoicePreview = async (quotation) => {
-    try {
-
-      const response = await axios.post(API_URL, {
-        type: "invoice",
-        mode: "html",
-        tripId:data?.TripId,
-        invoiceId:data?.TripId,
-        templateName: "invoiceip.hbs",
-      });
-
-      if (!response.data) {
-        throw new Error("HTML not returned");
-      }
-
-      setPdfHtml(response.data);
-      setShowPdfModal(true);
-    } catch (err) {
-      console.error("Preview error:", err);
-      toast.error("Failed to load preview");
-    }
+  const handleCreateNewInvoice = () => {
+    navigate("/invoices/create", {
+      state: {
+        initialData: data,
+        tripId: data?.TripId,
+      },
+    });
+    setIsInvoiceModalVisible(false);
   };
-
 
   const handleAction = (action) => {
     switch (action) {
@@ -79,7 +63,8 @@ const [showPdfModal,setShowPdfModal]=useState(false);
         fetchLatestQuote();
         break;
       case 'download-invoice':
-        handleInvoicePreview();
+      case 'invoices':
+        setIsInvoiceModalVisible(true);
         break;
       case 'share-details':
         window.alert('Share functionality would be implemented here');
@@ -176,10 +161,10 @@ const [showPdfModal,setShowPdfModal]=useState(false);
           </button>
 
           <button
-            onClick={() => handleAction('download-invoice')}
+            onClick={() => setIsInvoiceModalVisible(true)}
             className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl flex items-center h-[3rem] justify-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
           >
-            <Download size={18} />
+            <FileText size={18} />
             <span className="font-medium">Invoice</span>
           </button>
 
@@ -225,15 +210,11 @@ const [showPdfModal,setShowPdfModal]=useState(false);
         onClose={() => setIsModalVisible(false)}
         quote={{ ...quoteDetails, ...data }}
       />
-      <PdfPreviewModal
-        visible={showPdfModal}
-        pdfHtml={pdfHtml}
+      <InvoiceListModal
+        visible={isInvoiceModalVisible}
+        onClose={() => setIsInvoiceModalVisible(false)}
         data={data}
-        documentType="invoice"
-        clientName={"InvoicePdf"}
-        onClose={() => {
-          setShowPdfModal(false);
-        }}
+        onCreateNew={handleCreateNewInvoice}
       />
     </>
   );
