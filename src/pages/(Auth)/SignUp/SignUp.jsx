@@ -29,46 +29,46 @@ export default function SignUp() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!formData.email || !formData.password || !formData.fullname || !formData.phone) {
-      alert("Please fill all fields");
-      return;
-    }
+    // if (!formData.email || !formData.password || !formData.fullname || !formData.phone) {
+    //   alert("Please fill all fields");
+    //   return;
+    // }
 
-    let formattedPhone = formData.phone.trim();
-    if (!formattedPhone.startsWith('+')) {
-      if (formattedPhone.startsWith('91') && formattedPhone.length === 12) {
-        formattedPhone = '+' + formattedPhone;
-      } else {
-        formattedPhone = '+91' + formattedPhone;
-      }
-    }
-    
+    // let formattedPhone = formData.phone.trim();
+    // if (!formattedPhone.startsWith('+')) {
+    //   if (formattedPhone.startsWith('91') && formattedPhone.length === 12) {
+    //     formattedPhone = '+' + formattedPhone;
+    //   } else {
+    //     formattedPhone = '+91' + formattedPhone;
+    //   }
+    // }
+
     // Update formData state so it propagates to downstream components/hooks
-    setFormData((prev) => ({ ...prev, phone: formattedPhone }));
+    // setFormData((prev) => ({ ...prev, phone: formattedPhone }));
 
     setIsLoading(true);
-    try {
-      const { signUp } = await import('aws-amplify/auth');
+    // try {
+    //   const { signUp } = await import('aws-amplify/auth');
 
-      await signUp({
-        username: formData.email,
-        password: formData.password,
-        options: {
-          userAttributes: {
-            email: formData.email,
-            name: formData.fullname,
-            phone_number: formattedPhone,
-          }
-        }
-      });
+    //   await signUp({
+    //     username: formData.email,
+    //     password: formData.password,
+    //     options: {
+    //       userAttributes: {
+    //         email: formData.email,
+    //         name: formData.fullname,
+    //         phone_number: formattedPhone,
+    //       }
+    //     }
+    //   });
 
-      setAuthState("otp");
-    } catch (error) {
-      console.error("Sign up error:", error);
-      alert(error.message || "Failed to create account");
-    } finally {
-      setIsLoading(false);
-    }
+    //   setAuthState("otp");
+    // } catch (error) {
+    //   console.error("Sign up error:", error);
+    //   alert(error.message || "Failed to create account");
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
 
   const handleVerifyOTP = async (e) => {
@@ -76,62 +76,62 @@ export default function SignUp() {
     if (!otp) return;
 
     setIsLoading(true);
-    try {
-      const { confirmSignUp, signIn, signOut } = await import('aws-amplify/auth');
-      const result = await confirmSignUp({
-        username: formData.email,
-        confirmationCode: otp
-      });
-      console.log('✅ OTP Result:', result);
-      if (result.isSignUpComplete || result.nextStep?.signUpStep === 'DONE') {
-        // Sign in automatically after verification
-        try {
-          await signIn({
-            username: formData.email,
-            password: formData.password
-          });
-        } catch (signInError) {
-          if (signInError.name === 'UserAlreadyAuthenticatedException') {
-            await signOut();
-            await signIn({
-              username: formData.email,
-              password: formData.password
-            });
-          } else {
-            throw signInError;
-          }
-        }
+    // try {
+    //   const { confirmSignUp, signIn, signOut } = await import('aws-amplify/auth');
+    //   const result = await confirmSignUp({
+    //     username: formData.email,
+    //     confirmationCode: otp
+    //   });
+    //   console.log('✅ OTP Result:', result);
+    //   if (result.isSignUpComplete || result.nextStep?.signUpStep === 'DONE') {
+    //     // Sign in automatically after verification
+    //     try {
+    //       await signIn({
+    //         username: formData.email,
+    //         password: formData.password
+    //       });
+    //     } catch (signInError) {
+    //       if (signInError.name === 'UserAlreadyAuthenticatedException') {
+    //         await signOut();
+    //         await signIn({
+    //           username: formData.email,
+    //           password: formData.password
+    //         });
+    //       } else {
+    //         throw signInError;
+    //       }
+    //     }
 
-        // Pass available user data to the login hook to pre-populate store
-        const loginResult = await login({
-          email: formData.email,
-          fullname: formData.fullname,
-          phone: formData.phone
-        });
+    //     // Pass available user data to the login hook to pre-populate store
+    //     const loginResult = await login({
+    //       email: formData.email,
+    //       fullname: formData.fullname,
+    //       phone: formData.phone
+    //     });
 
-        console.log('🚀 Final Login Result:', loginResult);
+    //     console.log('🚀 Final Login Result:', loginResult);
 
-        if (loginResult && loginResult.success) {
-          debugger;
-          if (loginResult.hasProfile === true) {
-            console.log('this condition reuns')
-            debugger;
-            navigate("/"); // In case they somehow already have a profile
-          } else {
-            debugger;
-            console.log('good conditon rumns')
-            setAuthState("setup"); // Open the CompanySetupForm
-          }
-        }
-      } else {
-        alert(`Next step required: ${result.nextStep?.signUpStep || 'Unknown'}`);
-      }
-    } catch (error) {
-      console.error("OTP error:", error);
-      alert(error.message || "Confirmation failed. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    //     if (loginResult && loginResult.success) {
+    //       debugger;
+    //       if (loginResult.hasProfile === true) {
+    //         console.log('this condition reuns')
+    //         debugger;
+    //         navigate("/"); // In case they somehow already have a profile
+    //       } else {
+    //         debugger;
+    //         console.log('good conditon rumns')
+    //         setAuthState("setup"); // Open the CompanySetupForm
+    //       }
+    //     }
+    //   } else {
+    //     alert(`Next step required: ${result.nextStep?.signUpStep || 'Unknown'}`);
+    //   }
+    // } catch (error) {
+    //   console.error("OTP error:", error);
+    //   alert(error.message || "Confirmation failed. Please try again.");
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
 
   return (

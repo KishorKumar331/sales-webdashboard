@@ -176,61 +176,59 @@ const OnBoardingPage = () => {
   };
 
   const handleLogin = async () => {
-    if (!loginInput.trim() || !password.trim()) {
-      showToast('Please enter your email/phone and password', 'error');
-      return;
-    }
+    // if (!loginInput.trim() || !password.trim()) {
+    //   showToast('Please enter your email/phone and password', 'error');
+    //   return;
+    // }
 
     setIsLoading(true);
 
-    try {
-      const { signIn, signOut } = await import('aws-amplify/auth');
+    // try {
+    //   const { signIn, signOut } = await import('aws-amplify/auth');
 
-      let signInResult;
-      try {
-        signInResult = await signIn({
-          username: loginInput,
-          password: password,
-        });
-      } catch (signInError) {
-        if (signInError.name === 'UserAlreadyAuthenticatedException') {
-          await signOut();
-          signInResult = await signIn({
-            username: loginInput,
-            password: password,
-          });
-        } else {
-          throw signInError;
-        }
-      }
+    //   let signInResult;
+    //   try {
+    //     signInResult = await signIn({
+    //       username: loginInput,
+    //       password: password,
+    //     });
+    //   } catch (signInError) {
+    //     if (signInError.name === 'UserAlreadyAuthenticatedException') {
+    //       await signOut();
+    //       signInResult = await signIn({
+    //         username: loginInput,
+    //         password: password,
+    //       });
+    //     } else {
+    //       throw signInError;
+    //     }
+    //   }
 
-      if (signInResult.isSignedIn) {
-        const result = await login({ email: loginInput });
-        debugger;
-        if (result.success) {
-          console.log(result.hasProfile)
-          debugger;
-          if (!result.hasProfile) {
-            showToast('Almost there! Please complete your business profile.', 'info');
-          } else {
-            showToast('Login successful!');
-            window.location.href = "/";
-          }
-          setShowLoginModal(false);
-          // App.jsx ProtectedRoute will handle the redirect to /create-profile if hasProfile is false
-        }
-      } else {
-        showToast(`Login step required: ${signInResult.nextStep.signInStep}`, 'info');
-      }
-    } catch (error) {
-      showToast(error.message || 'Login failed. Please check your credentials.', 'error');
-      console.error('Login error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    //   if (signInResult.isSignedIn) {
+    //     const result = await login({ email: loginInput });
+    //     debugger;
+    //     if (result.success) {
+    //       console.log(result.hasProfile)
+    //       debugger;
+    //       if (!result.hasProfile) {
+    //         showToast('Almost there! Please complete your business profile.', 'info');
+    //       } else {
+    //         showToast('Login successful!');
+    //         window.location.href = "/";
+    //       }
+    //       setShowLoginModal(false);
+    //       // App.jsx ProtectedRoute will handle the redirect to /create-profile if hasProfile is false
+    //     }
+    //   } else {
+    //     showToast(`Login step required: ${signInResult.nextStep.signInStep}`, 'info');
+    //   }
+    // } catch (error) {
+    //   showToast(error.message || 'Login failed. Please check your credentials.', 'error');
+    //   console.error('Login error:', error);
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
-
-
 
   const goToSlide = (index) => {
     if (scrollViewRef.current) {
@@ -412,11 +410,11 @@ const OnBoardingPage = () => {
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
                   {authState === 'login' ? 'Welcome Back' :
-                      authState === 'forgot_password' ? 'Reset Password' : 'Confirm Reset'}
+                    authState === 'forgot_password' ? 'Reset Password' : 'Confirm Reset'}
                 </h2>
                 <p className="text-gray-600 mt-1">
                   {authState === 'login' ? 'Sign in to continue to Quick Quotes' :
-                      authState === 'forgot_password' ? 'Enter your email to receive a code' : 'Enter the code sent to your email'}
+                    authState === 'forgot_password' ? 'Enter your email to receive a code' : 'Enter the code sent to your email'}
                 </p>
               </div>
               <button
@@ -502,7 +500,7 @@ const OnBoardingPage = () => {
                 {isLoading && <Loader2 className="animate-spin" size={20} />}
                 {isLoading ? 'Processing...' :
                   authState === 'login' ? 'Sign In' :
-                      authState === 'forgot_password' ? 'Send Reset Code' : 'Reset Password'}
+                    authState === 'forgot_password' ? 'Send Reset Code' : 'Reset Password'}
               </button>
 
               {authState !== 'confirm_reset' && (
