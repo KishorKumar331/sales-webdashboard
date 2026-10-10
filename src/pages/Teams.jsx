@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, Phone, Calendar, CreditCard, Search, Filter, MoreVertical, Lock, Eye, EyeOff, Loader2, CheckCircle2, ShieldCheck, X, User, Sparkles } from 'lucide-react';
+import { Users, Plus, Mail, Phone, Calendar, CreditCard, Search, Filter, MoreVertical, Lock, Eye, EyeOff, Loader2, CheckCircle2, ShieldCheck, X, User, Sparkles, BarChart3 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { signUp, confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import TeamDsrReport from '../components/Teams/TeamDsrReport';
 
 const Teams = () => {
   const { realUser, setInspectedUser, clearInspectedUser, isInspecting, user: effectiveUser } = useAuth();
@@ -229,6 +230,14 @@ const Teams = () => {
               Fleet View
             </button>
             <button
+              onClick={() => setActiveTab('dsr')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'dsr' ? 'bg-white text-purple-600 shadow-md' : 'text-slate-500 hover:text-slate-700'
+                }`}
+            >
+              <BarChart3 size={14} />
+              DSR Performance
+            </button>
+            <button
               onClick={() => setActiveTab('add')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'add' ? 'bg-white text-purple-600 shadow-md' : 'text-slate-500 hover:text-slate-700'
                 }`}
@@ -360,6 +369,15 @@ const Teams = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* DSR Performance Telemetry Tab */}
+        {activeTab === 'dsr' && (
+          <TeamDsrReport
+            teamMembers={teamMembers}
+            realUser={realUser}
+            onInspect={handleInspect}
+          />
         )}
 
         {/* Add Member Tab */}

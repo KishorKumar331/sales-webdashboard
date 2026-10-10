@@ -172,7 +172,7 @@ const Profile = () => {
 
   const tabs = [
     { id: 'personal', label: 'Personal Info', icon: User },
-    { id: 'payment', label: 'Payment', icon: CreditCard },
+    // { id: 'payment', label: 'Payment', icon: CreditCard },
     { id: 'marketplace', label: 'Marketplace', icon: ShoppingCart },
   ];
 
