@@ -176,58 +176,58 @@ const OnBoardingPage = () => {
   };
 
   const handleLogin = async () => {
-    // if (!loginInput.trim() || !password.trim()) {
-    //   showToast('Please enter your email/phone and password', 'error');
-    //   return;
-    // }
+    if (!loginInput.trim() || !password.trim()) {
+      showToast('Please enter your email/phone and password', 'error');
+      return;
+    }
 
     setIsLoading(true);
 
-    // try {
-    //   const { signIn, signOut } = await import('aws-amplify/auth');
+    try {
+      const { signIn, signOut } = await import('aws-amplify/auth');
 
-    //   let signInResult;
-    //   try {
-    //     signInResult = await signIn({
-    //       username: loginInput,
-    //       password: password,
-    //     });
-    //   } catch (signInError) {
-    //     if (signInError.name === 'UserAlreadyAuthenticatedException') {
-    //       await signOut();
-    //       signInResult = await signIn({
-    //         username: loginInput,
-    //         password: password,
-    //       });
-    //     } else {
-    //       throw signInError;
-    //     }
-    //   }
+      let signInResult;
+      try {
+        signInResult = await signIn({
+          username: loginInput,
+          password: password,
+        });
+      } catch (signInError) {
+        if (signInError.name === 'UserAlreadyAuthenticatedException') {
+          await signOut();
+          signInResult = await signIn({
+            username: loginInput,
+            password: password,
+          });
+        } else {
+          throw signInError;
+        }
+      }
 
-    //   if (signInResult.isSignedIn) {
-    //     const result = await login({ email: loginInput });
-    //     debugger;
-    //     if (result.success) {
-    //       console.log(result.hasProfile)
-    //       debugger;
-    //       if (!result.hasProfile) {
-    //         showToast('Almost there! Please complete your business profile.', 'info');
-    //       } else {
-    //         showToast('Login successful!');
-    //         window.location.href = "/";
-    //       }
-    //       setShowLoginModal(false);
-    //       // App.jsx ProtectedRoute will handle the redirect to /create-profile if hasProfile is false
-    //     }
-    //   } else {
-    //     showToast(`Login step required: ${signInResult.nextStep.signInStep}`, 'info');
-    //   }
-    // } catch (error) {
-    //   showToast(error.message || 'Login failed. Please check your credentials.', 'error');
-    //   console.error('Login error:', error);
-    // } finally {
-    //   setIsLoading(false);
-    // }
+      if (signInResult.isSignedIn) {
+        const result = await login({ email: loginInput });
+        debugger;
+        if (result.success) {
+          console.log(result.hasProfile)
+          debugger;
+          if (!result.hasProfile) {
+            showToast('Almost there! Please complete your business profile.', 'info');
+          } else {
+            showToast('Login successful!');
+            window.location.href = "/";
+          }
+          setShowLoginModal(false);
+          // App.jsx ProtectedRoute will handle the redirect to /create-profile if hasProfile is false
+        }
+      } else {
+        showToast(`Login step required: ${signInResult.nextStep.signInStep}`, 'info');
+      }
+    } catch (error) {
+      showToast(error.message || 'Login failed. Please check your credentials.', 'error');
+      console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const goToSlide = (index) => {
