@@ -32,6 +32,7 @@ import {
   FileSpreadsheet,
   User,
   Baby,
+  ArrowUpDown,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -42,29 +43,34 @@ const formatINR = (val) => {
   return "₹" + num.toLocaleString("en-IN");
 };
 
-// Date Presets generator
+// Date Presets generator (timezone-safe local dates)
 const getDatePresets = () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
 
-  const toDateStr = (d) => d.toISOString().split("T")[0];
+  const formatYMD = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
 
-  const today = toDateStr(now);
+  const today = formatYMD(now);
 
-  const last7DaysDate = new Date();
+  const last7DaysDate = new Date(now);
   last7DaysDate.setDate(last7DaysDate.getDate() - 7);
-  const last7Days = toDateStr(last7DaysDate);
+  const last7Days = formatYMD(last7DaysDate);
 
-  const thisMonthStart = toDateStr(new Date(year, month, 1));
-  const thisMonthEnd = toDateStr(new Date(year, month + 1, 0));
+  const thisMonthStart = formatYMD(new Date(year, month, 1));
+  const thisMonthEnd = formatYMD(new Date(year, month + 1, 0));
 
-  const lastMonthStart = toDateStr(new Date(year, month - 1, 1));
-  const lastMonthEnd = toDateStr(new Date(year, month, 0));
+  const lastMonthStart = formatYMD(new Date(year, month - 1, 1));
+  const lastMonthEnd = formatYMD(new Date(year, month, 0));
 
   const ytdStart = `${year}-01-01`;
-  const allTimeStart = "2024-01-01";
-  const allTimeEnd = "2026-12-31";
+  const allTimeStart = "2020-01-01";
+  const allTimeEnd = "2030-12-31";
 
   return {
     today: { start: today, end: today, label: "Today" },
@@ -74,6 +80,123 @@ const getDatePresets = () => {
     ytd: { start: ytdStart, end: today, label: "Year to Date" },
     all: { start: allTimeStart, end: allTimeEnd, label: "All Time" },
   };
+};
+
+// Robust date string parser to YYYY-MM-DD
+const parseDateToYMD = (dateVal) => {
+  if (!dateVal) return null;
+  if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+    const y = dateVal.getFullYear();
+    const m = String(dateVal.getMonth() + 1).padStart(2, "0");
+    const d = String(dateVal.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  const str = String(dateVal).trim();
+  if (!str || str === "N/A" || str === "—" || str === "undefined" || str === "null") return null;
+
+  // Numeric epoch
+  if (/^\d{10,13}$/.test(str)) {
+    const d = new Date(Number(str) < 1e11 ? Number(str) * 1000 : Number(str));
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+  }
+
+  // YYYY-MM-DD pattern
+  const ymdMatch = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (ymdMatch) {
+    const y = ymdMatch[1];
+    const m = ymdMatch[2].padStart(2, "0");
+    const d = ymdMatch[3].padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  // DD/MM/YYYY or DD-MM-YYYY pattern
+  const dmyMatch = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+  if (dmyMatch) {
+    const d = dmyMatch[1].padStart(2, "0");
+    const m = dmyMatch[2].padStart(2, "0");
+    const y = dmyMatch[3];
+    return `${y}-${m}-${d}`;
+  }
+
+  // Standard Date parse
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  return null;
+};
+
+// Extract lead dates
+const getLeadDates = (lead) => {
+  if (!lead) return { leadDate: null, travelDate: null };
+
+  const rawLeadDate =
+    lead.assignedDate ||
+    lead.AssignDate ||
+    lead.leadAssignDate ||
+    lead.LeadAssignDate ||
+    lead.CreatedAt ||
+    lead.createdAt ||
+    lead.created_at ||
+    lead.Date ||
+    lead.date ||
+    lead.invoiceInfo?.rawInvoice?.invoiceDate ||
+    lead.invoiceInfo?.rawInvoice?.createdAt ||
+    (Array.isArray(lead.comments) && lead.comments[0]?.At) ||
+    null;
+
+  const rawTravelDate =
+    lead.travelDate ||
+    lead["Client-TravelDate"] ||
+    lead.TravelDate ||
+    null;
+
+  return {
+    leadDate: parseDateToYMD(rawLeadDate),
+    travelDate: parseDateToYMD(rawTravelDate),
+  };
+};
+
+// Check if a lead falls within start and end date range
+const isLeadInDateRange = (lead, startDate, endDate, dateBasis = "either", preset = "month") => {
+  if (preset === "all") return true;
+  if (!startDate && !endDate) return true;
+
+  const start = startDate || "1970-01-01";
+  const end = endDate || "2099-12-31";
+
+  const { leadDate, travelDate } = getLeadDates(lead);
+
+  const isBetween = (d) => d && d >= start && d <= end;
+
+  if (dateBasis === "leadDate") {
+    if (leadDate) return isBetween(leadDate);
+    return travelDate ? isBetween(travelDate) : false;
+  }
+
+  if (dateBasis === "travelDate") {
+    if (travelDate) return isBetween(travelDate);
+    return leadDate ? isBetween(leadDate) : false;
+  }
+
+  // 'either' default: matches if either lead date or travel date falls in range
+  const matchesLead = isBetween(leadDate);
+  const matchesTravel = isBetween(travelDate);
+
+  if (leadDate || travelDate) {
+    return matchesLead || matchesTravel;
+  }
+
+  return false;
 };
 
 // In-memory invoice cache by tripId
@@ -174,17 +297,104 @@ const extractInvoiceAmounts = (inv, fallbackBudget = 0) => {
   };
 };
 
+// Interactive sortable table column header component
+const SortableHeader = ({
+  label,
+  sortKey,
+  sortConfig,
+  onSort,
+  align = "left",
+  className = "",
+}) => {
+  const isSorted = sortConfig?.key === sortKey;
+  const isAsc = isSorted && sortConfig?.direction === "asc";
+
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className={`py-3 px-3 select-none cursor-pointer group transition-colors hover:bg-slate-200/80 ${
+        align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left"
+      } ${isSorted ? "text-emerald-700 bg-emerald-50/80 font-black" : ""} ${className}`}
+      title={`Click to sort by ${label}`}
+    >
+      <div
+        className={`inline-flex items-center gap-1.5 ${
+          align === "center"
+            ? "justify-center"
+            : align === "right"
+            ? "justify-end"
+            : "justify-start"
+        }`}
+      >
+        <span>{label}</span>
+        <span
+          className={`transition-all ${
+            isSorted
+              ? "text-emerald-600 scale-110"
+              : "text-slate-400 opacity-40 group-hover:opacity-100"
+          }`}
+        >
+          {isSorted ? (
+            isAsc ? (
+              <ChevronUp size={13} className="stroke-[3]" />
+            ) : (
+              <ChevronDown size={13} className="stroke-[3]" />
+            )
+          ) : (
+            <ArrowUpDown size={11} />
+          )}
+        </span>
+      </div>
+    </th>
+  );
+};
+
 const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
   const presets = useMemo(() => getDatePresets(), []);
   const [selectedPreset, setSelectedPreset] = useState("month");
   const [startDate, setStartDate] = useState(presets.month.start);
   const [endDate, setEndDate] = useState(presets.month.end);
+  const [dateBasis, setDateBasis] = useState("either"); // 'either' (Any Date) | 'leadDate' (Lead/Created) | 'travelDate' (Travel Date)
   const [viewMode, setViewMode] = useState("sheet"); // 'sheet' (Excel Sheet) | 'table' (Agent Matrix) | 'cards' (Agent Cards)
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [memberStats, setMemberStats] = useState([]);
   const [allEnrichedLeads, setAllEnrichedLeads] = useState([]);
   const [enrichingInvoices, setEnrichingInvoices] = useState(false);
+
+  // Sorting configurations
+  const [sheetSortConfig, setSheetSortConfig] = useState({ key: null, direction: "asc" });
+  const [matrixSortConfig, setMatrixSortConfig] = useState({ key: null, direction: "asc" });
+  const [modalSortConfig, setModalSortConfig] = useState({ key: null, direction: "asc" });
+
+  const handleSheetSort = (key) => {
+    setSheetSortConfig((prev) => {
+      if (prev.key === key) {
+        if (prev.direction === "asc") return { key, direction: "desc" };
+        return { key: null, direction: "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
+
+  const handleMatrixSort = (key) => {
+    setMatrixSortConfig((prev) => {
+      if (prev.key === key) {
+        if (prev.direction === "asc") return { key, direction: "desc" };
+        return { key: null, direction: "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
+
+  const handleModalSort = (key) => {
+    setModalSortConfig((prev) => {
+      if (prev.key === key) {
+        if (prev.direction === "asc") return { key, direction: "desc" };
+        return { key: null, direction: "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
 
   // Filters for Excel Sheet view
   const [sheetAgentFilter, setSheetAgentFilter] = useState("all");
@@ -314,78 +524,12 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
         ];
 
         allMemberLeads.forEach((l) => flatLeadsList.push(l));
-
-        // Converted leads invoice fetching by tripId
-        let memberPackageCost = 0;
-        let memberReceivedAmount = 0;
-        let memberInvoicesCount = 0;
-        const invoicesFound = [];
-
-        const convertedTripIds = convertedLeads
-          .map((l) => l.TripId)
-          .filter(Boolean);
-
-        const invoicePromises = convertedTripIds.map(async (tripId) => {
-          const inv = await fetchInvoiceByTripId(tripId);
-          if (inv) {
-            invoicesFound.push(inv);
-            const amounts = extractInvoiceAmounts(inv);
-            memberPackageCost += amounts.packageCost;
-            memberReceivedAmount += amounts.receivedAmount;
-            memberInvoicesCount += 1;
-          }
-        });
-
-        await Promise.allSettled(invoicePromises);
-
-        // Fallback to converted leads budget if no invoices
-        if (memberInvoicesCount === 0 && convertedLeads.length > 0) {
-          convertedLeads.forEach((l) => {
-            const b = parseFloat(l.budget || l["Client-Budget"]) || 0;
-            memberPackageCost += b;
-          });
-        }
-
-        const memberPendingAmount = Math.max(0, memberPackageCost - memberReceivedAmount);
-        const assignedCount =
-          createQuoteLeads.length + followUpLeads.length + convertedLeads.length;
-        const conversionRate =
-          assignedCount > 0
-            ? ((convertedLeads.length / assignedCount) * 100).toFixed(1)
-            : "0.0";
-        const collectionRate =
-          memberPackageCost > 0
-            ? ((memberReceivedAmount / memberPackageCost) * 100).toFixed(1)
-            : "0.0";
-
-        return {
-          member,
-          name: memberName,
-          email,
-          phone: member.Phone || member.Contact || "N/A",
-          status: member.subscription_status || member.Status || "Active",
-          createQuoteCount: createQuoteLeads.length,
-          followUpCount: followUpLeads.length,
-          convertedCount: convertedLeads.length,
-          assignedCount,
-          conversionRate,
-          invoicesCount: memberInvoicesCount,
-          packageCost: memberPackageCost,
-          receivedAmount: memberReceivedAmount,
-          pendingAmount: memberPendingAmount,
-          collectionRate,
-          invoices: invoicesFound,
-          convertedLeads,
-          followUpLeads,
-          createQuoteLeads,
-          allLeads: allMemberLeads,
-        };
+        return true;
       });
 
-      const results = (await Promise.all(memberPromises)).filter(Boolean);
-      setMemberStats(results);
+      await Promise.all(memberPromises);
 
-      // Now enrich all leads with invoice data for the Excel sheet
+      // Now enrich all leads with invoice data for the Excel sheet & telemetry
       setEnrichingInvoices(true);
       const enrichedPromises = flatLeadsList.map(async (lead) => {
         const tripId = lead.TripId;
@@ -416,7 +560,74 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
     fetchDsrData();
   }, [fetchDsrData]);
 
-  // Overall Company Aggregates
+  // Reactive date-filtered leads across the whole company
+  const dateFilteredLeads = useMemo(() => {
+    return allEnrichedLeads.filter((lead) =>
+      isLeadInDateRange(lead, startDate, endDate, dateBasis, selectedPreset)
+    );
+  }, [allEnrichedLeads, startDate, endDate, dateBasis, selectedPreset]);
+
+  // Compute Member Stats dynamically based on dateFilteredLeads
+  const memberStats = useMemo(() => {
+    return compiledMemberList.map((member) => {
+      const email = member.Email;
+      const memberName = member.fullname || member.FullName || email?.split("@")[0] || "Agent";
+
+      const memberLeads = dateFilteredLeads.filter(
+        (l) => (l.agentEmail || "").toLowerCase() === (email || "").toLowerCase()
+      );
+
+      const createQuoteLeads = memberLeads.filter((l) => l.stage === "Create Quote");
+      const followUpLeads = memberLeads.filter((l) => l.stage === "Follow Up");
+      const convertedLeads = memberLeads.filter((l) => l.stage === "Converted");
+
+      let memberPackageCost = 0;
+      let memberReceivedAmount = 0;
+      let memberInvoicesCount = 0;
+
+      convertedLeads.forEach((l) => {
+        const info = l.invoiceInfo || extractInvoiceAmounts(null);
+        memberPackageCost += info.packageCost;
+        memberReceivedAmount += info.receivedAmount;
+        if (info.hasInvoice) memberInvoicesCount++;
+      });
+
+      const memberPendingAmount = Math.max(0, memberPackageCost - memberReceivedAmount);
+      const assignedCount = memberLeads.length;
+      const conversionRate =
+        assignedCount > 0
+          ? ((convertedLeads.length / assignedCount) * 100).toFixed(1)
+          : "0.0";
+      const collectionRate =
+        memberPackageCost > 0
+          ? ((memberReceivedAmount / memberPackageCost) * 100).toFixed(1)
+          : "0.0";
+
+      return {
+        member,
+        name: memberName,
+        email,
+        phone: member.Phone || member.Contact || "N/A",
+        status: member.subscription_status || member.Status || "Active",
+        createQuoteCount: createQuoteLeads.length,
+        followUpCount: followUpLeads.length,
+        convertedCount: convertedLeads.length,
+        assignedCount,
+        conversionRate,
+        invoicesCount: memberInvoicesCount,
+        packageCost: memberPackageCost,
+        receivedAmount: memberReceivedAmount,
+        pendingAmount: memberPendingAmount,
+        collectionRate,
+        convertedLeads,
+        followUpLeads,
+        createQuoteLeads,
+        allLeads: memberLeads,
+      };
+    });
+  }, [compiledMemberList, dateFilteredLeads]);
+
+  // Overall Company Aggregates from date-filtered memberStats
   const totals = useMemo(() => {
     return memberStats.reduce(
       (acc, s) => {
@@ -453,24 +664,57 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
     return ((totals.received / totals.packageCost) * 100).toFixed(1);
   }, [totals]);
 
-  // Filtered members for Agent Summary Table & Cards
+  // Filtered members for Agent Summary Table & Cards with Matrix Sorting
   const filteredMemberStats = useMemo(() => {
-    if (!searchTerm.trim()) return memberStats;
-    const term = searchTerm.toLowerCase();
-    return memberStats.filter(
-      (s) =>
-        s.name.toLowerCase().includes(term) ||
-        s.email.toLowerCase().includes(term)
-    );
-  }, [memberStats, searchTerm]);
+    let list = memberStats;
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(term) ||
+          s.email.toLowerCase().includes(term)
+      );
+    }
 
-  // Filtered Leads for the Excel Sheet View
+    if (matrixSortConfig.key) {
+      const { key, direction } = matrixSortConfig;
+      const mult = direction === "asc" ? 1 : -1;
+      list = [...list].sort((a, b) => {
+        switch (key) {
+          case "name":
+            return a.name.localeCompare(b.name) * mult;
+          case "assigned":
+            return (a.assignedCount - b.assignedCount) * mult;
+          case "createQuote":
+            return (a.createQuoteCount - b.createQuoteCount) * mult;
+          case "followUp":
+            return (a.followUpCount - b.followUpCount) * mult;
+          case "converted":
+            return (a.convertedCount - b.convertedCount) * mult;
+          case "conversionRate":
+            return (parseFloat(a.conversionRate) - parseFloat(b.conversionRate)) * mult;
+          case "packageCost":
+            return (a.packageCost - b.packageCost) * mult;
+          case "received":
+            return (a.receivedAmount - b.receivedAmount) * mult;
+          case "pending":
+            return (a.pendingAmount - b.pendingAmount) * mult;
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return list;
+  }, [memberStats, searchTerm, matrixSortConfig]);
+
+  // Filtered Leads for the Excel Sheet View with Sheet Column Sorting
   const filteredSheetLeads = useMemo(() => {
-    let list = allEnrichedLeads;
+    let list = dateFilteredLeads;
 
     // Filter by agent
     if (sheetAgentFilter !== "all") {
-      list = list.filter((l) => l.agentEmail === sheetAgentFilter);
+      list = list.filter((l) => (l.agentEmail || "").toLowerCase() === sheetAgentFilter.toLowerCase());
     }
 
     // Filter by stage
@@ -504,8 +748,96 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
       });
     }
 
+    // Interactive column sorting
+    if (sheetSortConfig.key) {
+      const { key, direction } = sheetSortConfig;
+      const mult = direction === "asc" ? 1 : -1;
+
+      list = [...list].sort((a, b) => {
+        switch (key) {
+          case "tripId": {
+            const numA = Number(a.TripId) || 0;
+            const numB = Number(b.TripId) || 0;
+            return (numA - numB) * mult;
+          }
+          case "clientName": {
+            const valA = (a.clientName || a["Client-Name"] || "").toLowerCase();
+            const valB = (b.clientName || b["Client-Name"] || "").toLowerCase();
+            return valA.localeCompare(valB) * mult;
+          }
+          case "contact": {
+            const valA = (a.clientContact || a["Client-Contact"] || a.phone || "").toLowerCase();
+            const valB = (b.clientContact || b["Client-Contact"] || b.phone || "").toLowerCase();
+            return valA.localeCompare(valB) * mult;
+          }
+          case "email": {
+            const valA = (a.clientEmail || a["Client-Email"] || a.email || "").toLowerCase();
+            const valB = (b.clientEmail || b["Client-Email"] || b.email || "").toLowerCase();
+            return valA.localeCompare(valB) * mult;
+          }
+          case "destination": {
+            const valA = (a.destination || a["Client-Destination"] || "").toLowerCase();
+            const valB = (b.destination || b["Client-Destination"] || "").toLowerCase();
+            return valA.localeCompare(valB) * mult;
+          }
+          case "travelDate": {
+            const dA = parseDateToYMD(a.travelDate || a["Client-TravelDate"]) || "";
+            const dB = parseDateToYMD(b.travelDate || b["Client-TravelDate"]) || "";
+            return dA.localeCompare(dB) * mult;
+          }
+          case "pax": {
+            const valA = parseInt(a.pax || a["Client-Pax"]) || 0;
+            const valB = parseInt(b.pax || b["Client-Pax"]) || 0;
+            return (valA - valB) * mult;
+          }
+          case "child": {
+            const valA = parseInt(a.child || a["Client-Child"]) || 0;
+            const valB = parseInt(b.child || b["Client-Child"]) || 0;
+            return (valA - valB) * mult;
+          }
+          case "infant": {
+            const valA = parseInt(a.infant || a["Client-Infant"]) || 0;
+            const valB = parseInt(b.infant || b["Client-Infant"]) || 0;
+            return (valA - valB) * mult;
+          }
+          case "agent": {
+            const valA = (a.agentName || "").toLowerCase();
+            const valB = (b.agentName || "").toLowerCase();
+            return valA.localeCompare(valB) * mult;
+          }
+          case "stage": {
+            const valA = (a.stage || "").toLowerCase();
+            const valB = (b.stage || "").toLowerCase();
+            return valA.localeCompare(valB) * mult;
+          }
+          case "packageCost": {
+            const costA = a.invoiceInfo?.packageCost || 0;
+            const costB = b.invoiceInfo?.packageCost || 0;
+            return (costA - costB) * mult;
+          }
+          case "received": {
+            const recA = a.invoiceInfo?.receivedAmount || 0;
+            const recB = b.invoiceInfo?.receivedAmount || 0;
+            return (recA - recB) * mult;
+          }
+          case "pending": {
+            const penA = a.invoiceInfo?.pendingAmount || 0;
+            const penB = b.invoiceInfo?.pendingAmount || 0;
+            return (penA - penB) * mult;
+          }
+          case "status": {
+            const stA = (a.invoiceInfo?.status || "").toLowerCase();
+            const stB = (b.invoiceInfo?.status || "").toLowerCase();
+            return stA.localeCompare(stB) * mult;
+          }
+          default:
+            return 0;
+        }
+      });
+    }
+
     return list;
-  }, [allEnrichedLeads, sheetAgentFilter, sheetStageFilter, sheetSearchTerm]);
+  }, [dateFilteredLeads, sheetAgentFilter, sheetStageFilter, sheetSearchTerm, sheetSortConfig]);
 
   // Aggregates for the currently filtered Excel Sheet leads
   const sheetTotals = useMemo(() => {
@@ -627,8 +959,48 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
       });
     }
 
+    if (modalSortConfig.key) {
+      const { key, direction } = modalSortConfig;
+      const mult = direction === "asc" ? 1 : -1;
+      list = [...list].sort((a, b) => {
+        switch (key) {
+          case "tripId":
+            return ((Number(a.TripId) || 0) - (Number(b.TripId) || 0)) * mult;
+          case "clientName":
+            return (a.clientName || a["Client-Name"] || "").localeCompare(b.clientName || b["Client-Name"] || "") * mult;
+          case "contact":
+            return (a.clientContact || a["Client-Contact"] || "").localeCompare(b.clientContact || b["Client-Contact"] || "") * mult;
+          case "email":
+            return (a.clientEmail || a["Client-Email"] || "").localeCompare(b.clientEmail || b["Client-Email"] || "") * mult;
+          case "destination":
+            return (a.destination || a["Client-Destination"] || "").localeCompare(b.destination || b["Client-Destination"] || "") * mult;
+          case "travelDate": {
+            const dA = parseDateToYMD(a.travelDate || a["Client-TravelDate"]) || "";
+            const dB = parseDateToYMD(b.travelDate || b["Client-TravelDate"]) || "";
+            return dA.localeCompare(dB) * mult;
+          }
+          case "pax":
+            return ((parseInt(a.pax || a["Client-Pax"]) || 0) - (parseInt(b.pax || b["Client-Pax"]) || 0)) * mult;
+          case "child":
+            return ((parseInt(a.child || a["Client-Child"]) || 0) - (parseInt(b.child || b["Client-Child"]) || 0)) * mult;
+          case "infant":
+            return ((parseInt(a.infant || a["Client-Infant"]) || 0) - (parseInt(b.infant || b["Client-Infant"]) || 0)) * mult;
+          case "stage":
+            return (a.stage || "").localeCompare(b.stage || "") * mult;
+          case "packageCost":
+            return ((a.invoiceInfo?.packageCost || 0) - (b.invoiceInfo?.packageCost || 0)) * mult;
+          case "received":
+            return ((a.invoiceInfo?.receivedAmount || 0) - (b.invoiceInfo?.receivedAmount || 0)) * mult;
+          case "pending":
+            return ((a.invoiceInfo?.pendingAmount || 0) - (b.invoiceInfo?.pendingAmount || 0)) * mult;
+          default:
+            return 0;
+        }
+      });
+    }
+
     return list;
-  }, [memberLeadsWithInvoices, leadStageFilter, leadSearchTerm]);
+  }, [memberLeadsWithInvoices, leadStageFilter, leadSearchTerm, modalSortConfig]);
 
   // Export Complete Leads Excel Sheet (.CSV)
   const handleExportLeadsExcel = (leadsToExport = filteredSheetLeads, fileNamePrefix = "DSR_Leads_Report") => {
@@ -719,7 +1091,7 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* ----------------- Top Controls & Filter Bar ----------------- */}
-      {/* <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+      <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <span className="p-2.5 rounded-2xl bg-emerald-50 text-emerald-700">
@@ -735,31 +1107,86 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
           <p className="text-xs text-slate-500 font-medium">
             Full Excel sheet with Client Name, Mobile, Email, Destination, Travel Date, Pax/Child/Infant, Package Cost, Receiving & Pending by Trip ID
           </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-100">
+              <Calendar size={12} className="text-emerald-600" />
+              {selectedPreset === "all"
+                ? "All Time Historical"
+                : `${startDate} to ${endDate}`}
+            </span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-purple-50 text-purple-800 font-bold border border-purple-100">
+              <Users size={12} className="text-purple-600" />
+              {dateFilteredLeads.length} leads in period
+            </span>
+          </div>
         </div>
 
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+        {/* Date presets, basis & actions */}
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+          {/* Preset Buttons */}
+          <div className="flex flex-wrap bg-slate-100 p-1 rounded-2xl border border-slate-200">
             {Object.keys(presets).map((key) => (
               <button
                 key={key}
                 onClick={() => handlePresetSelect(key)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${selectedPreset === key
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  selectedPreset === key
                     ? "bg-white text-emerald-700 shadow-sm"
                     : "text-slate-500 hover:text-slate-800"
-                  }`}
+                }`}
               >
                 {presets[key].label}
               </button>
             ))}
             <button
               onClick={() => setSelectedPreset("custom")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${selectedPreset === "custom"
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                selectedPreset === "custom"
                   ? "bg-white text-emerald-700 shadow-sm"
                   : "text-slate-500 hover:text-slate-800"
-                }`}
+              }`}
             >
               Custom
+            </button>
+          </div>
+
+          {/* Date Basis: Any Date, Lead Created, Travel Date */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs">
+            <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider">
+              Basis:
+            </span>
+            <button
+              onClick={() => setDateBasis("either")}
+              className={`px-2.5 py-1 rounded-xl font-bold transition-all ${
+                dateBasis === "either"
+                  ? "bg-white text-emerald-700 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Filter matching either creation/assignment date or travel date"
+            >
+              Any
+            </button>
+            <button
+              onClick={() => setDateBasis("leadDate")}
+              className={`px-2.5 py-1 rounded-xl font-bold transition-all ${
+                dateBasis === "leadDate"
+                  ? "bg-white text-emerald-700 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Filter strictly by lead creation/assignment date"
+            >
+              Created
+            </button>
+            <button
+              onClick={() => setDateBasis("travelDate")}
+              className={`px-2.5 py-1 rounded-xl font-bold transition-all ${
+                dateBasis === "travelDate"
+                  ? "bg-white text-emerald-700 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Filter strictly by customer travel date"
+            >
+              Travel
             </button>
           </div>
 
@@ -781,16 +1208,17 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
             </div>
           )}
 
-
+          {/* Refresh Action */}
           <button
             onClick={fetchDsrData}
             disabled={loading}
             className="p-3 bg-emerald-50 text-emerald-700 rounded-2xl hover:bg-emerald-100 transition-all active:scale-95 border border-emerald-200 flex items-center justify-center disabled:opacity-50"
-            title="Refresh DSR Telemetry"
+            title="Refresh DSR Telemetry from Server"
           >
             <RefreshCw size={16} className={loading || enrichingInvoices ? "animate-spin" : ""} />
           </button>
 
+          {/* Export CSV Action */}
           <button
             onClick={() => handleExportLeadsExcel(filteredSheetLeads)}
             className="flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shadow-emerald-200"
@@ -799,7 +1227,7 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
             Export Excel (CSV)
           </button>
         </div>
-      </div> */}
+      </div>
 
       {/* ----------------- KPI Summary Ribbon ----------------- */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -814,10 +1242,10 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 leading-none mb-1">
-            {allEnrichedLeads.length}
+            {dateFilteredLeads.length}
           </div>
           <span className="text-[10px] font-bold text-slate-500">
-            Across all pipeline stages
+            Across selected period
           </span>
         </div>
 
@@ -1049,22 +1477,22 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
             <table className="w-full text-left border-collapse text-xs">
               <thead className="sticky top-0 z-20 bg-slate-100 text-[10px] font-black uppercase tracking-wider text-slate-500 shadow-2xs border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-3 w-12 text-center bg-slate-100">#</th>
-                  <th className="py-3 px-3 bg-slate-100">Trip ID</th>
-                  <th className="py-3 px-4 bg-slate-100">Client Name</th>
-                  <th className="py-3 px-4 bg-slate-100">Mobile / Contact</th>
-                  <th className="py-3 px-4 bg-slate-100">Email</th>
-                  <th className="py-3 px-4 bg-slate-100">Destination</th>
-                  <th className="py-3 px-3 bg-slate-100 text-center">Travel Date</th>
-                  <th className="py-3 px-2 bg-slate-100 text-center">Pax</th>
-                  <th className="py-3 px-2 bg-slate-100 text-center">Child</th>
-                  <th className="py-3 px-2 bg-slate-100 text-center">Infant</th>
-                  <th className="py-3 px-3 bg-slate-100">Agent</th>
-                  <th className="py-3 px-3 bg-slate-100 text-center">Stage</th>
-                  <th className="py-3 px-4 bg-slate-100 text-right font-black">Package Cost</th>
-                  <th className="py-3 px-4 bg-slate-100 text-right font-black text-emerald-700">Receiving</th>
-                  <th className="py-3 px-4 bg-slate-100 text-right font-black text-amber-700">Pending</th>
-                  <th className="py-3 px-3 bg-slate-100 text-center">Status</th>
+                  <SortableHeader label="#" sortKey="default" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="center" className="w-12" />
+                  <SortableHeader label="Trip ID" sortKey="tripId" sortConfig={sheetSortConfig} onSort={handleSheetSort} />
+                  <SortableHeader label="Client Name" sortKey="clientName" sortConfig={sheetSortConfig} onSort={handleSheetSort} className="px-4" />
+                  <SortableHeader label="Mobile / Contact" sortKey="contact" sortConfig={sheetSortConfig} onSort={handleSheetSort} className="px-4" />
+                  <SortableHeader label="Email" sortKey="email" sortConfig={sheetSortConfig} onSort={handleSheetSort} className="px-4" />
+                  <SortableHeader label="Destination" sortKey="destination" sortConfig={sheetSortConfig} onSort={handleSheetSort} className="px-4" />
+                  <SortableHeader label="Travel Date" sortKey="travelDate" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="center" />
+                  <SortableHeader label="Pax" sortKey="pax" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="center" className="px-2" />
+                  <SortableHeader label="Child" sortKey="child" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="center" className="px-2" />
+                  <SortableHeader label="Infant" sortKey="infant" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="center" className="px-2" />
+                  <SortableHeader label="Agent" sortKey="agent" sortConfig={sheetSortConfig} onSort={handleSheetSort} />
+                  <SortableHeader label="Stage" sortKey="stage" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="center" />
+                  <SortableHeader label="Package Cost" sortKey="packageCost" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="right" className="px-4 font-black" />
+                  <SortableHeader label="Receiving" sortKey="received" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="right" className="px-4 font-black text-emerald-700" />
+                  <SortableHeader label="Pending" sortKey="pending" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="right" className="px-4 font-black text-amber-700" />
+                  <SortableHeader label="Status" sortKey="status" sortConfig={sheetSortConfig} onSort={handleSheetSort} align="center" />
                 </tr>
               </thead>
 
@@ -1222,15 +1650,15 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/75 border-b border-slate-100 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  <th className="py-4 px-6">Agent (Click to inspect leads)</th>
-                  <th className="py-4 px-4 text-center">Assigned</th>
-                  <th className="py-4 px-4 text-center">New Quote</th>
-                  <th className="py-4 px-4 text-center">Follow Up</th>
-                  <th className="py-4 px-4 text-center">Converted</th>
-                  <th className="py-4 px-4 text-center">Conversion %</th>
-                  <th className="py-4 px-4 text-right">Package Cost</th>
-                  <th className="py-4 px-4 text-right">Received</th>
-                  <th className="py-4 px-4 text-right">Pending</th>
+                  <SortableHeader label="Agent (Click to inspect leads)" sortKey="name" sortConfig={matrixSortConfig} onSort={handleMatrixSort} className="py-4 px-6" />
+                  <SortableHeader label="Assigned" sortKey="assigned" sortConfig={matrixSortConfig} onSort={handleMatrixSort} align="center" className="py-4 px-4" />
+                  <SortableHeader label="New Quote" sortKey="createQuote" sortConfig={matrixSortConfig} onSort={handleMatrixSort} align="center" className="py-4 px-4" />
+                  <SortableHeader label="Follow Up" sortKey="followUp" sortConfig={matrixSortConfig} onSort={handleMatrixSort} align="center" className="py-4 px-4" />
+                  <SortableHeader label="Converted" sortKey="converted" sortConfig={matrixSortConfig} onSort={handleMatrixSort} align="center" className="py-4 px-4" />
+                  <SortableHeader label="Conversion %" sortKey="conversionRate" sortConfig={matrixSortConfig} onSort={handleMatrixSort} align="center" className="py-4 px-4" />
+                  <SortableHeader label="Package Cost" sortKey="packageCost" sortConfig={matrixSortConfig} onSort={handleMatrixSort} align="right" className="py-4 px-4" />
+                  <SortableHeader label="Received" sortKey="received" sortConfig={matrixSortConfig} onSort={handleMatrixSort} align="right" className="py-4 px-4" />
+                  <SortableHeader label="Pending" sortKey="pending" sortConfig={matrixSortConfig} onSort={handleMatrixSort} align="right" className="py-4 px-4" />
                   <th className="py-4 px-6 text-center">Action</th>
                 </tr>
               </thead>
@@ -1673,20 +2101,20 @@ const TeamDsrReport = ({ teamMembers = [], realUser, onInspect }) => {
                   <table className="w-full text-left border-collapse text-xs">
                     <thead className="sticky top-0 z-10 bg-slate-100 text-[10px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-200">
                       <tr>
-                        <th className="py-3 px-3 w-10 text-center bg-slate-100">#</th>
-                        <th className="py-3 px-3 bg-slate-100">Trip ID</th>
-                        <th className="py-3 px-4 bg-slate-100">Client Name</th>
-                        <th className="py-3 px-4 bg-slate-100">Mobile Number</th>
-                        <th className="py-3 px-4 bg-slate-100">Email</th>
-                        <th className="py-3 px-4 bg-slate-100">Destination</th>
-                        <th className="py-3 px-3 bg-slate-100 text-center">Travel Date</th>
-                        <th className="py-3 px-2 bg-slate-100 text-center">Pax</th>
-                        <th className="py-3 px-2 bg-slate-100 text-center">Child</th>
-                        <th className="py-3 px-2 bg-slate-100 text-center">Infant</th>
-                        <th className="py-3 px-3 bg-slate-100 text-center">Stage</th>
-                        <th className="py-3 px-4 bg-slate-100 text-right font-black">Package Cost</th>
-                        <th className="py-3 px-4 bg-slate-100 text-right font-black text-emerald-700">Receiving</th>
-                        <th className="py-3 px-4 bg-slate-100 text-right font-black text-amber-700">Pending</th>
+                        <SortableHeader label="#" sortKey="default" sortConfig={modalSortConfig} onSort={handleModalSort} align="center" className="w-10" />
+                        <SortableHeader label="Trip ID" sortKey="tripId" sortConfig={modalSortConfig} onSort={handleModalSort} />
+                        <SortableHeader label="Client Name" sortKey="clientName" sortConfig={modalSortConfig} onSort={handleModalSort} className="px-4" />
+                        <SortableHeader label="Mobile Number" sortKey="contact" sortConfig={modalSortConfig} onSort={handleModalSort} className="px-4" />
+                        <SortableHeader label="Email" sortKey="email" sortConfig={modalSortConfig} onSort={handleModalSort} className="px-4" />
+                        <SortableHeader label="Destination" sortKey="destination" sortConfig={modalSortConfig} onSort={handleModalSort} className="px-4" />
+                        <SortableHeader label="Travel Date" sortKey="travelDate" sortConfig={modalSortConfig} onSort={handleModalSort} align="center" />
+                        <SortableHeader label="Pax" sortKey="pax" sortConfig={modalSortConfig} onSort={handleModalSort} align="center" className="px-2" />
+                        <SortableHeader label="Child" sortKey="child" sortConfig={modalSortConfig} onSort={handleModalSort} align="center" className="px-2" />
+                        <SortableHeader label="Infant" sortKey="infant" sortConfig={modalSortConfig} onSort={handleModalSort} align="center" className="px-2" />
+                        <SortableHeader label="Stage" sortKey="stage" sortConfig={modalSortConfig} onSort={handleModalSort} align="center" />
+                        <SortableHeader label="Package Cost" sortKey="packageCost" sortConfig={modalSortConfig} onSort={handleModalSort} align="right" className="px-4 font-black" />
+                        <SortableHeader label="Receiving" sortKey="received" sortConfig={modalSortConfig} onSort={handleModalSort} align="right" className="px-4 font-black text-emerald-700" />
+                        <SortableHeader label="Pending" sortKey="pending" sortConfig={modalSortConfig} onSort={handleModalSort} align="right" className="px-4 font-black text-amber-700" />
                         <th className="py-3 px-3 bg-slate-100 text-center">Invoice</th>
                       </tr>
                     </thead>
