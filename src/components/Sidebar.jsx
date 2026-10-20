@@ -18,7 +18,7 @@ const Sidebar = () => {
 
   const handleDirectDownload = (e) => {
     if (e) e.preventDefault();
-    window.location.href = "/api/download-app";
+    window.location.href = "https://play.google.com/store/apps/details?id=com.salesapp.quickquotes";
   };
 
   return (

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Download, X, Smartphone, ExternalLink, QrCode } from 'lucide-react';
 
-const FloatingPlayStoreButton = ({ 
+const FloatingPlayStoreButton = ({
   appUrl = "https://drive.usercontent.google.com/download?id=1RZndlwHAhG27lOgaaMvC575qruQ0CgE9&export=download&confirm=t",
   apkUrl = "https://drive.usercontent.google.com/download?id=1RZndlwHAhG27lOgaaMvC575qruQ0CgE9&export=download&confirm=t",
   appName = "Quick Quotes Sales App",
   packageName = "com.salesboard.app"
+  // https://play.google.com/store/apps/details?id=com.salesapp.quickquotes
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -33,7 +34,7 @@ const FloatingPlayStoreButton = ({
                 <p className="text-[11px] text-slate-400">Android Mobile App</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setIsOpen(false)}
               className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
               title="Close card"
