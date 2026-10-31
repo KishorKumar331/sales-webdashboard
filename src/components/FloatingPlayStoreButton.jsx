@@ -4,7 +4,7 @@ import { Download, X, Smartphone, ExternalLink, QrCode } from 'lucide-react';
 const FloatingPlayStoreButton = ({
   appUrl = "https://drive.usercontent.google.com/download?id=1RZndlwHAhG27lOgaaMvC575qruQ0CgE9&export=download&confirm=t",
   apkUrl = "https://drive.usercontent.google.com/download?id=1RZndlwHAhG27lOgaaMvC575qruQ0CgE9&export=download&confirm=t",
-  appName = "Quick Quotes Sales App",
+  appName = "Incognito Solution Sales App",
   packageName = "com.salesboard.app"
   // https://play.google.com/store/apps/details?id=com.salesapp.quickquotes
 }) => {

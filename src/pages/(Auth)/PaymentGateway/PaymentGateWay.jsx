@@ -45,12 +45,12 @@ const PaymentPage = () => {
     setIsLoading(true);
 
     const options = {
-      description: 'Quick Quotes Premium - Complete Setup',
+      description: 'Incognito Solution Premium - Complete Setup',
       image: 'https://i.imgur.com/3g7nmJC.png',
       currency: 'INR',
       key: "rzp_live_SshSY8T6PNSHPq",
       amount: '117900', // ₹1179 in paise (₹999 + 18% GST)
-      name: 'Quick Quotes Premium',
+      name: 'Incognito Solution Premium',
       order_id: '',
       prefill: {
         email: userDetails?.Email || '',
@@ -447,7 +447,7 @@ const PaymentPage = () => {
 
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful! 🎉</h2>
             <p className="text-gray-600 mb-6">
-              Your account has been set up successfully. Welcome to Quick Quotes Premium!
+              Your account has been set up successfully. Welcome to Incognito Solution Premium!
             </p>
 
             <div className="space-y-3">

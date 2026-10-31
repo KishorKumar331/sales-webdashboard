@@ -49,7 +49,7 @@ const OnBoardingPage = () => {
   const carouselData = [
     {
       id: 1,
-      title: "Welcome to Quick Quotes",
+      title: "Welcome to Incognito Solution",
       subtitle: "Your Complete Sales Management Solution",
       description: "Streamline your sales process with our powerful tools",
       bgColor: "from-purple-500 to-purple-700",
@@ -264,7 +264,7 @@ const OnBoardingPage = () => {
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
               <Sparkles className="w-6 h-6 text-yellow-300" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Quick Quotes</h1>
+            <h1 className="text-2xl font-bold text-white">Incognito Solution</h1>
           </div>
           <div className="flex gap-3">
             <button
@@ -413,7 +413,7 @@ const OnBoardingPage = () => {
                     authState === 'forgot_password' ? 'Reset Password' : 'Confirm Reset'}
                 </h2>
                 <p className="text-gray-600 mt-1">
-                  {authState === 'login' ? 'Sign in to continue to Quick Quotes' :
+                  {authState === 'login' ? 'Sign in to continue to Incognito Solution' :
                     authState === 'forgot_password' ? 'Enter your email to receive a code' : 'Enter the code sent to your email'}
                 </p>
               </div>

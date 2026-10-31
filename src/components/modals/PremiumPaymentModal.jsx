@@ -30,7 +30,7 @@ const PremiumPaymentModal = ({ visible, onClose, onSuccess, templateName, userDe
       key: 'rzp_live_SshSY8T6PNSHPq',
       amount: amount,
       currency: 'INR',
-      name: 'Quick Quotes Premium',
+      name: 'Incognito Solution Premium',
       description: `Unlock ${templateName || 'Template'}`,
       image: 'https://i.imgur.com/3g7nmJC.png',
       handler: async function (response) {
