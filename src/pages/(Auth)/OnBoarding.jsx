@@ -49,7 +49,7 @@ const OnBoardingPage = () => {
   const carouselData = [
     {
       id: 1,
-      title: "Welcome to Incognito Solution",
+      title: "Welcome to Quick Quotes",
       subtitle: "Your Complete Sales Management Solution",
       description: "Streamline your sales process with our powerful tools",
       bgColor: "from-purple-500 to-purple-700",
@@ -287,7 +287,7 @@ const OnBoardingPage = () => {
               <Sparkles className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-300" />
             </div>
             <h1 className="text-base sm:text-xl md:text-2xl font-bold text-white tracking-tight truncate">
-              Incognito Solution
+              Quick Quotes
             </h1>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
@@ -438,7 +438,7 @@ const OnBoardingPage = () => {
                     authState === 'forgot_password' ? 'Reset Password' : 'Confirm Reset'}
                 </h2>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  {authState === 'login' ? 'Sign in to continue to Incognito Solution' :
+                  {authState === 'login' ? 'Sign in to continue to Quick Quotes' :
                     authState === 'forgot_password' ? 'Enter your email to receive a code' : 'Enter the code sent to your email'}
                 </p>
               </div>
